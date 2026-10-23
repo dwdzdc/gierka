@@ -1,0 +1,70 @@
+rooms/hall.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15,110,115,120,125,132,139,144,149-163,165-174,179,184,189,194,311-320
+rooms/stairwell.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15
+rooms/ramp.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15
+props/hiding_spot.gd.uid
+  s_f5557ab97914ea::t_e01744f9103314 1
+monster/monster.gd
+  s_f5557ab97914ea::t_ca5661a6045c87 430-432
+  s_f5557ab97914ea::t_764da949bdcff5 96-97,224-227,409-420,428-429,433-466,641
+  s_f5557ab97914ea::t_0b0ea038115863 609-610
+player/player.gd
+  s_f5557ab97914ea::t_239a57552fc74a 31-32,42-44,100,140-141,156-196,273-277,287,301-302
+main.gd
+  s_f5557ab97914ea::t_764da949bdcff5 129,397-399
+tests/hiding_test.gd
+  s_f5557ab97914ea::t_764da949bdcff5 1-72
+tests/visibility_test.gd
+  s_f5557ab97914ea::t_35313f0852fa5a 9
+progress.md
+  ai_agent 81,87-91
+props/locker.tscn
+  s_f5557ab97914ea::t_d103ba78286acd 1-60
+rooms/storage.tscn
+  s_f5557ab97914ea::t_625cca82e7c57c 406,409
+  s_f5557ab97914ea::t_e01744f9103314 1,15,191-212,403-405,407-408
+rooms/turn.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15
+rooms/junction.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15,112-114,117-136,141,203-206
+game/game_state.gd
+  s_f5557ab97914ea::t_239a57552fc74a 19-21,74-90,195,267,279,373-405
+tests/crouch_jump_test.gd.uid
+  s_f5557ab97914ea::t_e01744f9103314 1
+tools/gen_rooms.py
+  s_f5557ab97914ea::t_e01744f9103314 34,36,70-83,196-200,243,261,284,313,354,362
+  s_f5557ab97914ea::t_625cca82e7c57c 328,381
+rooms/closet.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15,159-161
+  s_f5557ab97914ea::t_625cca82e7c57c 162
+camera/camera_director.gd
+  s_f5557ab97914ea::t_239a57552fc74a 33,40-50,75
+game/monster_director.gd
+  s_f5557ab97914ea::t_764da949bdcff5 42-47,72,81-102
+main.tscn
+  s_f5557ab97914ea::t_764da949bdcff5 119-145
+rooms/corridor.tscn
+  s_f5557ab97914ea::t_e01744f9103314 1,15,95,102,107,112,207-210
+props/locker_metal.tres
+  s_f5557ab97914ea::t_d103ba78286acd 1-6
+props/hiding_spot.gd
+  s_f5557ab97914ea::t_d103ba78286acd 1-29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "901db8405f7bd492a020001c3a4be85e2906aa4f",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
