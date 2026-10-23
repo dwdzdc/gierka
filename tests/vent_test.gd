@@ -7,6 +7,7 @@ var main: Node3D
 var f := 0
 var m
 var log: Array[String] = []
+var climb_logged := false
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
@@ -20,10 +21,15 @@ func _physics_process(_d: float) -> bool:
 		main.get_node("Players/1").global_position = Vector3(-5, 0.05, -4)
 		main.get_node("Players/1").flashlight.visible = false
 		m = main.get_node("Monsters").get_child(0)
-		m.global_position = Vector3(34.8, 0.05, 0)
+		m.global_position = Vector3(34.8, 0.05, 0) if not "--corridor" in OS.get_cmdline_user_args() else Vector3(23.5, 0.05, 0)
 		m.state_changed.connect(func(s): log.append("t=%.1f %s pos=%s widoczny=%s" % [f / 60.0, m.State.keys()[s], m.global_position.snapped(Vector3.ONE * 0.1), m.get_node("Body").visible]))
 	if f == 30:
 		log.append("polecenie: do hali szybem -> %s" % m.vent_travel_to(main.rooms[0]))
+		log.append("kratka wejściowa: %s (kratka magazynu: %s)" % [m._vent_plan.entry.snapped(Vector3.ONE * 0.1), main.rooms[2].get_vents()[0].global_position.snapped(Vector3.ONE * 0.1)])
+	if f > 30 and m.state == m.State.VENT_CLIMB and not climb_logged:
+		climb_logged = true
+		var flat: Vector3 = (m._vent_plan.entry - m.global_position) * Vector3(1, 0, 1)
+		log.append("start wspinaczki %.2f m od miejsca pod kratką" % flat.length())
 	if f == 60 * 20:
 		log.append("koniec: pos=%s (hala ma środek w 0,0,0)" % m.global_position.snapped(Vector3.ONE * 0.1))
 		print("\n".join(log))

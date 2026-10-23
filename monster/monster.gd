@@ -317,7 +317,7 @@ func _victim_still_held() -> bool:
 func vent_travel_to(target_room: Room) -> bool:
 	if not profile.can_use_vents or target_room.get_vents().is_empty():
 		return false
-	var entry := _nearest_vent()
+	var entry := _vent_in_current_room()
 	if entry == Vector3.INF:
 		return false
 	_vent_plan = {"entry": entry, "exit": target_room.get_vents()[0].global_position}
@@ -329,11 +329,17 @@ func vent_travel_to(target_room: Room) -> bool:
 func _approach_vent() -> float:
 	var entry: Vector3 = _vent_plan.entry
 	var flat := (entry - global_position) * Vector3(1, 0, 1)
-	if flat.length() <= VENT_ENTER_DISTANCE or agent.is_navigation_finished():
+	# Wchodzi tylko spod samej kratki. Jeśli nie da się do niej dojść (koniec ścieżki daleko,
+	# utknięcie), rezygnuje z szybu i idzie do celu normalnie.
+	if flat.length() <= VENT_ENTER_DISTANCE and entry.y - global_position.y < 10.0:
 		_vent_progress = 0.0
 		_climb_from = global_position
 		velocity = Vector3.ZERO
 		_enter(State.VENT_CLIMB)
+		return 0.0
+	if agent.is_navigation_finished() or _stuck_time > 1.0:
+		director_goal = _floor_below(_vent_plan.exit)
+		_vent_plan = {}
 		return 0.0
 	return investigate_speed
 
@@ -372,17 +378,13 @@ func _move_in_vent(delta: float) -> void:
 		$Steps.play()
 
 
-func _nearest_vent() -> Vector3:
-	var best := Vector3.INF
+## Kratka pokoju, w którym potwór stoi (każdy pokój ma swoją). Nie bierzemy "najbliższej
+## w linii prostej", bo ta bywa za ścianą, w sąsiednim pokoju.
+func _vent_in_current_room() -> Vector3:
 	for room in get_tree().get_first_node_in_group(&"main").rooms:
-		for vent in room.get_vents():
-			var position: Vector3 = vent.global_position
-			# Tylko kratki na naszym piętrze (zakres wysokości pokoju).
-			if position.y < global_position.y or position.y > global_position.y + 10.0:
-				continue
-			if best == Vector3.INF or position.distance_to(global_position) < best.distance_to(global_position):
-				best = position
-	return best
+		if (room.transform * room.bounds).has_point(global_position + Vector3.UP * 0.5) and not room.get_vents().is_empty():
+			return room.get_vents()[0].global_position
+	return Vector3.INF
 
 
 func _floor_below(point: Vector3) -> Vector3:
