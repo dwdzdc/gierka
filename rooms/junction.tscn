@@ -168,11 +168,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.25, 0)
 shape = SubResource("zone_All")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/All"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, 4.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.3, 4.9)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(0, 0.5, -2.5)
+look_target = Vector3(0, 0, 0.5)
 follow = 0.2
 
 [node name="Lights" type="Node3D" parent="."]

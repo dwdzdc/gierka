@@ -355,7 +355,8 @@ build(
         ("box", (3.8, 0.5, -4.4), (2.0, 1.0, 0.8), "rust"),     # stół warsztatowy
         ("box", (3.6, 1.15, -4.4), (0.5, 0.3, 0.3), "metal"),
     ],
-    zones=[("All", (-5, 5, -5, 5), (0, 4.2, 4.8), (0, 0.5, -2.5), 0.2, 0)],
+    # Kamera stromo w dół: widzi też pas tuż pod sobą (wykryte mapą pokrycia, tools/coverage_map.gd).
+    zones=[("All", (-5, 5, -5, 5), (0, 4.3, 4.9), (0, 0, 0.5), 0.2, 0)],
     lights=[((0, 4.1, -1), WARM, 0.8, 10.0, False)],
     ambient=[("Ambient0", (-4, 1, -4))],
     vent=(2, 2),

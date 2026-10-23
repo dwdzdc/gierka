@@ -63,6 +63,7 @@ godot --headless --path . -s tests/walk_test.gd        # przejście przez pokoje
 godot --headless --path . -s tests/visibility_test.gd  # gdzie kamera nie widzi postaci
 godot --headless --path . -s tests/map_test.gd -- --rooms=20  # generator: kolizje, determinizm, dostępność
 godot --headless --path . -s tests/camera_rules_test.gd       # każde przejście widoczne z kamery swojej strefy
+godot --headless --path . -s tools/coverage_map.gd            # mapy pokrycia kamer -> docs/coverage/*.png
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
