@@ -178,6 +178,15 @@ Ustalenia (23.10):
 - [x] Konflikt klawiszy: Tab przełączał podgląd kolegi po śmierci, teraz robi to Spacja (martwy i tak nie skacze)
 - [x] Debug potworów (Tab + F1): tabela typ / stan / dystans / pokój / wzrok / słuch / zagrożenie / cel reżysera oraz dane reżysera (etap, czas do następnego potwora, szansa sprawdzania szafek, gniazdo strażnika). Część danych tylko u hosta. Na prośbę użytkownika debug domyślnie włączony (F1 chowa)
 
+## Światło, latarka, krwawienie (pomysły 23.10, do zrobienia)
+
+- [ ] 41a. Krwawienie widać na ekranie: pulsująca czerwona winieta w rytmie utraty HP (1/s), intensywność rośnie, gdy HP spada; przy każdym ubytku bardzo lekki wstrząs, wyraźnie słabszy niż po ciosie potwora
+  - Uwaga: ciągłe trzęsienie przy stałych kamerach męczy i utrudnia czytanie kadru, dlatego wstrząs tylko przy ubytku i słaby
+- [ ] 41b. Ciemniej: ~20% pomieszczeń całkiem ciemnych (losowane z seeda, zamiast obecnych 10% zgaszonych lamp), reszta jak teraz
+  - Uwaga: kłóci się częściowo z 15g (pokoje wyglądały na puste, bo w ciemności nie było widać mebli; światło podbite o 30%). Dlatego kontrast między pokojami zamiast równego przyciemnienia wszystkiego. Ciemny pokój nie powinien być jedyną drogą do windy, a przynajmniej nie bez baterii w zasięgu
+- [ ] 41c. Bateria latarki: ograniczony czas świecenia (np. 4–5 min), migotanie przy słabej baterii, baterie do znalezienia na mapie (nowy typ znaleziska obok monet), podniesienie doładowuje
+  - Uwaga: rozładowana latarka + ciemny pokój = ślepota, która frustruje zamiast straszyć; liczba baterii i ciemnych pokoi do strojenia razem. Wzmacnia istniejący dylemat (latarka = potwory widzą cię z 14 m zamiast 6 m). Naturalny kandydat do podawania przedmiotów (43)
+
 ## Faza 7: napięcie i niepewność
 
 - [x] 38. Rozmyty „poziom zagrożenia” (`fx/tension_audio.gd`): ambient gaśnie, wchodzą serce (szybsze przy większym zagrożeniu) i oddech. Liczony z odległości do potworów (pościg i szyb nad głową liczą się mocniej), z falującym mnożnikiem i opóźnieniem, żeby nie był radarem
