@@ -42,6 +42,19 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 14. Nawigacja wypiekana w runtime dla wygenerowanej mapy (2 klatki po złożeniu)
 - [ ] 15. Modyfikacje z seeda: loot, zablokowane przejścia, światła
 
+### Po playteście generatora (23.10)
+
+Problemy: mapa wydaje się ciasna nawet przy 30 pokojach, kamery w małych pokojach często
+skaczą, filar zasłania postać, drzwi trudno zauważyć (zwłaszcza z kamer prawie
+równoległych do ściany, np. nowe drzwi na południu hali).
+
+- [ ] 15a. Większa skala pokoi, bliżej Lethal Company (przestronnie, ale nie hala sportowa). Najpierw sprawdzić typowe wymiary wnętrz LC, potem przeskalować: szersze korytarze, większe pokoje, wyższe sufity
+- [ ] 15b. Limit pokoi w menu wyżej niż 30 (np. 60) + sprawdzić generator i wydajność (światła, CSG, NavMesh) na dużych mapach
+- [ ] 15c. Małe pokoje: jedno ujęcie zamiast dwóch, bez filara zasłaniającego postać (skrzyżowanie T)
+- [ ] 15d. Rzadsze cięcia kamer: mniej i większe strefy, minimalny czas trwania ujęcia (np. ~1.5 s, chyba że postaci nie widać)
+- [ ] 15e. Obramowanie drzwi: model futryny w kontrastowym kolorze (może lampka nad drzwiami), żeby przejście było widoczne z każdego ujęcia
+- [ ] 15f. Zasada ustawiania kamer: każde przejście pokoju widoczne z co najmniej jednego ujęcia tego pokoju, bez ujęć prawie równoległych do ścian z drzwiami. Test automatyczny, który to sprawdza (powiązane z 10c)
+
 ## Faza 3: sieć
 
 - [x] 16. Menu host/join po IP (ENet), port 7777, do 4 graczy
