@@ -55,6 +55,8 @@ var state := State.PATROL:
 			state_changed.emit(value)
 
 @onready var agent: NavigationAgent3D = $Agent
+@onready var _steps_player: AudioStreamPlayer3D = $Steps
+@onready var _breath_player: AudioStreamPlayer3D = $Breath
 
 ## Wynik percepcji (tylko u hosta). Stan potwora decyduje, co z tym zrobić.
 var seen_player: Player
@@ -68,11 +70,19 @@ var _state_time := 0.0  # ile sekund trwa bieżący stan
 var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
 var _prey: Player  # cel polowania/ataku
 var _heard_new := false
+# Dźwięk kroków liczony u każdego peera z (replikowanej) pozycji, jak u graczy.
+var _last_position := Vector3.ZERO
+var _smoothed_speed := 0.0
+var _step_timer := 0.0
 
 
 func _ready() -> void:
 	# Stan jest replikowany, więc setter (i sygnał) odpala się też u klientów: efekty są lokalne.
 	state_changed.connect(_on_state_visual)
+	_last_position = global_position
+	# Oddech w pętli. Słychać go tylko z bliska (max_distance w scenie): to główna poszlaka.
+	_breath_player.finished.connect(_breath_player.play)
+	_breath_player.play(randf() * 3.0)
 	if multiplayer.is_server():
 		NoiseBus.noise_made.connect(_on_noise)
 
@@ -83,6 +93,30 @@ func _on_state_visual(new_state: State) -> void:
 	var tween := create_tween().set_parallel()
 	for eye in [$EyeL, $EyeR]:
 		tween.tween_property(eye, "scale", Vector3.ONE * (3.0 if attacking else 1.0), 0.15)
+	match new_state:
+		State.HUNT:
+			$Voice.play()
+		State.ATTACK:
+			$Swing.play()
+	# Podczas pościgu oddech jest głośniejszy i szybszy.
+	var hunting := new_state in [State.HUNT, State.ATTACK]
+	_breath_player.volume_db = 4.0 if hunting else -2.0
+	_breath_player.pitch_scale = 1.35 if hunting else 1.0
+
+
+func _process(delta: float) -> void:
+	var measured := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / maxf(delta, 0.0001)
+	_last_position = global_position
+	if measured > 20.0:
+		measured = 0.0
+	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-10.0 * delta))
+	if _smoothed_speed < 0.4:
+		_step_timer = 0.0
+		return
+	_step_timer -= delta
+	if _step_timer <= 0.0:
+		_step_timer = clampf(1.4 / _smoothed_speed, 0.3, 0.9)  # szybciej idzie = częstsze kroki
+		_steps_player.play()
 
 
 func _physics_process(delta: float) -> void:

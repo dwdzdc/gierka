@@ -12,7 +12,8 @@ extends CharacterBody3D
 @export var turn_speed := 2.8  # rad/s
 @export var acceleration := 14.0
 @export var quick_turn_time := 0.28
-@export var step_interval := 0.35
+@export var walk_step_interval := 0.5
+@export var run_step_interval := 0.32
 @export var walk_noise_radius := 4.0
 @export var run_noise_radius := 10.0
 
@@ -22,6 +23,9 @@ var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _quick_turning := false
 var _last_position := Vector3.ZERO
 var _step_timer := 0.0
+var _smoothed_speed := 0.0
+
+@onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
 
 func _enter_tree() -> void:
@@ -78,8 +82,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if multiplayer.is_server():
-		_emit_footsteps(delta)
+	_footsteps(delta)
 	if not is_multiplayer_authority():
 		return
 	if not is_on_floor():
@@ -103,19 +106,26 @@ func _tank_movement(delta: float) -> Vector3:
 	return -global_transform.basis.z * throttle * speed
 
 
-## Liczone u hosta dla KAŻDEGO gracza z replikowanej pozycji, więc klient nie może
-## "oszukać" hałasu, a host nie potrzebuje żadnego RPC.
-func _emit_footsteps(delta: float) -> void:
-	var speed := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / delta
+## Kroki liczone u KAŻDEGO peera z (replikowanej) pozycji: każdy słyszy kroki każdego,
+## bez RPC. U hosta te same kroki są hałasem dla potwora, więc klient nie może go "oszukać".
+func _footsteps(delta: float) -> void:
+	var measured := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / delta
 	_last_position = global_position
-	if speed < 0.5 or speed > run_speed * 3.0:  # stoi albo teleport/spawn
+	if measured > run_speed * 3.0:  # teleport/spawn, nie ruch
+		measured = 0.0
+	# Wygładzenie: pozycje z sieci przychodzą nierówno, więc surowa prędkość skacze.
+	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-10.0 * delta))
+	if _smoothed_speed < 0.5 or not is_alive():
 		_step_timer = 0.0
 		return
 	_step_timer -= delta
 	if _step_timer <= 0.0:
-		_step_timer = step_interval
-		var running := speed > walk_speed * 1.3
-		NoiseBus.emit_noise(global_position, run_noise_radius if running else walk_noise_radius, self)
+		var running := _smoothed_speed > walk_speed * 1.3
+		_step_timer = run_step_interval if running else walk_step_interval
+		_footstep_player.volume_db = -4.0 if running else -10.0
+		_footstep_player.play()
+		if multiplayer.is_server():
+			NoiseBus.emit_noise(global_position, run_noise_radius if running else walk_noise_radius, self)
 
 
 func _quick_turn() -> void:

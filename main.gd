@@ -16,6 +16,7 @@ const RESPAWN_DELAY := 8.0
 @onready var spawn_points: Node3D = $SpawnPoints
 @onready var game_state: GameState = $GameState
 @onready var camera_director: CameraDirector = $CameraDirector
+@onready var listener: AudioListener3D = $Listener
 @onready var info_label: Label = $HUD/Info
 @onready var menu: CanvasLayer = $Menu
 @onready var address_input: LineEdit = %Address
@@ -33,6 +34,7 @@ func _ready() -> void:
 	%HostButton.pressed.connect(_on_host_pressed)
 	%JoinButton.pressed.connect(_on_join_pressed)
 	$HUD.visible = false
+	listener.make_current()
 	# NavMesh liczony w runtime: generator mapy też będzie składał pokoje w locie.
 	# Deferred, bo CSG buduje swoją geometrię dopiero po wejściu do drzewa.
 	# Uwaga: na dachach i regałach powstają "wyspy" NavMeshu. Potwór losuje punkty
@@ -48,6 +50,15 @@ func _ready() -> void:
 		elif arg.begins_with("--join="):
 			address_input.text = arg.trim_prefix("--join=")
 			_on_join_pressed()
+
+
+## "Uszy" są przy postaci, ale obrócone jak bieżąca kamera: dźwięk z lewej strony
+## ekranu słychać z lewej. Domyślnie słuchałaby kamera, czyli z drugiego końca pokoju.
+func _process(_delta: float) -> void:
+	var cam := get_viewport().get_camera_3d()
+	if camera_director.target == null or cam == null:
+		return
+	listener.global_transform = Transform3D(cam.global_transform.basis, camera_director.target.global_position + Vector3.UP * 1.6)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -113,6 +124,10 @@ func _respawn_later(peer_id: int) -> void:
 
 
 func _on_player_hit(peer_id: int, _amount: int) -> void:
+	var victim := players.get_node_or_null(str(peer_id))
+	if victim:
+		$HitSound.global_position = victim.global_position + Vector3.UP
+		$HitSound.play()
 	if peer_id != multiplayer.get_unique_id():
 		return
 	var cam := get_viewport().get_camera_3d() as FixedCamera

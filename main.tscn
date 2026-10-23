@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://rooms/hall.tscn" id="2"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
 [ext_resource type="Shader" path="res://fx/retro_post.gdshader" id="7"]
 [ext_resource type="Script" path="res://game/game_state.gd" id="8"]
+[ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/hit.tres" id="9"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -81,6 +82,14 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.7, 0.05, 0.3)
 
 [node name="GameState" type="Node" parent="."]
 script = ExtResource("8")
+
+[node name="Listener" type="AudioListener3D" parent="."]
+
+[node name="HitSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("9")
+volume_db = 4.0
+unit_size = 4.0
+max_distance = 20.0
 
 [node name="CameraDirector" type="Node" parent="."]
 script = ExtResource("6")
