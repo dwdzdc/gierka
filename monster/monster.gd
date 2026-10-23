@@ -19,9 +19,10 @@ extends CharacterBody3D
 ##   FEED        – w gnieździe zjada porwanego (szybciej traci życie); koledzy mogą go odbić
 ##   VENT        – przemieszcza się szybem wentylacyjnym: niewidoczny, słychać dudnienie nad głową
 ##   VENT_CLIMB  – widocznie wspina się pod kratkę i wciska do szybu (potem VENT)
+##   RECOVER     – po ciosie stoi i dochodzi do siebie (styl HIT_AND_RECOVER); trafiony ma okno na reakcję
 
 # Nowe stany dopisujemy na końcu: wartość enum leci przez sieć jako liczba.
-enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT, VENT_CLIMB }
+enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT, VENT_CLIMB, RECOVER }
 
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
@@ -100,6 +101,7 @@ var _checked_this_search := false
 var _vent_plan := {}
 var _vent_progress := 0.0
 var _climb_from := Vector3.ZERO
+var _slowed_until := 0.0  # po odzyskiwaniu: do tej chwili (s) goni wolniej
 var _vent_bang_timer := 0.0
 var _heard_new := false
 var _smell_timer := 0.0
@@ -272,6 +274,8 @@ func _think(delta: float) -> float:
 			return _attack(delta)
 		State.RETREAT:
 			return _retreat()
+		State.RECOVER:
+			return _recover(delta)
 		State.TRACK:
 			return _track()
 		State.CARRY:
@@ -515,7 +519,8 @@ func _hunt(delta: float) -> float:
 	if sensed and global_position.distance_to(sensed.global_position) <= attack_range:
 		_enter(State.ATTACK)
 		return 0.0
-	return hunt_speed
+	var slowed := Time.get_ticks_msec() / 1000.0 < _slowed_until
+	return hunt_speed * (profile.slowed_factor if slowed else 1.0)
 
 
 ## Obserwator widzi gracza: patrzy na niego i co kilka sekund krzyczy. Krzyk to hałas,
@@ -567,8 +572,24 @@ func _attack(delta: float) -> float:
 			return 0.0  # porwał: niesie ofiarę zamiast odchodzić
 		if is_watcher():
 			_enter(State.PATROL)
+		elif profile.attack_style == MonsterProfile.AttackStyle.HIT_AND_RECOVER:
+			_enter(State.RECOVER)
 		else:
 			_start_retreat()
+	return 0.0
+
+
+## Po ciosie: stoi (otrząsa się), potem wraca do pościgu, ale przez chwilę wolniej.
+func _recover(delta: float) -> float:
+	if is_instance_valid(_prey):
+		face(_prey.global_position - global_position, delta * 0.3)
+	if _state_time >= profile.recover_time:
+		_slowed_until = Time.get_ticks_msec() / 1000.0 + profile.slowed_time
+		if sensed_prey():
+			_enter(State.HUNT)
+		else:
+			_enter(State.INVESTIGATE)
+			agent.target_position = last_seen_position
 	return 0.0
 
 

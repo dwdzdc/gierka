@@ -8,8 +8,8 @@ extends Resource
 ## GUARD: pilnuje rewiru wokół gniazda. WATCHER: stoi w miejscu, wypatruje i krzyczy.
 enum Behavior { HUNTER, PATROLLER, GUARD, WATCHER }
 ## HIT_AND_RETREAT: cios i odejście. EXECUTE: natychmiastowa śmierć bez powalenia.
-## ABDUCT: porywa żywego gracza do gniazda.
-enum AttackStyle { HIT_AND_RETREAT, EXECUTE, ABDUCT }
+## ABDUCT: porywa żywego gracza do gniazda. HIT_AND_RECOVER: cios, chwila bezruchu, potem wolniejszy pościg.
+enum AttackStyle { HIT_AND_RETREAT, EXECUTE, ABDUCT, HIT_AND_RECOVER }
 
 const DIRECTORY := "res://monster/profiles/%s.tres"
 
@@ -48,6 +48,10 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 ## Porywanie: ile HP na sekundę traci porwany w drodze i w gnieździe.
 @export var carry_damage_per_second := 3
 @export var feed_damage_per_second := 6
+## HIT_AND_RECOVER: ile stoi po ciosie i jak długo potem goni wolniej (ułamek prędkości).
+@export var recover_time := 2.5
+@export var slowed_time := 4.0
+@export var slowed_factor := 0.6
 
 @export_group("Ruch")
 @export var can_use_vents := false
