@@ -1,13 +1,13 @@
 # Progress
 
-Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zrobienia
+Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zrobienia · ~~przekreślone~~ odrzucone
 
 ## Decyzje
 
 - [x] Silnik: Godot 4 (4.7, renderer Mobile)
 - [x] Sieć: host-client po ENet (później Steam lobby przez GodotSteam). Ruch gracza z autorytetem klienta; potwór, HP, krew i punkty z autorytetem hosta. Kamera, UI i audio feedback lokalnie.
 - [x] Kontrakt pokoju: `Geometry`, `Doorways`, `CameraZones` (Area3D + Camera), `LootSpawns`, `AmbientPoints` (patrz `rooms/room.gd`)
-- [x] Potwory jako typy: wspólna baza (percepcja, nawigacja, stany) + wymienne zachowania
+- [x] Potwory jako typy: wspólna baza (percepcja, nawigacja, stany) + wymienne zachowania. Szczegóły w „Potwory: abstrakcja” (faza 8), decyzja szkieletowa do potwierdzenia przed refaktorem
 - [ ] Liczba graczy (2–4?)
 - [x] Sterowanie: tank (camera-relative odrzucone po playteście)
 
@@ -32,6 +32,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 10a. Bezpiecznik widoczności: postać zasłonięta w bieżącym ujęciu (raycast kamera → postać) dłużej niż ~0,5 s → przełącz na najlepszą inną kamerę z sąsiednich stref, w której ją widać
 - [x] 10b. Stożek widoku jako tie-breaker: w nakładających się strefach wygrywa kamera, która lepiej pokrywa stożek przed postacią. Liczone tylko przy wejściu/wyjściu ze strefy, nie co klatkę (obrót w miejscu nie tnie)
 - [ ] 10c. Narzędzie w edytorze: wizualizacja martwych pól (miejsca bez pokrycia kamer, miejsca, gdzie postać byłaby zasłonięta)
+- [ ] 10d. Przewidywalność cięć: po playteście kamery bywają nieprzewidywalne. Ustalić, co zaskakuje (bezpiecznik 10a, tie-breaker 10b, śledzenie `follow`) i stroić
 
 ## Faza 2: modularne pokoje
 
@@ -56,8 +57,8 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 23. Percepcja: słuch (promień hałasu) + wzrok (stożek 120°, raycast). Zasięg wzroku 6 m w ciemności, 14 m na gracza z włączoną latarką
 - [x] 24. Maszyna stanów patrol → trop → polowanie → atak → wycofanie (atak na razie bez obrażeń)
 - [x] 25. Atak i obrażenia u hosta (35 HP, unik możliwy w czasie zamachu), feedback u klienta (czerwony błysk, wstrząs kamery, oczy potwora rozbłyskują przy zamachu). Tymczasowo: śmierć → respawn po 8 s, do czasu fazy 5
-- [ ] 26. Sygnały obecności w 3D audio
-- [ ] 27. Wariant „niewidzialny” z mignięciem przed atakiem
+- [ ] 26. Sygnały obecności w 3D audio (darmowe paczki CC0, np. Kenney)
+- [x] ~~27. Wariant „niewidzialny” z mignięciem przed atakiem~~ (odrzucone)
 
 ## Faza 5: krew i ranni
 
@@ -89,7 +90,18 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [ ] 44. Wleczenie ciał przez potwora + ślad
 - [ ] 45. Punktacja co-op vs solo
 - [ ] 46. Spectator przez kamery żyjących graczy
-- [ ] 47. Kolejne typy potworów
+- [ ] 47. Kolejne typy potworów (patrz niżej)
+
+### Potwory: abstrakcja
+
+Różne potwory = kombinacja wymiennych części zamiast jednej klasy z flagami.
+Skeleton (interfejsy części) do potwierdzenia przed refaktorem `Monster`.
+
+- [ ] 47a. Rozbicie `Monster` na części: ruch, percepcja, zachowanie, atak
+- [ ] 47b. Ruch: po podłodze (NavMesh, jest) i po ścianach/suficie
+- [ ] 47c. Zachowanie: patrol (jest) i „obserwator” (stoi w miejscu i patrzy, nie patroluje)
+- [ ] 47d. Atak: wręcz (jest), zdalny (pocisk albo efekt na odległość)
+- [ ] 47e. Atak: porwanie gracza (chwyta i odciąga; powiązane z 44, wleczenie ciał)
 - [ ] 48. Shader glitcha
 - [ ] 49. Drugi setting
 
