@@ -53,14 +53,17 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
 shape = SubResource("shape")
 
 [node name="Body" type="MeshInstance3D" parent="."]
+layers = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.05, 0)
 mesh = SubResource("body_mesh")
 
 [node name="EyeL" type="MeshInstance3D" parent="."]
+layers = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, 1.85, -0.36)
 mesh = SubResource("eye_mesh")
 
 [node name="EyeR" type="MeshInstance3D" parent="."]
+layers = 2
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, 1.85, -0.36)
 mesh = SubResource("eye_mesh")
 

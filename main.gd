@@ -15,6 +15,7 @@ const WIPE_RESET_DELAY := 5.0
 @onready var monsters: Node3D = $Monsters
 @onready var spawn_points: Node3D = $SpawnPoints
 @onready var game_state: GameState = $GameState
+@onready var blood_trail: BloodTrail = $BloodTrail
 @onready var camera_director: CameraDirector = $CameraDirector
 @onready var listener: AudioListener3D = $Listener
 @onready var info_label: Label = $HUD/Info
@@ -106,6 +107,8 @@ func _spawn_player(peer_id: int) -> void:
 	player.transform = marker.transform
 	players.add_child(player, true)
 	game_state.add_player(peer_id)
+	if peer_id != multiplayer.get_unique_id():
+		blood_trail.send_all_to(peer_id)
 
 
 func _spawn_monster() -> void:
@@ -120,6 +123,7 @@ func _on_player_died(_peer_id: int) -> void:
 		if game_state.is_alive(peer_id):
 			return
 	await get_tree().create_timer(WIPE_RESET_DELAY).timeout
+	blood_trail.clear_all()
 	var i := 0
 	for player in players.get_children():
 		var peer_id: int = player.get_multiplayer_authority()
@@ -134,6 +138,8 @@ func _on_player_hit(peer_id: int, _amount: int) -> void:
 	if victim:
 		$HitSound.global_position = victim.global_position + Vector3.UP
 		$HitSound.play()
+		if multiplayer.is_server():
+			blood_trail.add_drop(victim.global_position, 1.4)  # rozbryzg przy trafieniu
 	if peer_id != multiplayer.get_unique_id():
 		return
 	var cam := get_viewport().get_camera_3d() as FixedCamera
