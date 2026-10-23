@@ -154,6 +154,12 @@ Skeleton (interfejsy części) do potwierdzenia przed refaktorem `Monster`.
 - [ ] 47c. Zachowanie: patrol (jest) i „obserwator” (stoi w miejscu i patrzy, nie patroluje)
 - [ ] 47d. Atak: wręcz (jest), zdalny (pocisk albo efekt na odległość)
 - [ ] 47e. Atak: porwanie gracza (chwyta i odciąga; powiązane z 44, wleczenie ciał)
+- [ ] 47f. Typ „Łowca” (wzorowany na Alien: Isolation). Dwie warstwy AI:
+  - **Reżyser** (host, osobny węzeł): zawsze wie, gdzie są gracze, ale nie podaje potworowi ich pozycji. Co jakiś czas tylko kieruje go w okolicę graczy (pokój obok, piętro), a resztę potwór musi znaleźć sam, zmysłami.
+  - **Wskaźnik zagrożenia**: rośnie, gdy potwór jest blisko graczy, długo przy nich i może ich szybko dosięgnąć. Po przekroczeniu progu reżyser odsyła potwora daleko (oddech dla graczy), potem znów go przybliża. W co-opie liczony dla grupy, nie dla jednego gracza.
+  - **Odblokowywane zachowania**: część zachowań startuje wyłączona i włącza się, gdy gracze często uciekają tą samą metodą (np. po kilku udanych ukryciach w szafkach zaczyna je sprawdzać; po ucieczkach na inne piętro zaczyna tam zaglądać). Daje wrażenie, że potwór się uczy.
+  - Decyzja szkieletowa do potwierdzenia przy 47a: reżyser jako wspólny element dla wszystkich typów, czy tylko dla Łowcy.
+  - Źródła: [Game Developer: The Perfect Organism – The AI of Alien: Isolation](https://www.gamedeveloper.com/design/the-perfect-organism-the-ai-of-alien-isolation), [Game Developer: Revisiting the AI of Alien: Isolation](https://www.gamedeveloper.com/design/revisiting-the-ai-of-alien-isolation)
 - [ ] 48. Shader glitcha
 - [ ] 49. Drugi setting
 
