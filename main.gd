@@ -33,7 +33,7 @@ const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 @onready var address_input: LineEdit = %Address
 @onready var status_label: Label = %Status
 
-var _show_debug := false  # F1: debug w panelu statystyk (ujęcie, stany potworów)
+var _show_debug := true  # F1 chowa/pokazuje debug w panelu statystyk (ujęcie, potwory, reżyser)
 var _stage := 0  # znany etap trudności (klienci dostają go z ogłoszeń reżysera)
 
 ## Mapa. Host ustawia seed i liczbę pokoi; klient dostaje je od hosta.
@@ -437,7 +437,7 @@ func _stats_text() -> String:
 	if _show_debug:
 		t += _debug_text()
 	else:
-		t += "\n[color=#777777]F1: debug (kamera, potwory, reżyser)[/color]"
+		t += "\n[color=#777777]F1: pokaż debug (kamera, potwory, reżyser)[/color]"
 	return t
 
 
