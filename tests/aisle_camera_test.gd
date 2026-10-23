@@ -10,9 +10,9 @@ var director
 var frames := 0
 var cases := [
 	# [start, kierunek obrotu y]: wejście ze wschodniego końca blisko regału B i blisko regału A
-	[Vector3(29.1, 0.05, 2.4), Vector3(21.8, 0.05, 1.7)],
-	[Vector3(29.1, 0.05, -2.2), Vector3(21.8, 0.05, -1.2)],
-	[Vector3(29.1, 0.05, 0.3), Vector3(21.8, 0.05, 0.3)],
+	[Vector3(44.1, 0.05, 2.6), Vector3(33.8, 0.05, 2.2)],
+	[Vector3(44.1, 0.05, -2.6), Vector3(33.8, 0.05, -2.2)],
+	[Vector3(44.1, 0.05, 0.3), Vector3(33.8, 0.05, 0.3)],
 ]
 var idx := 0
 var shots := []
@@ -37,14 +37,14 @@ func _physics_process(_d: float) -> bool:
 	# Kamera w chwili, gdy gracz jest w połowie alejki (x=24) i w połowie drogi do jej końca (x=22.5).
 	if director.current_zone == null:
 		return false
-	if p.global_position.x < 24.8 and at_mid == "":
+	if p.global_position.x < 36.8 and at_mid == "":
 		at_mid = director.current_zone.name
-	if p.global_position.x < 23.3 and at_mid.find("/") == -1 and at_mid != "":
+	if p.global_position.x < 34.8 and at_mid.find("/") == -1 and at_mid != "":
 		at_mid += "/" + director.current_zone.name
 	if local == 0:
 		if idx > 0:
 			var ok := at_mid == "MiddleAisle/MiddleAisle"
-			print("%s start=%s ujęcia=%s w alejce (x=24.8/x=23.3)=%s" % ["OK " if ok else "ZLE", cases[idx - 1][0], shots, at_mid])
+			print("%s start=%s ujęcia=%s w alejce (x=36.8/x=34.8)=%s" % ["OK " if ok else "ZLE", cases[idx - 1][0], shots, at_mid])
 		at_mid = ""
 		if idx >= cases.size():
 			return true

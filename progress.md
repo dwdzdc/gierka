@@ -48,12 +48,12 @@ Problemy: mapa wydaje się ciasna nawet przy 30 pokojach, kamery w małych pokoj
 skaczą, filar zasłania postać, drzwi trudno zauważyć (zwłaszcza z kamer prawie
 równoległych do ściany, np. nowe drzwi na południu hali).
 
-- [ ] 15a. Większa skala pokoi, bliżej Lethal Company (przestronnie, ale nie hala sportowa). Najpierw sprawdzić typowe wymiary wnętrz LC, potem przeskalować: szersze korytarze, większe pokoje, wyższe sufity
+- [x] 15a. Większa skala pokoi: korytarze 4 m szerokości, pokoje 6–20 m, sufity 4–6 m, drzwi 2,0×2,6 m, piętro co 5 m. Twardych wymiarów z LC nie znalazłem, skala dobrana względem postaci (1,7 m)
 - [ ] 15b. Limit pokoi w menu wyżej niż 30 (np. 60) + sprawdzić generator i wydajność (światła, CSG, NavMesh) na dużych mapach
-- [ ] 15c. Małe pokoje: jedno ujęcie zamiast dwóch, bez filara zasłaniającego postać (skrzyżowanie T)
+- [x] 15c. Małe pokoje (zakręt, skrzyżowanie, schowek) mają jedno ujęcie; skrzyżowanie bez filara
 - [ ] 15d. Rzadsze cięcia kamer: mniej i większe strefy, minimalny czas trwania ujęcia (np. ~1.5 s, chyba że postaci nie widać)
 - [ ] 15e. Obramowanie drzwi: model futryny w kontrastowym kolorze (może lampka nad drzwiami), żeby przejście było widoczne z każdego ujęcia
-- [ ] 15f. Zasada ustawiania kamer: każde przejście pokoju widoczne z co najmniej jednego ujęcia tego pokoju, bez ujęć prawie równoległych do ścian z drzwiami. Test automatyczny, który to sprawdza (powiązane z 10c)
+- [x] 15f. Zasada kamer: każde przejście widoczne z kamery strefy, w której leży, pod kątem < 70° do normalnej ściany. Pilnuje tego `tests/camera_rules_test.gd`
 
 ## Faza 3: sieć
 

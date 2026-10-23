@@ -22,7 +22,7 @@ func _physics_process(_d: float) -> bool:
 	var polys := region.navigation_mesh.get_polygon_count()
 	var map := region.get_navigation_map()
 	var from := NavigationServer3D.map_get_closest_point(map, Vector3(-3, 0, 0))
-	var to := NavigationServer3D.map_get_closest_point(map, Vector3(28.8, 0, 5))
+	var to := NavigationServer3D.map_get_closest_point(map, Vector3(44, 0, 8))
 	var path := NavigationServer3D.map_get_path(map, from, to, true)
 	var length := 0.0
 	for i in range(1, path.size()):

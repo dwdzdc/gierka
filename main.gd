@@ -176,12 +176,12 @@ func _spawn_transform(index: int) -> Transform3D:
 	return spawns[index % spawns.size()].global_transform
 
 
-## Potwór startuje w środku najdalszego płaskiego pokoju (bez ramp i schodów).
+## Potwór startuje w środku najdalszego płaskiego pokoju (bez ramp i schodów, które mają 2 piętra).
 func _spawn_monster() -> void:
 	var start := rooms[0].global_position
 	var lair := rooms[0]
 	for room in rooms:
-		var flat := room.bounds.size.y < 5.0
+		var flat := room.bounds.size.y < 8.0
 		if flat and room.global_position.distance_to(start) > lair.global_position.distance_to(start):
 			lair = room
 	var monster: Monster = MONSTER_SCENE.instantiate()

@@ -12,8 +12,10 @@ from pathlib import Path
 
 OUT = Path(__file__).resolve().parent.parent / "rooms"
 T = 0.2  # grubość ścian
-DOOR_W = 1.6
-DOOR_H = 2.4
+DOOR_W = 2.0
+DOOR_H = 2.6
+FLOOR_STEP = 5.0  # wysokość piętra (rampa, klatka schodowa)
+CAMERA_FOV = 68.0
 
 EXT = [
     ("Script", "res://rooms/room.gd"),
@@ -135,7 +137,7 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         )
         nodes.append(
             f'[node name="Camera" type="Camera3D" parent="CameraZones/{zname}"]\n'
-            f"transform = {tf(*cam_pos)}\nfov = 62.0\nnear = 0.05\n"
+            f"transform = {tf(*cam_pos)}\nfov = {CAMERA_FOV:g}\nnear = 0.05\n"
             f'script = ExtResource("{EXT_ID["cam"]}")\nlook_target = Vector3({v(*target)})\nfollow = {follow:g}\n'
         )
 
@@ -165,137 +167,139 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
 
 
 WARM, COLD = (1.0, 0.82, 0.6), (0.75, 0.85, 1.0)
+S = FLOOR_STEP
 
-# Hall: 10x8, strefa startowa (spawn graczy). Drzwi na wschód i na południe.
+# Zasady kamer (sprawdza tests/camera_rules_test.gd): każde przejście widoczne z co najmniej
+# jednego ujęcia pokoju i nie pod kątem prawie równoległym do ściany. Małe pokoje: jedno ujęcie.
+
+# Hall: 16x12, strefa startowa (spawn graczy). Drzwi na wschód i na południe.
 build(
-    "Hall", 10, 8, 3.5,
-    doors=[("East", "E", 0, 0), ("South", "S", -2.5, 0)],
+    "Hall", 16, 12, 5.0,
+    doors=[("East", "E", 0, 0), ("South", "S", -4, 0)],
     solids=[
-        ("box", (-2.5, 0.45, -2.6), (1.8, 0.9, 0.9), "wood"),   # stół
-        ("box", (3.6, 0.5, 2.9), (1, 1, 1), "wood"),            # skrzynie
-        ("box", (3.6, 0.4, 1.9), (0.8, 0.8, 0.8), "wood"),
-        ("box", (1.2, 1.75, -0.8), (0.6, 3.5, 0.6), "concrete"),  # filar zasłaniający część kadru
+        ("box", (-4, 0.45, -3.5), (2.4, 0.9, 1.2), "wood"),     # stół
+        ("box", (5.5, 0.6, 4.2), (1.2, 1.2, 1.2), "wood"),      # skrzynie
+        ("box", (4.2, 0.45, 4.6), (0.9, 0.9, 0.9), "wood"),
+        ("box", (-7.6, 1.0, -3), (0.6, 2.0, 3), "metal"),       # szafki pod zachodnią ścianą
     ],
     zones=[
-        ("West", (-5, 0.6, -4, 4), (4.6, 3.1, 3.6), (-2.5, 0.6, -1.0), 0.0, 0),
-        ("East", (-0.6, 5, -4, 4), (-4.6, 3.1, 3.6), (3.0, 0.6, -0.8), 0.0, 0),
+        ("West", (-8, 1, -6, 6), (7.6, 4.6, -5.6), (-4, 0.6, 2), 0.0, 0),
+        ("East", (-1, 8, -6, 6), (-7.6, 4.6, -5.6), (4, 0.6, 2), 0.0, 0),
     ],
-    lights=[((0, 3.1, 0.5), WARM, 0.9, 7.5, False)],
-    loot=[("Loot0", (-2.5, 0.95, -2.6))],
-    ambient=[("Ambient0", (-4.5, 1, 3.5))],
-    spawns=[("Spawn0", (-2.5, 0.05, 1.5), -90), ("Spawn1", (-2.5, 0.05, 0.3), -90),
-            ("Spawn2", (-3.7, 0.05, 1.5), -90), ("Spawn3", (-3.7, 0.05, 0.3), -90)],
+    lights=[((0, 4.6, 0), WARM, 1.0, 12.0, False)],
+    loot=[("Loot0", (-4, 0.95, -3.5))],
+    ambient=[("Ambient0", (-7, 1, 5))],
+    spawns=[("Spawn0", (-5, 0.05, 1.5), -90), ("Spawn1", (-5, 0.05, 0), -90),
+            ("Spawn2", (-6.2, 0.05, 1.5), -90), ("Spawn3", (-6.2, 0.05, 0), -90)],
 )
 
-# Corridor: 12x2.5, drzwi na obu końcach.
+# Corridor: 16x4, drzwi na obu końcach. Kamery na końcach patrzą wzdłuż na przeciwległe drzwi.
 build(
-    "Corridor", 12, 2.5, 3.0,
+    "Corridor", 16, 4, 4.0,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
-        ("box", (2.2, 0.35, 0.75), (0.7, 0.7, 0.7), "wood"),
-        ("box", (-3.0, 0.9, -0.95), (1.2, 1.8, 0.5), "metal"),  # szafka przy ścianie
+        ("box", (3, 0.4, 1.4), (0.8, 0.8, 0.8), "wood"),
+        ("box", (-4, 1.0, -1.65), (1.4, 2.0, 0.5), "metal"),  # szafka przy ścianie
     ],
     zones=[
-        ("WestHalf", (-6.2, 0.8, -1.25, 1.25), (5.6, 2.6, 0.9), (-4.0, 0.8, 0), 0.35, 0),
-        ("EastHalf", (-0.8, 6.2, -1.25, 1.25), (-5.6, 2.6, -0.9), (4.0, 0.8, 0), 0.35, 0),
+        ("WestHalf", (-8, 1, -2, 2), (7.6, 3.6, 1.4), (-5, 0.8, 0), 0.35, 0),
+        ("EastHalf", (-1, 8, -2, 2), (-7.6, 3.6, -1.4), (5, 0.8, 0), 0.35, 0),
     ],
-    lights=[((0, 2.7, 0), COLD, 0.8, 6.0, True)],
-    ambient=[("Ambient0", (3.5, 2.5, 0))],
+    lights=[((0, 3.6, 0), COLD, 0.9, 9.0, True)],
+    ambient=[("Ambient0", (5, 3.4, 0))],
 )
 
-# Storage: 12x12, regały tworzą trzy alejki. Drzwi na zachód i na wschód.
+# Storage: 20x20, dwa regały tworzą trzy alejki po ~6 m. Drzwi na zachód i na wschód.
 build(
-    "Storage", 12, 12, 4.0,
+    "Storage", 20, 20, 6.0,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
-        ("box", (1.0, 1.1, -2.0), (6, 2.2, 0.8), "metal"),   # regał A
-        ("box", (1.0, 1.1, 2.5), (6, 2.2, 0.8), "metal"),    # regał B
-        ("box", (4.9, 0.5, -4.9), (1, 1, 1), "wood"),
-        ("box", (4.9, 0.5, -3.8), (1, 1, 1), "wood"),
-        ("box", (4.9, 1.5, -4.9), (1, 1, 1), "wood"),
-        ("box", (-5.2, 0.4, -5.2), (0.8, 0.8, 0.8), "wood"),
+        ("box", (1.5, 1.1, -3.5), (10, 2.2, 1.0), "metal"),   # regał A
+        ("box", (1.5, 1.1, 3.5), (10, 2.2, 1.0), "metal"),    # regał B
+        ("box", (8.8, 0.6, -8.8), (1.2, 1.2, 1.2), "wood"),
+        ("box", (8.8, 0.6, -7.4), (1.2, 1.2, 1.2), "wood"),
+        ("box", (8.8, 1.8, -8.8), (1.2, 1.2, 1.2), "wood"),
+        ("box", (-8.8, 0.5, -8.8), (1.0, 1.0, 1.0), "wood"),
     ],
     zones=[
-        ("Entry", (-6, -1.4, -6, 6), (-1.2, 3.6, -5.6), (-4.5, 0.6, 2.0), 0.25, 0),
-        ("NorthAisle", (-2.0, 6, -6, -1.6), (5.7, 3.7, -2.6), (-1.5, 0.4, -4.2), 0.2, 0),
-        ("MiddleAisle", (-2.0, 6, -2.0, 2.5), (5.6, 3.6, 0.25), (-2.0, 0.6, 0.25), 0.3, 0),
-        ("SouthAisle", (-2.0, 6, 2.1, 6), (-5.6, 3.6, 5.6), (4.0, 0.6, 4.5), 0.0, 0),
-        # Wschodni koniec regałów: martwe pole dla kamer alejek, wykryte testem widoczności.
-        ("EastEnd", (3.9, 6, -2.8, 2.9), (1.0, 3.8, -5.6), (4.8, 0.6, 0.0), 0.3, 1),
+        ("Entry", (-10, -2.5, -10, 10), (2, 5.6, -9.6), (-7, 0.6, 2), 0.25, 0),
+        ("NorthAisle", (-4.5, 10, -10, -3.5), (9.6, 5.4, -9.6), (-3, 0.6, -7), 0.2, 0),
+        ("MiddleAisle", (-4.5, 10, -4, 4), (-9.4, 5.4, 0.5), (7, 0.6, 0), 0.3, 0),
+        ("SouthAisle", (-4.5, 10, 3.5, 10), (9.6, 5.4, 9.6), (-3, 0.6, 7), 0.0, 0),
+        # Pas za regałami przy wschodnich drzwiach: widok znad środka magazynu.
+        ("EastEnd", (6.5, 10, -10, 10), (0, 5.7, 0), (9, 0.6, 0), 0.25, 1),
     ],
-    lights=[((3.0, 3.6, 0.2), (1.0, 0.75, 0.5), 0.8, 7.0, True), ((-4.0, 3.6, -1.0), (0.6, 0.75, 1.0), 0.8, 7.5, False)],
-    loot=[("Loot0", (4.9, 2.1, -4.9)), ("Loot1", (-5.2, 0.85, -5.2))],
-    ambient=[("Ambient0", (5.5, 1, 5.5)), ("Ambient1", (0, 3.5, -4))],
+    lights=[((2, 5.6, 0), (1.0, 0.75, 0.5), 1.0, 12.0, True), ((-7, 5.6, -6), (0.6, 0.75, 1.0), 0.9, 10.0, False)],
+    loot=[("Loot0", (8.8, 2.45, -8.8)), ("Loot1", (-8.8, 1.05, -8.8))],
+    ambient=[("Ambient0", (9, 1, 9)), ("Ambient1", (0, 5, -7))],
 )
 
-# Turn: 4x4, zakręt (drzwi na zachód i na północ).
+# Turn: 6x6, zakręt (drzwi na zachód i na północ). Jedno ujęcie.
 build(
-    "Turn", 4, 4, 3.0,
+    "Turn", 6, 6, 4.0,
     doors=[("West", "W", 0, 0), ("North", "N", 0, 0)],
-    solids=[("box", (1.4, 0.5, 1.4), (0.9, 1.0, 0.9), "wood")],
-    zones=[("All", (-2, 2, -2, 2), (1.75, 2.7, 1.75), (-1.0, 0.5, -1.0), 0.3, 0)],
-    lights=[((0, 2.7, 0), COLD, 0.5, 4.0, True)],
-    ambient=[("Ambient0", (1.5, 2.5, -1.5))],
+    solids=[("box", (2.2, 0.5, -2.2), (0.9, 1.0, 0.9), "wood")],
+    zones=[("All", (-3, 3, -3, 3), (2.8, 3.6, 2.8), (-1.5, 0.5, -1.5), 0.25, 0)],
+    lights=[((0, 3.6, 0), COLD, 0.6, 6.0, True)],
+    ambient=[("Ambient0", (2.2, 3.2, -2.2))],
 )
 
-# Junction: 6x6, skrzyżowanie T (zachód, wschód, północ).
+# Junction: 10x10, skrzyżowanie T (zachód, wschód, północ). Bez filara, jedno ujęcie.
 build(
-    "Junction", 6, 6, 3.5,
+    "Junction", 10, 10, 4.5,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0), ("North", "N", 0, 0)],
-    solids=[("box", (0, 1.75, 1.2), (0.7, 3.5, 0.7), "concrete")],
-    zones=[
-        ("West", (-3, 0.5, -3, 3), (2.7, 3.2, 2.7), (-1.5, 0.5, -1.0), 0.25, 0),
-        ("East", (-0.5, 3, -3, 3), (-2.7, 3.2, 2.7), (1.5, 0.5, -1.0), 0.25, 0),
-    ],
-    lights=[((0, 3.1, -1.0), WARM, 0.6, 6.0, False)],
-    ambient=[("Ambient0", (-2.5, 1, -2.5))],
+    solids=[("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood")],
+    zones=[("All", (-5, 5, -5, 5), (0, 4.2, 4.8), (0, 0.5, -2.5), 0.2, 0)],
+    lights=[((0, 4.1, -1), WARM, 0.8, 10.0, False)],
+    ambient=[("Ambient0", (-4, 1, -4))],
 )
 
-# Closet: 5x5, ślepy zaułek ze znaleziskami.
+# Closet: 7x7, ślepy zaułek ze znaleziskami. Jedno ujęcie.
 build(
-    "Closet", 5, 5, 3.0,
+    "Closet", 7, 7, 4.0,
     doors=[("West", "W", 0, 0)],
     solids=[
-        ("box", (1.8, 0.5, -1.8), (1, 1, 1), "wood"),
-        ("box", (1.8, 0.4, 1.9), (0.8, 0.8, 0.8), "wood"),
-        ("box", (0.8, 0.9, -2.2), (1.4, 1.8, 0.5), "metal"),
+        ("box", (2.5, 0.5, -2.5), (1, 1, 1), "wood"),
+        ("box", (2.6, 0.4, 2.6), (0.8, 0.8, 0.8), "wood"),
+        ("box", (0.5, 1.0, -3.2), (2.0, 2.0, 0.6), "metal"),
     ],
-    zones=[("All", (-2.5, 2.5, -2.5, 2.5), (-2.2, 2.7, 2.2), (1.2, 0.5, -0.8), 0.25, 0)],
-    lights=[((0.5, 2.7, 0), WARM, 0.45, 4.5, True)],
-    loot=[("Loot0", (1.8, 1.05, -1.8)), ("Loot1", (1.8, 0.85, 1.9))],
+    zones=[("All", (-3.5, 3.5, -3.5, 3.5), (3.2, 3.6, 3.2), (-2, 0.6, -1), 0.2, 0)],
+    lights=[((0.5, 3.6, 0), WARM, 0.6, 6.0, True)],
+    loot=[("Loot0", (2.5, 1.05, -2.5)), ("Loot1", (0.5, 2.05, -3.2))],
 )
 
-# Ramp: 10x2.5, korytarz w górę o jedno piętro (3 m). Dolne drzwi na zachodzie, górne na wschodzie.
+# Ramp: 16x4, korytarz w górę o jedno piętro. Dolne drzwi na zachodzie, górne na wschodzie.
 build(
-    "Ramp", 10, 2.5, 6.0,
-    doors=[("Low", "W", 0, 0), ("High", "E", 0, 3.0)],
+    "Ramp", 16, 4, S + 4.0,
+    doors=[("Low", "W", 0, 0), ("High", "E", 0, S)],
     solids=[
-        ("prism", [(-3, 0), (3, 0), (3, 3)], -1.25, 1.25, "concrete"),
-        ("box", (4, 1.5, 0), (2, 3, 2.5), "concrete"),  # górny podest
+        ("prism", [(-5, 0), (5, 0), (5, S)], -2, 2, "concrete"),
+        ("box", (6.5, S / 2, 0), (3, S, 4), "concrete"),  # górny podest
     ],
     zones=[
-        ("Lower", (-5, 1, -1.25, 1.25), (4.6, 5.6, 0.9), (-3.0, 0.8, 0), 0.4, 0),
-        ("Upper", (-1, 5, -1.25, 1.25), (-4.6, 5.0, -0.9), (4.0, 3.6, 0), 0.4, 0),
+        ("Lower", (-8, 1, -2, 2), (7.6, S + 3.4, 1.4), (-4, 0.8, 0), 0.4, 0),
+        ("Upper", (-1, 8, -2, 2), (-7.6, S + 2.6, -1.4), (6, S + 0.6, 0), 0.4, 0),
     ],
-    lights=[((-3.5, 3.2, 0), COLD, 0.6, 6.0, False), ((3.5, 5.6, 0), WARM, 0.5, 5.0, True)],
-    ambient=[("Ambient0", (0, 4, 0))],
+    lights=[((-6, 3.8, 0), COLD, 0.7, 8.0, False), ((6, S + 3.6, 0), WARM, 0.6, 7.0, True)],
+    ambient=[("Ambient0", (0, S, 0))],
 )
 
-# Stairwell: 6x5, klatka schodowa na jedno piętro (dwa biegi z podestem).
-# Oba wejścia na zachodzie: dolne (z=-1.25, y=0) i górne (z=1.25, y=3).
+# Stairwell: 10x8, klatka schodowa na jedno piętro (dwa biegi z półpiętrem).
+# Oba wejścia na zachodzie: dolne (z=-2, y=0) i górne (z=2, y=S).
 build(
-    "Stairwell", 6, 5, 6.2,
-    doors=[("Low", "W", -1.25, 0), ("High", "W", 1.25, 3.0)],
+    "Stairwell", 10, 8, S + 4.5,
+    doors=[("Low", "W", -2, 0), ("High", "W", 2, S)],
     solids=[
-        ("prism", [(-1, 0), (2, 0), (2, 1.5)], -2.5, 0, "concrete"),  # bieg 1
-        ("box", (2.5, 0.75, 0), (1, 1.5, 5), "concrete"),  # półpiętro
+        ("prism", [(-1.5, 0), (3.5, 0), (3.5, S / 2)], -4, 0, "concrete"),  # bieg 1
+        ("box", (4.25, S / 4, 0), (1.5, S / 2, 8), "concrete"),  # półpiętro
         # bieg 2 + górny podest jako jedna pełna bryła (bez pustki pod spodem)
-        ("prism", [(-3, 0), (2, 0), (2, 1.5), (-1, 3), (-3, 3)], 0, 2.5, "concrete"),
+        ("prism", [(-5, 0), (3.5, 0), (3.5, S / 2), (-1.5, S), (-5, S)], 0, 4, "concrete"),
     ],
     zones=[
-        ("Low", (-3, 3, -2.5, 0.4), (2.7, 5.8, 2.2), (-2.0, 0.5, -1.3), 0.3, 0),
-        ("High", (-3, 3, -0.4, 2.5), (2.7, 5.8, -2.2), (-2.0, 3.5, 1.3), 0.3, 0),
+        # Każda kamera stoi nad "swoją" stroną klatki, żeby bryła drugiego biegu nie zasłaniała drzwi.
+        ("Low", (-5, 5, -4, 0.6), (4.6, S + 4.0, -3.6), (-3, 0.5, -2), 0.3, 0),
+        ("High", (-5, 5, -0.6, 4), (4.6, S + 4.0, 3.6), (-3, S + 0.5, 2), 0.3, 0),
     ],
-    lights=[((0, 5.8, 0), COLD, 0.7, 7.0, True)],
-    ambient=[("Ambient0", (2.5, 3, 0))],
+    lights=[((0, S + 4.1, 0), COLD, 0.8, 10.0, True)],
+    ambient=[("Ambient0", (4.2, S / 2 + 0.5, 0))],
 )

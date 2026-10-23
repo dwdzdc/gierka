@@ -29,25 +29,25 @@ func _physics_process(_d: float) -> bool:
 		main._on_connected()
 		m = main.get_node("Monsters").get_child(0)
 		p = main.get_node("Players/1")
-		m.global_position = Vector3(26.8, 0.05, 0)
+		m.global_position = Vector3(37.8, 0.05, 0)
 		m.rotation.y = PI / 2  # patrzy na -X
 		m.state_changed.connect(func(s): log.append("t=%.1f %s" % [frames / 60.0, m.State.keys()[s]]))
 		match scenario:
 			"attack":
-				p.global_position = Vector3(22.8, 0.05, 0)
+				p.global_position = Vector3(33.8, 0.05, 0)
 			"noise":
 				p.global_position = Vector3(-4, 0.05, -3)
 				m.rotation.y = -PI / 2  # plecami do hałasu
-				root.get_node("NoiseBus").emit_noise.call_deferred(Vector3(21.8, 0, 0.5), 10.0, null)
+				root.get_node("NoiseBus").emit_noise.call_deferred(Vector3(32.8, 0, 0.5), 10.0, null)
 			"escape", "dodge":
-				p.global_position = Vector3(22.8, 0.05, 0)
+				p.global_position = Vector3(33.8, 0.05, 0)
 			"death":
-				p.global_position = Vector3(22.8, 0.05, 0)
+				p.global_position = Vector3(33.8, 0.05, 0)
 				m.attack_damage = 100
 	if scenario == "escape" and frames == 40:
 		p.global_position = Vector3(-4, 0.05, -3)  # zniknął z pola widzenia
-	if scenario == "dodge" and m != null and m.state == m.State.ATTACK and p.global_position.x > 15.8:
-		p.global_position = Vector3(14.8, 0.05, 0)  # odskok o kilka metrów w czasie zamachu
+	if scenario == "dodge" and m != null and m.state == m.State.ATTACK and p.global_position.x > 30.0:
+		p.global_position = Vector3(27.8, 0.05, 0)  # odskok o kilka metrów w czasie zamachu
 	var gs = main.get_node("GameState")
 	if scenario == "death" and frames % 60 == 0 and frames <= 60 * 12:
 		log.append("t=%d hp=%d alive=%s pos=%s" % [frames / 60, gs.hp(1), gs.is_alive(1), p.global_position.snapped(Vector3.ONE)])

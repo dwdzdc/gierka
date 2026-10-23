@@ -10,98 +10,98 @@
 [ext_resource type="Material" path="res://rooms/materials/metal.tres" id="8"]
 
 [sub_resource type="BoxShape3D" id="zone_Low"]
-size = Vector3(6, 6.2, 2.9)
+size = Vector3(10, 9.5, 4.6)
 
 [sub_resource type="BoxShape3D" id="zone_High"]
-size = Vector3(6, 6.2, 2.9)
+size = Vector3(10, 9.5, 4.6)
 
 
 [node name="Stairwell" type="Node3D"]
 script = ExtResource("1")
-bounds = AABB(-3.2, -0.2, -2.7, 6.4, 6.6, 5.4)
+bounds = AABB(-5.2, -0.2, -4.2, 10.4, 9.9, 8.4)
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true
 
 [node name="Floor" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
-size = Vector3(6.4, 0.2, 5.4)
+size = Vector3(10.4, 0.2, 8.4)
 material = ExtResource("5")
 
 [node name="Ceiling" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6.3, 0)
-size = Vector3(6.4, 0.2, 5.4)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.6, 0)
+size = Vector3(10.4, 0.2, 8.4)
 material = ExtResource("5")
 
 [node name="WallN0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, -2.6)
-size = Vector3(6.4, 6.2, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.75, -4.1)
+size = Vector3(10.4, 9.5, 0.2)
 material = ExtResource("6")
 
 [node name="WallS0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 2.6)
-size = Vector3(6.4, 6.2, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.75, 4.1)
+size = Vector3(10.4, 9.5, 0.2)
 material = ExtResource("6")
 
 [node name="WallE0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 3.1, 0)
-size = Vector3(0.2, 6.2, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.1, 4.75, 0)
+size = Vector3(0.2, 9.5, 8)
 material = ExtResource("6")
 
 [node name="WallW0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 3.1, -2.275)
-size = Vector3(0.2, 6.2, 0.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.1, 4.75, -3.5)
+size = Vector3(0.2, 9.5, 1)
 material = ExtResource("6")
 
 [node name="WallW1" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 4.3, -1.25)
-size = Vector3(0.2, 3.8, 1.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.1, 6.05, -2)
+size = Vector3(0.2, 6.9, 2)
 material = ExtResource("6")
 
 [node name="WallW2" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 3.1, 0)
-size = Vector3(0.2, 6.2, 0.9)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.1, 4.75, 0)
+size = Vector3(0.2, 9.5, 2)
 material = ExtResource("6")
 
 [node name="WallW3" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 1.5, 1.25)
-size = Vector3(0.2, 3, 1.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.1, 2.5, 2)
+size = Vector3(0.2, 5, 2)
 material = ExtResource("6")
 
 [node name="WallW4" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 5.8, 1.25)
-size = Vector3(0.2, 0.8, 1.6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.1, 8.55, 2)
+size = Vector3(0.2, 1.9, 2)
 material = ExtResource("6")
 
 [node name="WallW5" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 3.1, 2.275)
-size = Vector3(0.2, 6.2, 0.45)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.1, 4.75, 3.5)
+size = Vector3(0.2, 9.5, 1)
 material = ExtResource("6")
 
 [node name="Solid0" type="CSGPolygon3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0)
-polygon = PackedVector2Array(-1, 0, 2, 0, 2, 1.5)
-depth = 2.5
+polygon = PackedVector2Array(-1.5, 0, 3.5, 0, 3.5, 2.5)
+depth = 4
 material = ExtResource("5")
 
 [node name="Solid1" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0.75, 0)
-size = Vector3(1, 1.5, 5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.25, 1.25, 0)
+size = Vector3(1.5, 2.5, 8)
 material = ExtResource("5")
 
 [node name="Solid2" type="CSGPolygon3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.5)
-polygon = PackedVector2Array(-3, 0, 2, 0, 2, 1.5, -1, 3, -3, 3)
-depth = 2.5
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
+polygon = PackedVector2Array(-5, 0, 3.5, 0, 3.5, 2.5, -1.5, 5, -5, 5)
+depth = 4
 material = ExtResource("5")
 
 [node name="Doorways" type="Node3D" parent="."]
 
 [node name="Low" type="Marker3D" parent="Doorways"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.2, 0, -1.25)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -5.2, 0, -2)
 
 [node name="High" type="Marker3D" parent="Doorways"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.2, 3, 1.25)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -5.2, 5, 2)
 
 [node name="CameraZones" type="Node3D" parent="."]
 
@@ -113,15 +113,15 @@ script = ExtResource("2")
 camera_priority = 0
 
 [node name="Shape" type="CollisionShape3D" parent="CameraZones/Low"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, -1.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.75, -1.7)
 shape = SubResource("zone_Low")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/Low"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7, 5.8, 2.2)
-fov = 62.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 9, -3.6)
+fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(-2, 0.5, -1.3)
+look_target = Vector3(-3, 0.5, -2)
 follow = 0.3
 
 [node name="High" type="Area3D" parent="CameraZones"]
@@ -132,25 +132,25 @@ script = ExtResource("2")
 camera_priority = 0
 
 [node name="Shape" type="CollisionShape3D" parent="CameraZones/High"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 1.05)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.75, 1.7)
 shape = SubResource("zone_High")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/High"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7, 5.8, -2.2)
-fov = 62.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.6, 9, 3.6)
+fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(-2, 3.5, 1.3)
+look_target = Vector3(-3, 5.5, 2)
 follow = 0.3
 
 [node name="Lights" type="Node3D" parent="."]
 
 [node name="Light0" type="OmniLight3D" parent="Lights"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.1, 0)
 light_color = Color(0.75, 0.85, 1, 1)
-light_energy = 0.7
+light_energy = 0.8
 shadow_enabled = true
-omni_range = 7
+omni_range = 10
 script = ExtResource("4")
 
 [node name="LootSpawns" type="Node3D" parent="."]
@@ -158,4 +158,4 @@ script = ExtResource("4")
 [node name="AmbientPoints" type="Node3D" parent="."]
 
 [node name="Ambient0" type="Marker3D" parent="AmbientPoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2, 3, 0)

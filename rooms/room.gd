@@ -10,7 +10,7 @@ extends Node3D
 ##   PlayerSpawns  – (opcjonalnie) Marker3D startu graczy; ma je pokój startowy
 ## Generator mapy składa pokoje po Doorways. Kamery i strefy jadą razem z pokojem.
 
-const DOOR_SIZE := Vector2(1.6, 2.4)
+const DOOR_SIZE := Vector2(2.0, 2.6)
 const WALL_THICKNESS := 0.2
 const CAP_MATERIAL := preload("res://rooms/materials/wall.tres")
 

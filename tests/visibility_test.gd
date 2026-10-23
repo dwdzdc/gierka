@@ -17,8 +17,8 @@ func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
 	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
-	for x in range(-5, 31, 1):
-		for z in range(-5, 6, 1):
+	for x in range(-9, 46, 2):
+		for z in range(-10, 11, 2):
 			spots.append(Vector3(x + 0.5, 0.05, z + 0.5))
 
 func _physics_process(_d: float) -> bool:
@@ -32,7 +32,7 @@ func _physics_process(_d: float) -> bool:
 		director.camera_changed.connect(func(_z): cuts += 1)
 	if frames < 10:  # mapa składana w klatce 2; kolizje CSG są dopiero chwilę później
 		return false
-	var step := (frames - 10) % 50
+	var step := (frames - 10) % 30
 	if step == 0:
 		while idx < spots.size():
 			var s := spots[idx]
@@ -43,7 +43,7 @@ func _physics_process(_d: float) -> bool:
 				return false
 		print("spots checked, hidden after settle: %d, cuts: %d" % [hidden, cuts])
 		return true
-	if step == 49 and director.current_zone and not director.is_target_visible(director.current_zone.camera):
+	if step == 29 and director.current_zone and not director.is_target_visible(director.current_zone.camera):
 		hidden += 1
 		print("hidden at ", p.global_position.snapped(Vector3.ONE * 0.1), " shot ", director.current_zone.owner.name, "/", director.current_zone.name)
 	return false
