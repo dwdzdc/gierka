@@ -16,8 +16,9 @@ extends CharacterBody3D
 @export var run_step_interval := 0.32
 @export var walk_noise_radius := 4.0
 @export var run_noise_radius := 10.0
-## Ile sekund trzeba trzymać E przy powalonym koledze, żeby go podnieść.
+## Ile sekund trzeba trzymać klawisz, żeby podnieść kolegę / założyć bandaż.
 @export var revive_time := 3.0
+@export var bandage_time := 2.0
 
 @onready var flashlight: SpotLight3D = $Flashlight
 
@@ -29,7 +30,10 @@ var _smoothed_speed := 0.0
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
-## Pomaganie koledze (tylko u właściciela postaci, do HUD-a).
+enum Help { NONE, REVIVE, BANDAGE }
+
+## Bieżąca akcja "trzymaj klawisz" (tylko u właściciela postaci, do HUD-a).
+var help_kind := Help.NONE
 var help_target: Player
 var help_progress := 0.0
 
@@ -108,33 +112,51 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 
-## Trzymanie E przy powalonym koledze: po `revive_time` s prosimy hosta o podniesienie.
-## Licznik jest lokalny (to tylko "animacja" czekania), decyzję i tak podejmuje host.
-## Zwraca true, gdy właśnie pomagamy (wtedy stoimy w miejscu).
+## Akcje "trzymaj klawisz": E przy powalonym koledze = podnieś, E przy krwawiącym
+## koledze = bandaż dla niego, H = bandaż dla siebie. Po upływie czasu prosimy hosta
+## o wykonanie. Licznik jest lokalny (to tylko czekanie), decyzję podejmuje host.
+## Zwraca true, gdy właśnie coś robimy (wtedy stoimy w miejscu).
 func _update_help(delta: float) -> bool:
-	help_target = _nearest_downed_teammate() if is_up() and Input.is_action_pressed("interact") else null
-	if help_target == null:
+	var kind := Help.NONE
+	var target: Player = null
+	var game_state := _game_state()
+	if game_state and is_up():
+		var me := get_multiplayer_authority()
+		if Input.is_action_pressed("interact"):
+			target = _nearest_teammate(func(id: int) -> bool: return game_state.is_downed(id))
+			kind = Help.REVIVE
+			if target == null and game_state.bandages(me) > 0:
+				target = _nearest_teammate(func(id: int) -> bool: return game_state.is_up(id) and game_state.is_bleeding(id))
+				kind = Help.BANDAGE
+		elif Input.is_action_pressed("bandage_self") and game_state.is_bleeding(me) and game_state.bandages(me) > 0:
+			target = self
+			kind = Help.BANDAGE
+	if target == null or target != help_target or kind != help_kind:
 		help_progress = 0.0
+	help_target = target
+	help_kind = kind if target else Help.NONE
+	if help_target == null:
 		return false
-	help_progress += delta / revive_time
+	help_progress += delta / (revive_time if kind == Help.REVIVE else bandage_time)
 	if help_progress >= 1.0:
 		help_progress = 0.0
-		_game_state().request_revive.rpc_id(1, help_target.get_multiplayer_authority())
+		var target_id := help_target.get_multiplayer_authority()
+		if kind == Help.REVIVE:
+			game_state.request_revive.rpc_id(1, target_id)
+		else:
+			game_state.request_bandage.rpc_id(1, target_id)
 	return true
 
 
-func _nearest_downed_teammate() -> Player:
-	var game_state := _game_state()
-	if game_state == null:
-		return null
+func _nearest_teammate(matches: Callable) -> Player:
 	var best: Player = null
 	for node in get_tree().get_nodes_in_group(&"players"):
 		var other := node as Player
-		if other == self or not game_state.is_downed(other.get_multiplayer_authority()):
+		if other == self or not matches.call(other.get_multiplayer_authority()):
 			continue
-		if global_position.distance_to(other.global_position) <= GameState.HELP_DISTANCE:
-			if best == null or global_position.distance_to(other.global_position) < global_position.distance_to(best.global_position):
-				best = other
+		var distance := global_position.distance_to(other.global_position)
+		if distance <= GameState.HELP_DISTANCE and (best == null or distance < global_position.distance_to(best.global_position)):
+			best = other
 	return best
 
 

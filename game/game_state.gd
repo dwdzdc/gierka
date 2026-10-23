@@ -21,10 +21,11 @@ const BLEED_CHANCE := 0.6
 const BLEED_DAMAGE_PER_SECOND := 2
 const BLEED_OUT_SECONDS := 30
 const REVIVE_HP := 30
+const START_BANDAGES := 2
 ## Jak blisko trzeba stać, żeby pomóc koledze (host to sprawdza).
 const HELP_DISTANCE := 2.0
 
-## peer_id -> {"hp": int, "life": Life, "bleeding": bool, "bleed_out": int}
+## peer_id -> {"hp": int, "life": Life, "bleeding": bool, "bleed_out": int, "bandages": int}
 var players := {}
 
 var _tick := 0.0
@@ -62,6 +63,10 @@ func is_bleeding(peer_id: int) -> bool:
 
 func bleed_out_left(peer_id: int) -> int:
 	return players.get(peer_id, {}).get("bleed_out", 0)
+
+
+func bandages(peer_id: int) -> int:
+	return players.get(peer_id, {}).get("bandages", 0)
 
 
 # --- Tylko host ---------------------------------------------------------------
@@ -143,7 +148,7 @@ func _kill(peer_id: int) -> void:
 
 
 func _fresh_entry() -> Dictionary:
-	return {"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0}
+	return {"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0, "bandages": START_BANDAGES}
 
 
 func _broadcast() -> void:
@@ -184,6 +189,21 @@ func request_revive(target_id: int) -> void:
 	entry.life = Life.OK
 	entry.hp = REVIVE_HP
 	entry.bleed_out = 0
+	_broadcast()
+
+
+## Opatrzenie siebie albo krwawiącego kolegi. Zużywa bandaż pomagającego.
+@rpc("any_peer", "call_local", "reliable")
+func request_bandage(target_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var helper_id := _caller()
+	if not is_up(helper_id) or bandages(helper_id) <= 0 or not is_up(target_id) or not is_bleeding(target_id):
+		return
+	if helper_id != target_id and not _close_enough(helper_id, target_id):
+		return
+	players[helper_id].bandages -= 1
+	players[target_id].bleeding = false
 	_broadcast()
 
 

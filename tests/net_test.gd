@@ -23,7 +23,15 @@ func _physics_process(_d: float) -> bool:
 		for id in main.get_node("GameState").players:
 			if id != 1:
 				main.get_node("GameState").damage(id, 30)
-	if frames == 300:
+	if frames == 210 and main.multiplayer.is_server():
+		var gs = main.get_node("GameState")
+		for id in gs.players:
+			if id != 1:
+				gs.players[id].bleeding = true
+		gs._broadcast()
+	if frames == 230 and not main.multiplayer.is_server():
+		Input.action_press("bandage_self")  # klient prosi hosta o bandaż (po 2 s trzymania)
+	if frames == 400:
 		var role := "HOST" if main.multiplayer.is_server() else "KLIENT"
 		print("%s (id %d) widzi %d graczy:" % [role, main.multiplayer.get_unique_id(), players.get_child_count()])
 		print("  game_state: ", main.get_node("GameState").players)
@@ -33,4 +41,4 @@ func _physics_process(_d: float) -> bool:
 			print("  %s pos=%s authority=%d kamera_lokalna=%s" % [p.name, p.global_position.snapped(Vector3.ONE * 0.01),
 				p.get_multiplayer_authority(), main.get_node("CameraDirector").target == p])
 	# Host żyje dłużej, żeby klient zdążył się wypisać przed rozłączeniem.
-	return frames >= (420 if main.multiplayer.is_server() else 300)
+	return frames >= (520 if main.multiplayer.is_server() else 400)

@@ -165,15 +165,16 @@ func _update_hud() -> void:
 	var status := ""
 	match game_state.life(me):
 		GameState.Life.OK:
-			status = "HP %d" % game_state.hp(me)
+			status = "HP %d  bandaze: %d" % [game_state.hp(me), game_state.bandages(me)]
 			if game_state.is_bleeding(me):
-				status += "  KRWAWISZ"
+				status += "  KRWAWISZ (H - bandaz)"
 		GameState.Life.DOWNED:
 			status = "POWALONY - wykrwawisz sie za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me)
 		GameState.Life.DEAD:
 			status = "NIE ZYJESZ"
 	var me_node: Player = players.get_node_or_null(str(me))
 	if me_node and me_node.help_target:
-		status += "  PODNOSZENIE %d%%" % int(me_node.help_progress * 100)
-	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  E (trzymaj) podnies kolege  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
+		var what := "PODNOSZENIE" if me_node.help_kind == Player.Help.REVIVE else "BANDAZ"
+		status += "  %s %d%%" % [what, int(me_node.help_progress * 100)]
+	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  E (trzymaj) pomoz koledze  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
 		status, shot, role, players.get_child_count()]
