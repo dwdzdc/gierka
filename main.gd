@@ -6,9 +6,11 @@ extends Node3D
 ##                              godot --path . -- --join=192.168.1.20
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
+const MONSTER_SCENE := preload("res://monster/monster.tscn")
 
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
+@onready var monsters: Node3D = $Monsters
 @onready var spawn_points: Node3D = $SpawnPoints
 @onready var game_state: GameState = $GameState
 @onready var camera_director: CameraDirector = $CameraDirector
@@ -30,8 +32,8 @@ func _ready() -> void:
 	$HUD.visible = false
 	# NavMesh liczony w runtime: generator mapy też będzie składał pokoje w locie.
 	# Deferred, bo CSG buduje swoją geometrię dopiero po wejściu do drzewa.
-	# filter_baking_aabb (w main.tscn) bierze tylko geometrię do y=0.5, więc nie powstają
-	# "wyspy" na dachach i regałach.
+	# Uwaga: na dachach i regałach powstają "wyspy" NavMeshu. Potwór losuje punkty
+	# tylko na poziomie podłogi (Monster.random_floor_point).
 	navigation.bake_navigation_mesh.call_deferred(false)
 	status_label.text = Net.last_disconnect_reason
 	players.child_entered_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
@@ -71,6 +73,7 @@ func _on_connected() -> void:
 		multiplayer.peer_connected.connect(_spawn_player)
 		multiplayer.peer_disconnected.connect(_despawn_player)
 		_spawn_player(multiplayer.get_unique_id())
+		_spawn_monster()
 	_update_hud()
 
 
@@ -86,6 +89,13 @@ func _spawn_player(peer_id: int) -> void:
 	player.transform = marker.transform
 	players.add_child(player, true)
 	game_state.add_player(peer_id)
+
+
+func _spawn_monster() -> void:
+	var monster: Monster = MONSTER_SCENE.instantiate()
+	monster.transform = $MonsterSpawn.transform
+	monsters.add_child(monster, true)
+	monster.state_changed.connect(func(_s: Monster.State) -> void: _update_hud())
 
 
 func _despawn_player(peer_id: int) -> void:
@@ -104,5 +114,7 @@ func _update_hud() -> void:
 	var shot := "-" if zone == null else "%s/%s" % [zone.owner.name, zone.name]
 	var role := "host, adres: %s" % ", ".join(Net.local_addresses()) if multiplayer.is_server() else "klient"
 	var me := multiplayer.get_unique_id()
+	if multiplayer.is_server() and monsters.get_child_count() > 0:
+		role += "  potwor: %s" % Monster.State.keys()[monsters.get_child(0).state]
 	info_label.text = "HP %d\nWASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
 		game_state.hp(me), shot, role, players.get_child_count()]

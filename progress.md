@@ -51,7 +51,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 
 ## Faza 4: potwór (baza)
 
-- [ ] 21. Potwór-kapsuła u hosta, patrol po NavMesh, replikowana pozycja
+- [x] 21. Potwór-kapsuła u hosta, patrol po NavMesh (losowe punkty na poziomie podłogi), replikowana pozycja i stan, wykrywanie utknięcia
 - [ ] 22. Noise bus (kroki, bieg, drzwi emitują hałas)
 - [ ] 23. Percepcja: słuch + wzrok
 - [ ] 24. Maszyna stanów patrol → trop → polowanie → atak → wycofanie

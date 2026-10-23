@@ -10,7 +10,7 @@ func _initialize() -> void:
 
 func _physics_process(_d: float) -> bool:
 	frames += 1
-	if frames < 10:
+	if frames < 30:
 		return false
 	var region: NavigationRegion3D = main.get_node("Navigation")
 	var polys := region.navigation_mesh.get_polygon_count()

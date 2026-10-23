@@ -24,7 +24,6 @@ geometry_parsed_geometry_type = 1
 agent_radius = 0.5
 agent_height = 1.75
 agent_max_climb = 0.25
-filter_baking_aabb = AABB(-8, -1, -8, 40, 1.5, 16)
 
 [sub_resource type="Theme" id="menu_theme"]
 default_font_size = 32
@@ -56,6 +55,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 0)
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("res://player/player.tscn")
 spawn_path = NodePath("../Players")
+
+[node name="Monsters" type="Node3D" parent="."]
+
+[node name="MonsterSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://monster/monster.tscn")
+spawn_path = NodePath("../Monsters")
+
+[node name="MonsterSpawn" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 0.05, 5)
 
 [node name="SpawnPoints" type="Node3D" parent="."]
 
