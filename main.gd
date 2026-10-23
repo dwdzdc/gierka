@@ -157,5 +157,7 @@ func _update_hud() -> void:
 	if multiplayer.is_server() and monsters.get_child_count() > 0:
 		role += "  potwor: %s" % Monster.State.keys()[monsters.get_child(0).state]
 	var status := "HP %d" % game_state.hp(me) if game_state.is_alive(me) else "NIE ZYJESZ - powrot za chwile"
+	if game_state.is_bleeding(me):
+		status += "  KRWAWISZ"
 	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
 		status, shot, role, players.get_child_count()]

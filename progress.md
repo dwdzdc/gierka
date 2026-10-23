@@ -62,7 +62,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 
 ## Faza 5: krew i ranni
 
-- [ ] 28. Krwawienie i timer bleed-out
+- [x] 28. Krwawienie: 60% trafień otwiera krwawienie, −2 HP/s aż do zatamowania albo śmierci (timer bleed-out po powaleniu w 30)
 - [ ] 29. Bandaż: tamowanie siebie lub kolegi
 - [ ] 30. Powalenie, podnoszenie, śmierć
 - [ ] 31. Ślady krwi trwałe w rundzie, widoczne przez cięcia kamer
