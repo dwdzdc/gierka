@@ -49,7 +49,7 @@ godot --path . -- --join=192.168.1.23
 
 ## Sterowanie
 
-WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · F1: HUD · Esc: wyjście
+WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · E (trzymaj): pomóż koledze · H (trzymaj): bandaż · F1: HUD · Esc: wyjście
 
 ## Pokoje
 
@@ -62,6 +62,7 @@ Kontrakt pokoju i drzwi: `rooms/room.gd`. Składanie mapy: `game/map_generator.g
 godot --headless --path . -s tests/walk_test.gd        # przejście przez pokoje, log cięć kamery
 godot --headless --path . -s tests/visibility_test.gd  # gdzie kamera nie widzi postaci
 godot --headless --path . -s tests/map_test.gd -- --rooms=20  # generator: kolizje, determinizm, dostępność
+godot --headless --path . -s tests/camera_rules_test.gd       # każde przejście widoczne z kamery swojej strefy
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1

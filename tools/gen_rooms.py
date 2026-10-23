@@ -147,7 +147,9 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         nodes.append(
             f'[node name="Light{i}" type="OmniLight3D" parent="Lights"]\n'
             f"transform = {tf(*pos)}\nlight_color = Color({v(*color)}, 1)\nlight_energy = {energy:g}\n"
-            f"shadow_enabled = true\nomni_range = {rng:g}\n{script}"
+            f"shadow_enabled = true\nomni_range = {rng:g}\n"
+            # Wygaszanie z odległością: na dużych mapach dalekie światła nic nie kosztują.
+            f"distance_fade_enabled = true\ndistance_fade_begin = 30.0\ndistance_fade_shadow = 20.0\ndistance_fade_length = 10.0\n{script}"
         )
 
     markers("LootSpawns", loot)

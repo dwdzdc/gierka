@@ -149,6 +149,10 @@ light_color = Color(1, 0.82, 0.6, 1)
 light_energy = 1
 shadow_enabled = true
 omni_range = 12
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_shadow = 20.0
+distance_fade_length = 10.0
 
 [node name="LootSpawns" type="Node3D" parent="."]
 

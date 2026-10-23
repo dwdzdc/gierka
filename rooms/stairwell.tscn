@@ -151,6 +151,10 @@ light_color = Color(0.75, 0.85, 1, 1)
 light_energy = 0.8
 shadow_enabled = true
 omni_range = 10
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_shadow = 20.0
+distance_fade_length = 10.0
 script = ExtResource("4")
 
 [node name="LootSpawns" type="Node3D" parent="."]

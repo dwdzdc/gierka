@@ -138,7 +138,7 @@ text = "Liczba pokoi (host)"
 [node name="RoomCount" type="SpinBox" parent="Menu/Center/Panel/Margin/Items/RoomsRow"]
 unique_name_in_owner = true
 min_value = 3.0
-max_value = 30.0
+max_value = 60.0
 value = 8.0
 
 [node name="HostButton" type="Button" parent="Menu/Center/Panel/Margin/Items"]

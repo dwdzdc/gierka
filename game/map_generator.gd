@@ -59,7 +59,7 @@ func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
 	_rng.seed = map_seed * 7919 + variant  # prosta, przenośna formuła (bez zależności od hash())
 	_place_start()
 	var attempts := 0
-	while rooms.size() < room_count and not _open.is_empty() and attempts < MAX_ATTEMPTS:
+	while rooms.size() < room_count and not _open.is_empty() and attempts < maxi(MAX_ATTEMPTS, room_count * 20):
 		attempts += 1
 		var index := _rng.randi_range(0, _open.size() - 1)
 		var open: Dictionary = _open[index]
