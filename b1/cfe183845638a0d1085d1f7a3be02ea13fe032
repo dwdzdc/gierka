@@ -1,0 +1,19 @@
+tools/gen_rooms.py
+  ai_agent 259-260
+net/network.gd
+  ai_agent 10
+README.md
+  ai_agent 69
+rooms/hall.tscn
+  ai_agent 306-308
+tests/debug_menu_test.gd.uid
+  ai_agent 1
+progress.md
+  ai_agent 11
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "b1cfe183845638a0d1085d1f7a3be02ea13fe032",
+  "prompts": {}
+}
