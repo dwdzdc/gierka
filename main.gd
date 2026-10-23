@@ -49,6 +49,11 @@ var coins_per_room := 2
 
 var _spectate_index := 0
 var _threat_text := ""
+# Krwawienie na ekranie: czerwona winieta pulsuje przy każdym ubytku HP.
+var _bleed_vignette: TextureRect
+var _bleed_pulse := 0.0
+var _last_hp := -1
+var _last_hit_time := 0.0
 var _threat_until := 0
 
 
@@ -68,6 +73,7 @@ func _ready() -> void:
 	%NextRoundButton.pressed.connect(request_next_round)
 	$HUD.visible = false
 	$Summary.visible = false
+	_build_bleed_vignette()
 	listener.make_current()
 	status_label.text = Net.last_disconnect_reason
 	players.child_entered_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
@@ -92,6 +98,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if $HUD.visible:
 		_update_hud()  # postęp akcji "trzymaj klawisz" zmienia się co klatkę
+		_update_bleed_vignette(_delta)
 		var stats_open := Input.is_action_pressed("show_stats")
 		$HUD/StatsPanel.visible = stats_open
 		if stats_open:
@@ -309,6 +316,47 @@ func _despawn_player(peer_id: int) -> void:
 func _on_game_state_changed() -> void:
 	_update_spectating()
 	_update_hud()
+	# Ubytek HP bez ciosu = krwawienie (albo zjadanie przez porywacza): puls + lekki wstrząs.
+	var me := multiplayer.get_unique_id()
+	var hp := game_state.hp(me)
+	var recent_hit := Time.get_ticks_msec() / 1000.0 - _last_hit_time < 0.2
+	if _last_hp >= 0 and hp < _last_hp and not recent_hit:
+		_bleed_pulse = 1.0
+		var cam := get_viewport().get_camera_3d() as FixedCamera
+		if cam:
+			cam.shake(0.05)  # wyraźnie słabiej niż cios (0.25)
+	_last_hp = hp
+
+
+func _build_bleed_vignette() -> void:
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.6, 1.0])
+	gradient.colors = PackedColorArray([Color(0.5, 0, 0, 0), Color(0.5, 0, 0, 0.04), Color(0.6, 0, 0, 0.95)])
+	var texture := GradientTexture2D.new()
+	texture.gradient = gradient
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1.0, 0.5)
+	_bleed_vignette = TextureRect.new()
+	_bleed_vignette.texture = texture
+	_bleed_vignette.stretch_mode = TextureRect.STRETCH_SCALE
+	_bleed_vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_bleed_vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_bleed_vignette.modulate.a = 0.0
+	$HUD.add_child(_bleed_vignette)
+	$HUD.move_child(_bleed_vignette, 0)
+
+
+## Winieta widoczna, póki tracisz krew (krwawienie, powalenie, porwanie). Im mniej HP, tym mocniej.
+func _update_bleed_vignette(delta: float) -> void:
+	var me := multiplayer.get_unique_id()
+	var losing := (game_state.is_up(me) and game_state.is_bleeding(me)) or game_state.is_downed(me) or game_state.is_carried(me)
+	_bleed_pulse = maxf(_bleed_pulse - delta * 1.4, 0.0)
+	var target := 0.0
+	if losing:
+		var base := 0.25 + 0.4 * (1.0 - game_state.hp(me) / float(GameState.MAX_HP))
+		target = base * (0.55 + 0.45 * _bleed_pulse)
+	_bleed_vignette.modulate.a = move_toward(_bleed_vignette.modulate.a, target, delta * 2.0)
 
 
 ## Martwy albo wydostany gracz ogląda kamery żyjącego kolegi (Tab = następny).
@@ -354,6 +402,8 @@ func _on_coins_picked(_peer_id: int, position: Vector3) -> void:
 
 
 func _on_player_hit(peer_id: int, _amount: int) -> void:
+	if peer_id == multiplayer.get_unique_id():
+		_last_hit_time = Time.get_ticks_msec() / 1000.0
 	var victim := players.get_node_or_null(str(peer_id))
 	if victim:
 		$HitSound.global_position = victim.global_position + Vector3.UP
