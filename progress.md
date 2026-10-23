@@ -51,7 +51,7 @@ równoległych do ściany, np. nowe drzwi na południu hali).
 - [x] 15a. Większa skala pokoi: korytarze 4 m szerokości, pokoje 6–20 m, sufity 4–6 m, drzwi 2,0×2,6 m, piętro co 5 m. Twardych wymiarów z LC nie znalazłem, skala dobrana względem postaci (1,7 m)
 - [ ] 15b. Limit pokoi w menu wyżej niż 30 (np. 60) + sprawdzić generator i wydajność (światła, CSG, NavMesh) na dużych mapach
 - [x] 15c. Małe pokoje (zakręt, skrzyżowanie, schowek) mają jedno ujęcie; skrzyżowanie bez filara
-- [ ] 15d. Rzadsze cięcia kamer: mniej i większe strefy, minimalny czas trwania ujęcia (np. ~1.5 s, chyba że postaci nie widać)
+- [x] 15d. Rzadsze cięcia: mniej i większe strefy (15a/15c) + minimalny czas ujęcia 1,2 s (wyjątek: postaci nie widać). Losowe błądzenie: ~7 cięć/min, najkrótsze ujęcie 2,6 s (`tests/camera_churn_test.gd`)
 - [x] 15e. Futryna w kontrastowym kolorze (lekko świeci) + lampka nad przejściem, po obu stronach każdego połączonego przejścia. Zamurowane przejścia nie mają futryny
 - [x] 15f. Zasada kamer: każde przejście widoczne z kamery strefy, w której leży, pod kątem < 70° do normalnej ściany. Pilnuje tego `tests/camera_rules_test.gd`
 

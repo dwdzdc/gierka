@@ -7,13 +7,16 @@ extends Node
 ## 1. Strefy. Dopóki gracz stoi w strefie bieżącej kamery, kamera się nie zmienia
 ##    (histereza), chyba że wejdzie w strefę o wyższym `camera_priority`.
 ## 2. Remis przy wyjściu ze strefy: wygrywa kamera, która lepiej pokrywa stożek
-##    widzenia postaci. Liczone tylko przy zdarzeniach stref, więc obrót w miejscu nie tnie.
-## 3. Bezpiecznik: jeśli postaci nie widać w bieżącym ujęciu dłużej niż
+##    widzenia postaci. Liczone tylko gdy trzeba zmienić strefę, więc obrót w miejscu nie tnie.
+## 3. Minimalny czas ujęcia: zwykłe cięcie czeka, aż ujęcie potrwa `min_shot_time`
+##    (chyba że postaci w nim nie widać). Częste skakanie kamer utrudnia orientację.
+## 4. Bezpiecznik: jeśli postaci nie widać w bieżącym ujęciu dłużej niż
 ##    `occlusion_grace`, przełączamy na kamerę z tego samego pokoju, która ją widzi.
 
 signal camera_changed(zone: CameraZone)
 
 @export var occlusion_grace := 0.5
+@export var min_shot_time := 1.2
 ## Przeszkody dla raycastów widoczności (warstwa "world").
 @export_flags_3d_physics var occluder_mask := 1
 
@@ -25,6 +28,8 @@ var target: Node3D
 var current_zone: CameraZone
 var _zones: Array[CameraZone] = []  # strefy, w których stoi target, w kolejności wejścia
 var _hidden_time := 0.0
+var _shot_time := 0.0  # ile sekund trwa bieżące ujęcie
+var _guard_shot := false  # bieżące ujęcie wybrał bezpiecznik (strefa, w której gracza nie ma)
 
 
 func _ready() -> void:
@@ -36,6 +41,7 @@ func set_target(new_target: Node3D) -> void:
 	_zones.clear()
 	current_zone = null
 	_hidden_time = 0.0
+	_guard_shot = false
 
 
 func on_zone_entered(zone: CameraZone, body: Node3D) -> void:
@@ -43,35 +49,26 @@ func on_zone_entered(zone: CameraZone, body: Node3D) -> void:
 		return
 	_zones.erase(zone)
 	_zones.append(zone)
-	# Ujęcie z bezpiecznika (strefa, w której gracza nie ma) oddaje kontrolę przy pierwszej okazji.
-	var overridden := current_zone != null and not _zones.has(current_zone)
-	if current_zone == null or overridden or zone.camera_priority > current_zone.camera_priority:
-		_activate(zone)
+	if current_zone == null:
+		_activate(zone)  # pierwsze ujęcie od razu
 
 
 func on_zone_exited(zone: CameraZone, body: Node3D) -> void:
 	if body != target:
 		return
 	_zones.erase(zone)
-	if zone == current_zone:
-		var best := _pick_best(_zones)
-		# Poza wszystkimi strefami zostajemy przy ostatnim ujęciu, zamiast pokazać nic.
-		if best:
-			_activate(best)
 
 
 func _physics_process(delta: float) -> void:
 	if target == null or current_zone == null:
 		return
-	# Ujęcie z bezpiecznika jest tylko tymczasowe: gdy kamera strefy, w której gracz
-	# faktycznie stoi, znów go widzi, wracamy do niej. Inaczej obca kamera "przykleja się"
-	# aż do wejścia w kolejną strefę.
-	if not _zones.has(current_zone):
-		var own := _pick_best(_zones)
-		if own and is_target_visible(own.camera):
-			_activate(own)
-			return
-	if is_target_visible(current_zone.camera):
+	_shot_time += delta
+	var visible_now := is_target_visible(current_zone.camera)
+	var desired := _desired_zone()
+	if desired != current_zone and (_shot_time >= min_shot_time or not visible_now):
+		_activate(desired)
+		return
+	if visible_now:
 		_hidden_time = 0.0
 		return
 	_hidden_time += delta
@@ -87,6 +84,24 @@ func _physics_process(delta: float) -> void:
 	var best := _pick_best(candidates, false)
 	if best:
 		_activate(best)
+		_guard_shot = not _zones.has(best)
+
+
+## Ujęcie wynikające ze stref (reguły 1–2). Bez zmian, jeśli nie ma powodu ciąć.
+func _desired_zone() -> CameraZone:
+	if _zones.is_empty():
+		return current_zone  # poza strefami zostajemy przy ostatnim ujęciu
+	if not _zones.has(current_zone):
+		var best := _pick_best(_zones)
+		# Ujęcie z bezpiecznika oddaje kontrolę dopiero, gdy kamera własnej strefy widzi gracza.
+		# Inaczej obca kamera "przyklejałaby się" aż do wejścia w kolejną strefę.
+		if _guard_shot and not is_target_visible(best.camera):
+			return current_zone
+		return best
+	for zone in _zones:
+		if zone.camera_priority > current_zone.camera_priority:
+			return _pick_best(_zones)
+	return current_zone
 
 
 ## Widać postać, jeśli jest w kadrze i przynajmniej jeden jej punkt nie jest zasłonięty.
@@ -150,5 +165,7 @@ func _line_clear(from: Vector3, to: Vector3) -> bool:
 func _activate(zone: CameraZone) -> void:
 	current_zone = zone
 	_hidden_time = 0.0
+	_shot_time = 0.0
+	_guard_shot = false
 	zone.camera.activate(target)
 	camera_changed.emit(zone)
