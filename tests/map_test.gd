@@ -44,7 +44,7 @@ func _physics_process(_d: float) -> bool:
 	# CSG buduje geometrię klatkę po wejściu do drzewa, dopiero potem można wypiec NavMesh.
 	if phase == 1 and frames == 2:
 		main.navigation.bake_navigation_mesh(false)
-	if phase == 1 and frames >= 12:
+	if phase == 1 and frames >= 40:  # duże mapy synchronizują się z serwerem nawigacji dłużej
 		phase = 0
 		var rooms: Array = main.rooms
 		var overlaps := 0
