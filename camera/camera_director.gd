@@ -63,6 +63,14 @@ func on_zone_exited(zone: CameraZone, body: Node3D) -> void:
 func _physics_process(delta: float) -> void:
 	if target == null or current_zone == null:
 		return
+	# Ujęcie z bezpiecznika jest tylko tymczasowe: gdy kamera strefy, w której gracz
+	# faktycznie stoi, znów go widzi, wracamy do niej. Inaczej obca kamera "przykleja się"
+	# aż do wejścia w kolejną strefę.
+	if not _zones.has(current_zone):
+		var own := _pick_best(_zones)
+		if own and is_target_visible(own.camera):
+			_activate(own)
+			return
 	if is_target_visible(current_zone.camera):
 		_hidden_time = 0.0
 		return
