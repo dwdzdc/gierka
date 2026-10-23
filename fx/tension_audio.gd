@@ -57,7 +57,7 @@ func _danger_from(monster: Monster, position: Vector3) -> float:
 		return 0.0
 	var distance := monster.global_position.distance_to(position)
 	match monster.state:
-		Monster.State.VENT:
+		Monster.State.VENT, Monster.State.VENT_CLIMB:
 			return 0.6 * (1.0 - clampf(distance / VENT_RADIUS, 0.0, 1.0))
 		Monster.State.HUNT, Monster.State.ATTACK, Monster.State.CARRY:
 			return minf(1.25 * (1.0 - clampf(distance / HUNT_RADIUS, 0.0, 1.0)), 1.0)

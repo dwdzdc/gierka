@@ -18,9 +18,10 @@ extends CharacterBody3D
 ##   CARRY       – niesie porwanego gracza do gniazda (porwany powoli traci życie)
 ##   FEED        – w gnieździe zjada porwanego (szybciej traci życie); koledzy mogą go odbić
 ##   VENT        – przemieszcza się szybem wentylacyjnym: niewidoczny, słychać dudnienie nad głową
+##   VENT_CLIMB  – widocznie wspina się pod kratkę i wciska do szybu (potem VENT)
 
 # Nowe stany dopisujemy na końcu: wartość enum leci przez sieć jako liczba.
-enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT }
+enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT, VENT_CLIMB }
 
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
@@ -28,6 +29,7 @@ signal heard(position: Vector3)
 const SCREAM_RADIUS := 28.0
 const VENT_SPEED := 6.0  # m/s w szybie
 const VENT_ENTER_DISTANCE := 1.3  # jak blisko pod kratką trzeba stanąć, żeby wejść
+const VENT_CLIMB_TIME := 1.2  # ile trwa widoczne wspinanie się do kratki
 ## Z bliska potwór rozpoznaje po dźwięku, KTO hałasuje, i goni go jak widzianego
 ## (ślepy potwór poluje tylko tak). Ile metrów (przy słuchu 1.0) i jak długo pamięta.
 const HEAR_HUNT_DISTANCE := 7.0
@@ -97,6 +99,7 @@ var _check_spot: HidingSpot  # szafka do sprawdzenia (INVESTIGATE)
 var _checked_this_search := false
 var _vent_plan := {}
 var _vent_progress := 0.0
+var _climb_from := Vector3.ZERO
 var _vent_bang_timer := 0.0
 var _heard_new := false
 var _smell_timer := 0.0
@@ -167,12 +170,14 @@ func _on_state_visual(new_state: State) -> void:
 			$Voice.play()
 		State.ATTACK:
 			$Swing.play()
-	# W szybie potwora nie widać i nie da się w niego wpaść.
+	# W szybie potwora nie widać i nie da się w niego wpaść. Przy wspinaczce widać,
+	# ale przenika przez sufit (wciska się w kratkę).
 	var in_vent := new_state == State.VENT
+	var passing := new_state in [State.VENT, State.VENT_CLIMB]
 	for part in [$Body, $EyeL, $EyeR]:
 		part.visible = not in_vent
-	collision_layer = 0 if in_vent else 4
-	collision_mask = 0 if in_vent else 1
+	collision_layer = 0 if passing else 4
+	collision_mask = 0 if passing else 1
 	# Podczas pościgu oddech jest głośniejszy i szybszy.
 	var hunting := new_state in [State.HUNT, State.ATTACK]
 	_breath_player.volume_db = 4.0 if hunting else -2.0
@@ -180,7 +185,7 @@ func _on_state_visual(new_state: State) -> void:
 
 
 func _process(delta: float) -> void:
-	if state == State.VENT:
+	if state in [State.VENT, State.VENT_CLIMB]:
 		# Dudnienie w szybie: nieregularne, metaliczne, słychać je przez sufit.
 		_vent_bang_timer -= delta
 		if _vent_bang_timer <= 0.0:
@@ -206,6 +211,9 @@ func _physics_process(delta: float) -> void:
 		return
 	if state == State.VENT:
 		_move_in_vent(delta)
+		return
+	if state == State.VENT_CLIMB:
+		_climb_into_vent(delta)
 		return
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -323,11 +331,28 @@ func _approach_vent() -> float:
 	var flat := (entry - global_position) * Vector3(1, 0, 1)
 	if flat.length() <= VENT_ENTER_DISTANCE or agent.is_navigation_finished():
 		_vent_progress = 0.0
-		_enter(State.VENT)
-		global_position = entry
+		_climb_from = global_position
 		velocity = Vector3.ZERO
+		_enter(State.VENT_CLIMB)
 		return 0.0
 	return investigate_speed
+
+
+## Wspinaczka: potwór sunie pod kratkę i podnosi się, aż cały zniknie w suficie.
+## Pozycja idzie do klientów zwykłą synchronizacją, więc wszyscy to widzą.
+func _climb_into_vent(delta: float) -> void:
+	var entry: Vector3 = _vent_plan.entry
+	_vent_progress = minf(_vent_progress + delta / VENT_CLIMB_TIME, 1.0)
+	# Najpierw dosuwa się pod kratkę, potem w górę, aż stopy znajdą się nad sufitem.
+	var under := Vector3(entry.x, _climb_from.y, entry.z)
+	var inside := entry + Vector3.UP * 0.3
+	var t := _vent_progress
+	global_position = _climb_from.lerp(under, minf(t * 3.0, 1.0)).lerp(inside, clampf((t - 0.25) / 0.75, 0.0, 1.0))
+	face(entry - global_position, delta)
+	if _vent_progress >= 1.0:
+		_vent_progress = 0.0
+		global_position = entry
+		_enter(State.VENT)
 
 
 func _move_in_vent(delta: float) -> void:
