@@ -1,0 +1,11 @@
+progress.md
+  ai_agent 177
+main.gd
+  ai_agent 36,440
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "b100849530c878f5434f3fd74402e7afe94df59b",
+  "prompts": {}
+}
