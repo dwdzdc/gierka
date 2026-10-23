@@ -28,6 +28,8 @@ var _last_position := Vector3.ZERO
 var _step_timer := 0.0
 var _smoothed_speed := 0.0
 var _air_time := 0.0
+var _hidden_spot: HidingSpot  # u właściciela: szafka, w której siedzimy
+var hide_target: HidingSpot  # u właściciela: szafka, do której właśnie wchodzimy
 
 ## Synchronizowane do innych (wygląd, hałas i wzrok potwora liczone u hosta).
 var crouching := false:
@@ -37,8 +39,9 @@ var crouching := false:
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
-enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE }
-const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE"}
+enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE, HIDE }
+const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE", Help.HIDE: "CHOWANIE"}
+const HIDE_TIME := 0.5
 const RESCUE_TIME := 1.5
 ## Pełna kieszeń hałasuje: przy tylu monetach kroki są słyszalne 2x dalej.
 const COINS_FOR_DOUBLE_NOISE := 300.0
@@ -94,7 +97,7 @@ func _process(_delta: float) -> void:
 	$Body.rotation.x = PI / 2.0 if lying else 0.0
 	$Body.position.y = 0.35 if lying else 0.85
 	$Visor.visible = life != GameState.Life.DEAD
-	var gone := life == GameState.Life.EXTRACTED
+	var gone := life == GameState.Life.EXTRACTED or (game_state != null and game_state.is_hidden(get_multiplayer_authority()))
 	visible = not gone
 	collision_layer = 0 if gone else 2
 
@@ -134,6 +137,8 @@ func _physics_process(delta: float) -> void:
 
 	if _follow_carrier():
 		return
+	if _update_hiding():
+		return
 	_update_crouch()
 	var helping := _update_help(delta)
 	if Input.is_action_just_pressed("jump") and is_on_floor() and is_up() and not crouching and not helping:
@@ -146,6 +151,47 @@ func _physics_process(delta: float) -> void:
 	_air_time = 0.0 if is_on_floor() else _air_time + delta
 	if is_on_floor() and was_airborne > 0.35:
 		_on_landed()
+
+
+## Szafka: w środku nie ma ruchu, widok przez szpary, E = wyjście. Pozycją steruje właściciel,
+## więc to on wkłada postać do szafki i wyjmuje ją przed drzwi (także gdy wyciągnie go potwór).
+## Zwraca true, gdy siedzimy w szafce.
+func _update_hiding() -> bool:
+	var game_state := _game_state()
+	if game_state == null:
+		return false
+	var spot_path := game_state.hiding_spot(get_multiplayer_authority())
+	var spot := get_node_or_null(NodePath(spot_path)) as HidingSpot if spot_path != "" else null
+	if spot != _hidden_spot:
+		var director := get_tree().get_first_node_in_group(&"camera_director") as CameraDirector
+		if spot:
+			global_position = spot.inside_position()
+			if director:
+				director.hold_camera(spot.peek_camera())
+		else:
+			if _hidden_spot:
+				global_transform = _hidden_spot.front_transform()
+			if director:
+				director.release_hold()
+		_hidden_spot = spot
+	if spot == null:
+		return false
+	velocity = Vector3.ZERO
+	global_position = spot.inside_position()
+	if Input.is_action_just_pressed("interact"):
+		game_state.request_unhide.rpc_id(1)
+	return true
+
+
+func _nearest_free_hiding_spot() -> HidingSpot:
+	var game_state := _game_state()
+	var best: HidingSpot = null
+	for node in get_tree().get_nodes_in_group(&"hiding_spots"):
+		var spot := node as HidingSpot
+		if spot.can_use_from(global_position) and game_state.occupant(str(spot.get_path())) == 0:
+			if best == null or spot.global_position.distance_to(global_position) < best.global_position.distance_to(global_position):
+				best = spot
+	return best
 
 
 ## Kucanie trzyma się klawiszem. Wstać można tylko, gdy nad głową jest miejsce (np. pod stołem nie).
@@ -224,6 +270,11 @@ func _update_help(delta: float) -> bool:
 			if target == null and global_position.distance_to(game_state.exit_position) <= GameState.EXIT_DISTANCE:
 				target = self
 				kind = Help.EXTRACT
+			if target == null:
+				hide_target = _nearest_free_hiding_spot()
+				if hide_target:
+					target = self
+					kind = Help.HIDE
 		elif Input.is_action_pressed("bandage_self") and game_state.is_bleeding(me) and game_state.bandages(me) > 0:
 			target = self
 			kind = Help.BANDAGE
@@ -233,7 +284,7 @@ func _update_help(delta: float) -> bool:
 	help_kind = kind if target else Help.NONE
 	if help_target == null:
 		return false
-	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME}[kind]
+	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME, Help.HIDE: HIDE_TIME}[kind]
 	help_progress += delta / duration
 	if help_progress >= 1.0:
 		help_progress = 0.0
@@ -247,6 +298,8 @@ func _update_help(delta: float) -> bool:
 				game_state.request_extract.rpc_id(1)
 			Help.RESCUE:
 				game_state.request_rescue.rpc_id(1, target_id)
+			Help.HIDE:
+				game_state.request_hide.rpc_id(1, str(hide_target.get_path()))
 	return true
 
 

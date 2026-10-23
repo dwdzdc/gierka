@@ -6,7 +6,7 @@ const Maps = preload("res://tests/test_maps.gd")
 
 var main: Node3D
 var p: Node3D
-var director: CameraDirector
+var director
 var frames := 0
 var spots: Array[Vector3] = []
 var idx := 0

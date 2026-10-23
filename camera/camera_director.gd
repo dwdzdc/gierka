@@ -30,10 +30,22 @@ var _zones: Array[CameraZone] = []  # strefy, w których stoi target, w kolejno�
 var _hidden_time := 0.0
 var _shot_time := 0.0  # ile sekund trwa bieżące ujęcie
 var _guard_shot := false  # bieżące ujęcie wybrał bezpiecznik (strefa, w której gracza nie ma)
+var _held_camera: Camera3D  # wymuszone ujęcie (np. widok z wnętrza szafki); strefy wtedy nie działają
 
 
 func _ready() -> void:
 	add_to_group(&"camera_director")
+
+
+## Wymuszone ujęcie (np. przez szpary szafki). Strefy i bezpiecznik czekają do `release_hold`.
+func hold_camera(camera: Camera3D) -> void:
+	_held_camera = camera
+	camera.make_current()
+
+
+func release_hold() -> void:
+	_held_camera = null
+	set_target(target)  # wybierz ujęcie od nowa według stref
 
 
 func set_target(new_target: Node3D) -> void:
@@ -60,7 +72,7 @@ func on_zone_exited(zone: CameraZone, body: Node3D) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if target == null or current_zone == null:
+	if _held_camera or target == null or not is_instance_valid(current_zone):
 		return
 	_shot_time += delta
 	var visible_now := is_target_visible(current_zone.camera)

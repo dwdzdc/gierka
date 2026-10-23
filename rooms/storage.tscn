@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -12,6 +12,7 @@
 [ext_resource type="Material" path="res://rooms/materials/door_lamp.tres" id="10"]
 [ext_resource type="Material" path="res://rooms/materials/exit.tres" id="11"]
 [ext_resource type="Material" path="res://rooms/materials/vent.tres" id="12"]
+[ext_resource type="PackedScene" path="res://props/locker.tscn" id="13"]
 
 [sub_resource type="BoxShape3D" id="zone_Entry"]
 size = Vector3(7.5, 6, 20)
@@ -187,8 +188,28 @@ sides = 10
 material = ExtResource("9")
 
 [node name="Solid18" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.6, 1.1, -5.5)
-size = Vector3(0.6, 2.2, 3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.2, 1.15, 3)
+size = Vector3(2.6, 0.1, 1.2)
+material = ExtResource("9")
+
+[node name="Solid19" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.98, 0.55, 2.48)
+size = Vector3(0.1, 1.1, 0.1)
+material = ExtResource("8")
+
+[node name="Solid20" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.98, 0.55, 3.52)
+size = Vector3(0.1, 1.1, 0.1)
+material = ExtResource("8")
+
+[node name="Solid21" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.42, 0.55, 2.48)
+size = Vector3(0.1, 1.1, 0.1)
+material = ExtResource("8")
+
+[node name="Solid22" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.42, 0.55, 3.52)
+size = Vector3(0.1, 1.1, 0.1)
 material = ExtResource("8")
 
 [node name="Doorways" type="Node3D" parent="."]
@@ -378,6 +399,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 1, 9)
 
 [node name="Ambient1" type="Marker3D" parent="AmbientPoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -7)
+
+[node name="HidingSpots" type="Node3D" parent="."]
+
+[node name="Locker0" parent="HidingSpots" instance=ExtResource("13")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -9.55, 0, -6)
+
+[node name="Locker1" parent="HidingSpots" instance=ExtResource("13")]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -9.55, 0, -4.9)
 
 [node name="VentFrame" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 5.97, 6)

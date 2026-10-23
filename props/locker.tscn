@@ -1,0 +1,60 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://props/hiding_spot.gd" id="1"]
+[ext_resource type="Material" path="res://props/locker_metal.tres" id="2"]
+
+[sub_resource type="BoxShape3D" id="shape"]
+size = Vector3(1, 2.3, 0.8)
+
+[sub_resource type="BoxMesh" id="body"]
+material = ExtResource("2")
+size = Vector3(1, 2.3, 0.8)
+
+[sub_resource type="StandardMaterial3D" id="slit_mat"]
+albedo_color = Color(0.02, 0.02, 0.02, 1)
+
+[sub_resource type="BoxMesh" id="slit"]
+material = SubResource("slit_mat")
+size = Vector3(0.6, 0.04, 0.02)
+
+[sub_resource type="BoxMesh" id="handle"]
+material = ExtResource("2")
+size = Vector3(0.05, 0.25, 0.05)
+
+[node name="Locker" type="StaticBody3D"]
+script = ExtResource("1")
+
+[node name="Shape" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+shape = SubResource("shape")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.15, 0)
+mesh = SubResource("body")
+
+[node name="Slit0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.75, 0.405)
+mesh = SubResource("slit")
+
+[node name="Slit1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.65, 0.405)
+mesh = SubResource("slit")
+
+[node name="Slit2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.55, 0.405)
+mesh = SubResource("slit")
+
+[node name="Handle" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35, 1.1, 0.42)
+mesh = SubResource("handle")
+
+[node name="Inside" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+
+[node name="Front" type="Marker3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0.05, 1.0)
+
+[node name="Peek" type="Camera3D" parent="."]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 1.65, 0.3)
+fov = 75.0
+near = 0.05

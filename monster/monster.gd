@@ -93,6 +93,8 @@ var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
 var _prey: Player  # cel polowania/ataku
 var _victim: Player  # porwany (CARRY/FEED)
 # Przejście wentylacją: {"entry": Vector3, "exit": Vector3} (kratki), czas w szybie.
+var _check_spot: HidingSpot  # szafka do sprawdzenia (INVESTIGATE)
+var _checked_this_search := false
 var _vent_plan := {}
 var _vent_progress := 0.0
 var _vent_bang_timer := 0.0
@@ -219,6 +221,10 @@ func _physics_process(delta: float) -> void:
 # --- Maszyna stanów ------------------------------------------------------------
 
 func _enter(new_state: State) -> void:
+	if new_state != State.INVESTIGATE:
+		_check_spot = null
+	if new_state != state:
+		_checked_this_search = false
 	state = new_state
 	_state_time = 0.0
 	_timer = 0.0
@@ -400,12 +406,62 @@ func _watch(delta: float) -> float:
 func _investigate(delta: float) -> float:
 	if not agent.is_navigation_finished() and not is_watcher():
 		return investigate_speed
-	# Na miejscu: rozgląda się, obracając się w kółko.
+	if _check_spot:
+		_open_hiding_spot()
+		return 0.0
+	# Na miejscu: czasem zagląda do pobliskiej szafki (tym częściej, im częściej gracze się w nich
+	# chowali przed potworami), potem rozgląda się, obracając się w kółko.
+	if not _checked_this_search and not is_watcher():
+		_checked_this_search = true
+		var director := get_tree().get_first_node_in_group(&"monster_director") as MonsterDirector
+		var spot := _nearest_hiding_spot(7.0)
+		if spot and director and randf() < director.hiding_check_chance():
+			check_hiding_spot(spot)
+			return investigate_speed
 	_timer += delta
 	rotate_y(1.5 * delta)
 	if _timer >= investigate_linger:
 		_enter(State.PATROL)
 	return 0.0
+
+
+## Idź do szafki i zajrzyj do środka.
+func check_hiding_spot(spot: HidingSpot) -> void:
+	# Gracz zniknął w szafce: zapomnij stary obraz z oczu/uszu, inaczej od razu wróciłby pościg.
+	seen_player = null
+	heard_player = null
+	_enter(State.INVESTIGATE)
+	_check_spot = spot
+	_checked_this_search = true
+	agent.target_position = spot.front_transform().origin
+
+
+## Otwiera szafkę: jeśli ktoś w niej siedzi, wyciąga go i od razu atakuje.
+func _open_hiding_spot() -> void:
+	var spot := _check_spot
+	_check_spot = null
+	$Swing.play()
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	var peer_id := game_state.occupant(str(spot.get_path()))
+	if peer_id == 0:
+		return
+	game_state.force_unhide(peer_id)
+	for node in get_tree().get_nodes_in_group(&"players"):
+		if node.get_multiplayer_authority() == peer_id:
+			_prey = node
+			last_seen_position = node.global_position
+	_enter(State.ATTACK)
+	_state_time = attack_windup * 0.5  # zaskoczony gracz ma mniej czasu na reakcję
+
+
+func _nearest_hiding_spot(max_distance: float) -> HidingSpot:
+	var best: HidingSpot = null
+	for node in get_tree().get_nodes_in_group(&"hiding_spots"):
+		var spot := node as HidingSpot
+		var distance := spot.global_position.distance_to(global_position)
+		if distance <= max_distance and (best == null or distance < best.global_position.distance_to(global_position)):
+			best = spot
+	return best
 
 
 func _hunt(delta: float) -> float:
@@ -550,7 +606,8 @@ func sensed_prey() -> Player:
 		return seen_player
 	if is_instance_valid(heard_player) and Time.get_ticks_msec() / 1000.0 - _heard_player_time <= HEAR_MEMORY:
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
-		if game_state == null or game_state.is_alive(heard_player.get_multiplayer_authority()):
+		var peer_id := heard_player.get_multiplayer_authority()
+		if game_state == null or (game_state.is_alive(peer_id) and not game_state.is_hidden(peer_id)):
 			last_seen_position = heard_player.global_position
 			return heard_player
 	return null
@@ -580,6 +637,8 @@ func _update_sight(delta: float) -> void:
 func can_see(player: Player) -> bool:
 	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 	if game_state and game_state.life(player.get_multiplayer_authority()) not in [GameState.Life.OK, GameState.Life.DOWNED]:
+		return false
+	if game_state and game_state.is_hidden(player.get_multiplayer_authority()):
 		return false
 	var eye := global_position + Vector3.UP * eye_height
 	var target := player.global_position + Vector3.UP * (0.6 if player.crouching else 1.2)

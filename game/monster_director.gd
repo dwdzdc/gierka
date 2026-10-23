@@ -39,6 +39,12 @@ var _goal_timer := 0.0
 var _menace := {}  # Monster -> float
 var _cooldown := {}  # Monster -> sekundy do końca "oddechu"
 var _active := false
+## "Nauka" (Alien: Isolation): ile razy gracze uciekli potworom, chowając się w szafce.
+## Im więcej, tym częściej potwory zaglądają do szafek przy przeszukiwaniu.
+var hiding_escapes := 0
+const HIDING_CHECK_BASE := 0.1
+const HIDING_CHECK_PER_ESCAPE := 0.15
+const HIDING_CHECK_MAX := 0.7
 
 
 func _ready() -> void:
@@ -63,12 +69,37 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 	rooms = round_rooms
 	monsters_parent = parent
 	stage = 0
+	hiding_escapes = 0
 	_stage_timer = 0.0
 	_goal_timer = GOAL_INTERVAL
 	_menace.clear()
 	_cooldown.clear()
 	_active = true
 	spawn(SPAWN_ORDER[0], _farthest_room_from_players())
+
+
+func hiding_check_chance() -> float:
+	return minf(HIDING_CHECK_BASE + HIDING_CHECK_PER_ESCAPE * hiding_escapes, HIDING_CHECK_MAX)
+
+
+## Gracz wszedł do szafki. Potwór, który go teraz widzi lub słyszy, idzie ją sprawdzić.
+## Jeśli żaden nie widział, a jakiś był w pościgu albo blisko, liczy się to jako ucieczka
+## przez schowanie (potwory "uczą się" sprawdzać szafki).
+func on_player_hid(peer_id: int, spot_path: String) -> void:
+	var spot := get_node_or_null(NodePath(spot_path)) as HidingSpot
+	if spot == null:
+		return
+	var witnessed := false
+	var chased := false
+	for monster in monsters():
+		var sensed := monster.sensed_prey()
+		if sensed and sensed.get_multiplayer_authority() == peer_id:
+			monster.check_hiding_spot(spot)
+			witnessed = true
+		elif monster.state in [Monster.State.HUNT, Monster.State.INVESTIGATE] and monster.global_position.distance_to(spot.global_position) < 15.0:
+			chased = true
+	if chased and not witnessed:
+		hiding_escapes += 1
 
 
 func stop() -> void:

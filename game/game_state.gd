@@ -16,6 +16,9 @@ signal player_downed(peer_id: int)
 signal player_died(peer_id: int)
 signal coins_dropped(peer_id: int, amount: int, position: Vector3)
 signal player_extracted(peer_id: int)
+signal player_hid(peer_id: int, spot_path: String)
+## Promień hałasu przy wchodzeniu do szafki (skrzypnięcie drzwi).
+const HIDE_NOISE_RADIUS := 5.0
 
 ## OK = sprawny; DOWNED = powalony; DEAD = koniec; EXTRACTED = wydostał się z mapy;
 ## CARRIED = porwany przez potwora (żywy, ale nic nie może zrobić).
@@ -66,6 +69,23 @@ func is_downed(peer_id: int) -> bool:
 ## Na mapie i żywy = sprawny, powalony (potwór może go jeszcze dobić) albo porwany.
 func is_alive(peer_id: int) -> bool:
 	return life(peer_id) in [Life.OK, Life.DOWNED, Life.CARRIED]
+
+
+## Ścieżka kryjówki (HidingSpot), w której siedzi gracz; "" = nie chowa się.
+func hiding_spot(peer_id: int) -> String:
+	return players.get(peer_id, {}).get("hidden_in", "")
+
+
+func is_hidden(peer_id: int) -> bool:
+	return hiding_spot(peer_id) != ""
+
+
+## Kto siedzi w danej kryjówce (0 = nikt).
+func occupant(spot_path: String) -> int:
+	for peer_id in players:
+		if players[peer_id].get("hidden_in", "") == spot_path:
+			return peer_id
+	return 0
 
 
 func is_carried(peer_id: int) -> bool:
@@ -172,6 +192,7 @@ func abduct(peer_id: int, monster_name: String, damage_per_second: int) -> void:
 		return
 	var entry: Dictionary = players[peer_id]
 	entry.life = Life.CARRIED
+	entry.hidden_in = ""
 	entry.carried_by = monster_name
 	entry.carry_dps = damage_per_second
 	entry.bleeding = true
@@ -243,6 +264,7 @@ func _kill(peer_id: int) -> void:
 	entry.coins = 0
 	entry.carried_by = ""
 	entry.carry_dps = 0
+	entry.hidden_in = ""
 	_broadcast()
 	var body := _player_node(peer_id)
 	player_died.emit(peer_id)
@@ -254,7 +276,7 @@ func _kill(peer_id: int) -> void:
 func _fresh_entry(keep: Dictionary) -> Dictionary:
 	return {"name": keep.get("name", "?"), "session": keep.get("session", 0),
 		"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0,
-		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0}
+		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": ""}
 
 
 ## Runda się kończy, gdy nikt nie został na mapie (każdy zginął albo wyszedł).
@@ -346,6 +368,41 @@ func request_bandage(target_id: int) -> void:
 	players[helper_id].bandages -= 1
 	players[target_id].bleeding = false
 	_broadcast()
+
+
+## Potwór otwiera szafkę i wyciąga gracza.
+func force_unhide(peer_id: int) -> void:
+	assert(multiplayer.is_server())
+	if is_hidden(peer_id):
+		players[peer_id].hidden_in = ""
+		_broadcast()
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_hide(spot_path: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := _caller()
+	var spot := get_node_or_null(NodePath(spot_path)) as HidingSpot
+	var body := _player_node(peer_id)
+	if spot == null or body == null or not is_up(peer_id) or is_hidden(peer_id) or occupant(spot_path) != 0:
+		return
+	if not spot.can_use_from(body.global_position):
+		return
+	players[peer_id].hidden_in = spot_path
+	_broadcast()
+	NoiseBus.emit_noise(spot.global_position, HIDE_NOISE_RADIUS, body)
+	player_hid.emit(peer_id, spot_path)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_unhide() -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := _caller()
+	if is_hidden(peer_id):
+		players[peer_id].hidden_in = ""
+		_broadcast()
 
 
 ## Odbicie porwanego: kolega trzyma E przy porwanym. Potwór puszcza ofiarę i ucieka.

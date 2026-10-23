@@ -31,8 +31,9 @@ EXT = [
     ("Material", "res://rooms/materials/door_lamp.tres"),
     ("Material", "res://rooms/materials/exit.tres"),
     ("Material", "res://rooms/materials/vent.tres"),
+    ("PackedScene", "res://props/locker.tscn"),
 ]
-EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12}
+EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12, "locker": 13}
 # Obrót markera drzwi (stopnie wokół Y), żeby jego -Z wskazywało na zewnątrz danej ściany.
 SIDE_YAW = {"N": 0, "W": 90, "S": 180, "E": -90}
 
@@ -66,7 +67,20 @@ def wall_pieces(length, h, doors):
     return pieces
 
 
-def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None):
+TABLE_TOP = 1.1  # spód blatu: kucający gracz (1.0 m) mieści się pod spodem, stojący i potwór nie
+
+
+def table(pos, length, depth, mat="wood"):
+    """Długi stół z prześwitem pod blatem (kryjówka dla kucającego). pos = środek na podłodze."""
+    x, z = pos
+    parts = [("box", (x, TABLE_TOP + 0.05, z), (length, 0.1, depth), mat)]
+    for dx in (-length / 2 + 0.08, length / 2 - 0.08):
+        for dz in (-depth / 2 + 0.08, depth / 2 - 0.08):
+            parts.append(("box", (x + dx, TABLE_TOP / 2, z + dz), (0.1, TABLE_TOP, 0.1), "metal"))
+    return parts
+
+
+def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=()):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
             albo [("prism", [(x, y), ...], z0, z1, mat)] (profil w XY, wyciągnięty wzdłuż Z)
@@ -179,6 +193,11 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         markers("PlayerSpawns", spawns)
     if exit_point:
         markers("ExitPoint", [("Exit",) + tuple(exit_point)])
+    if lockers:
+        nodes.append('[node name="HidingSpots" type="Node3D" parent="."]\n')
+        for i, (pos, yaw) in enumerate(lockers):
+            nodes.append(f'[node name="Locker{i}" parent="HidingSpots" instance=ExtResource("{EXT_ID["locker"]}")]\n'
+                         f"transform = {tf(*pos, yaw)}\n")
     if vent:
         # Kratka wentylacji w suficie: ciemna płyta z listwami (wygląd), znacznik tuż pod nią.
         vx, vz = vent
@@ -213,10 +232,6 @@ build(
         ("box", (5.5, 0.6, 4.2), (1.2, 1.2, 1.2), "wood"),      # skrzynie
         ("box", (4.2, 0.45, 4.6), (0.9, 0.9, 0.9), "wood"),
         ("box", (-7.6, 1.0, -3), (0.6, 2.0, 3), "metal"),       # szafki pod zachodnią ścianą
-        # rząd szafek pracowniczych pod północną ścianą
-        ("box", (-6.2, 1.0, -5.65), (0.85, 2.0, 0.6), "metal"),
-        ("box", (-5.3, 1.0, -5.65), (0.85, 2.0, 0.6), "metal"),
-        ("box", (-4.4, 1.0, -5.65), (0.85, 2.0, 0.6), "metal"),
         ("box", (-4.8, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),  # krzesła przy stole
         ("box", (-3.2, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),
         ("box", (3.5, 0.5, -5.5), (3.0, 1.0, 0.9), "rust"),     # stół warsztatowy
@@ -225,6 +240,7 @@ build(
         ("cyl", (6.0, 0.6, -5.3), 0.4, 1.2, "rust"),
         ("box", (0, 4.5, 5.6), (16, 0.25, 0.25), "metal"),       # rury pod sufitem
         ("box", (0, 4.15, 5.65), (16, 0.15, 0.15), "rust"),
+        *table((1.5, -1.0), 3.2, 1.3),  # stół z prześwitem: wyspa do krążenia i kryjówka
         # wyjście z mapy: drzwi windy w zachodniej ścianie, zielona futryna i znak
         ("box", (-7.95, 1.3, 3.5), (0.1, 2.6, 2.0), "metal"),
         ("box", (-7.92, 1.45, 2.4), (0.15, 2.9, 0.15), "exit"),
@@ -242,6 +258,7 @@ build(
     spawns=[("Spawn0", (-5, 0.05, 1.5), -90), ("Spawn1", (-5, 0.05, 0), -90),
             ("Spawn2", (-6.2, 0.05, 1.5), -90), ("Spawn3", (-6.2, 0.05, 0), -90)],
     exit_point=((-7.2, 0.05, 3.5), -90),
+    lockers=[((-6.0, 0, -5.55), 0), ((-4.9, 0, -5.55), 0), ((-3.8, 0, -5.55), 0)],
     vent=(2, 3),
 )
 
@@ -251,7 +268,6 @@ build(
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
         ("box", (3, 0.4, 1.4), (0.8, 0.8, 0.8), "wood"),
-        ("box", (-4, 1.0, -1.65), (1.4, 2.0, 0.5), "metal"),  # szafka przy ścianie
         ("box", (1.5, 0.6, -1.7), (1.6, 1.2, 0.45), "rust"),   # niska szafka
         ("cyl", (5.6, 0.6, 1.5), 0.4, 1.2, "rust"),             # beczka
         ("box", (-1.5, 0.3, 1.6), (0.9, 0.6, 0.6), "wood"),     # skrzynka
@@ -265,6 +281,7 @@ build(
     lights=[((-4, 3.6, 0), COLD, 0.8, 7.0, False), ((4, 3.6, 0), COLD, 0.8, 7.0, True)],
     ambient=[("Ambient0", (5, 3.4, 0))],
     vent=(-6, 0),
+    lockers=[((-4, 0, -1.55), 0)],
 )
 
 # Storage: 20x20, dwa regały tworzą trzy alejki po ~6 m. Drzwi na zachód i na wschód.
@@ -293,7 +310,7 @@ build(
         ("cyl", (-8.6, 0.6, 8.6), 0.4, 1.2, "rust"),
         ("cyl", (-7.7, 0.6, 8.7), 0.4, 1.2, "rust"),
         ("cyl", (-8.5, 0.6, 7.7), 0.4, 1.2, "rust"),
-        ("box", (-9.6, 1.1, -5.5), (0.6, 2.2, 3.0), "metal"),   # szafa przy zachodniej ścianie
+        *table((8.2, 3.0), 2.6, 1.2, "rust"),  # stół warsztatowy z prześwitem przy wschodnim pasie
     ],
     zones=[
         ("Entry", (-10, -2.5, -10, 10), (2, 5.6, -9.6), (-7, 0.6, 2), 0.25, 0),
@@ -308,6 +325,7 @@ build(
     loot=[("Loot0", (8.8, 2.45, -8.8)), ("Loot1", (-8.8, 1.05, -8.8))],
     ambient=[("Ambient0", (9, 1, 9)), ("Ambient1", (0, 5, -7))],
     vent=(-6, 6),
+    lockers=[((-9.55, 0, -6.0), 90), ((-9.55, 0, -4.9), 90)],  # front szafki (+Z) do środka pokoju
 )
 
 # Turn: 6x6, zakręt (drzwi na zachód i na północ). Jedno ujęcie.
@@ -333,7 +351,7 @@ build(
         ("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood"),
         ("cyl", (4.1, 0.6, 4.1), 0.4, 1.2, "rust"),
         ("cyl", (3.3, 0.6, 4.4), 0.4, 1.2, "rust"),
-        ("box", (-4.3, 1.0, -4.4), (1.2, 2.0, 0.6), "metal"),   # szafa
+        *table((0, -1.0), 3.0, 1.2),  # wyspa na środku: krążenie i kryjówka
         ("box", (3.8, 0.5, -4.4), (2.0, 1.0, 0.8), "rust"),     # stół warsztatowy
         ("box", (3.6, 1.15, -4.4), (0.5, 0.3, 0.3), "metal"),
     ],
@@ -341,6 +359,7 @@ build(
     lights=[((0, 4.1, -1), WARM, 0.8, 10.0, False)],
     ambient=[("Ambient0", (-4, 1, -4))],
     vent=(2, 2),
+    lockers=[((-4.3, 0, -4.55), 0)],
 )
 
 # Closet: 7x7, ślepy zaułek ze znaleziskami. Jedno ujęcie.
@@ -359,6 +378,7 @@ build(
     lights=[((0.5, 3.6, 0), WARM, 0.6, 6.0, True)],
     loot=[("Loot0", (2.5, 1.05, -2.5)), ("Loot1", (0.5, 2.05, -3.2))],
     vent=(-1, 1),
+    lockers=[((-3.05, 0, 2.6), 90)],
 )
 
 # Ramp: 16x4, korytarz w górę o jedno piętro. Dolne drzwi na zachodzie, górne na wschodzie.

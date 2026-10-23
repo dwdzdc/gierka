@@ -78,15 +78,17 @@ Research (jak to robią inni):
 Wnioski dla nas: kryjówka ma przerwać pościg tylko wtedy, gdy potwór nie widział, jak się
 chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów pętle wokół mebli.
 
-- [ ] 16a. Większe meble: wysokie szafy i regały do sufitu (zasłaniają linię wzroku), długie stoły i łóżka/prycze z prześwitem pod spodem (~0,7 m), „wyspy” mebli na środku pokoi, wokół których da się krążyć przed potworem
+- [x] 16a. Większe meble: wysokie szafy i regały do sufitu (zasłaniają linię wzroku), długie stoły i łóżka/prycze z prześwitem pod spodem (~0,7 m), „wyspy” mebli na środku pokoi, wokół których da się krążyć przed potworem
 - [x] 16b. Kucanie (Ctrl albo C): niższa postać (mieści się pod stołem), wolniej, kroki ~2,5× ciszej, potwór zauważa kucającego z mniejszej odległości; stan synchronizowany po sieci
   - Zrobione: kapsuła 1,0 m (wstać się nie da, gdy nad głową przeszkoda), prędkość 1,1, kroki słychać z 35% odległości, potwór widzi z 60% zasięgu i celuje niżej
 - [x] 16c. Skok (Spacja): niski skok na skrzynki i przez przeszkody do ~0,7 m; lądowanie robi hałas
   - Zrobione: skok ~1 m, lądowanie słychać z 7 m (klient zgłasza je hostowi). Uwaga o sterowaniu tank poniżej nadal aktualna: ocenić w playteście
   - Uwaga: swobodny skok kiepsko gra ze sterowaniem tank i stałą kamerą (trudno ocenić odległość, klasyczne RE skoku nie miały). Jeśli w playteście będzie toporny, zamienić na kontekstowe przeskakiwanie przeszkód (Spacja przy niskiej przeszkodzie)
-- [ ] 16d. Kryjówki: szafki/szafy do wejścia (E), pod stołami i pryczami (kucając). Schowany gracz jest niewidoczny dla wzroku potwora, ale wejście do szafki robi hałas
-- [ ] 16e. AI vs kryjówki: jeśli potwór widział, jak się chowasz, sprawdza kryjówkę i wyciąga gracza; jeśli nie, przy tropieniu może z pewną szansą zajrzeć do pobliskich kryjówek (bez gwarancji bezpieczeństwa, jak w Alien: Isolation)
-- [ ] 16f. Kamera przy chowaniu: osobne ujęcie z wnętrza szafki (szpara), a pod stołem zwykłe ujęcie bez „uciekania” kamery (bezpiecznik ma wiedzieć, że gracz jest schowany celowo)
+- [x] 16d. Kryjówki: szafki/szafy do wejścia (E), pod stołami i pryczami (kucając). Schowany gracz jest niewidoczny dla wzroku potwora, ale wejście do szafki robi hałas
+- [x] 16e. AI vs kryjówki: jeśli potwór widział, jak się chowasz, sprawdza kryjówkę i wyciąga gracza; jeśli nie, przy tropieniu może z pewną szansą zajrzeć do pobliskich kryjówek (bez gwarancji bezpieczeństwa, jak w Alien: Isolation)
+- [x] 16f. Kamera przy chowaniu: osobne ujęcie z wnętrza szafki (szpara), a pod stołem zwykłe ujęcie bez „uciekania” kamery (bezpiecznik ma wiedzieć, że gracz jest schowany celowo)
+  - Zrobione: szafki (`props/locker.tscn`, 8 sztuk w 5 typach pokoi), stoły z prześwitem 1,1 m (hala, skrzyżowanie, magazyn) jako wyspy do krążenia i kryjówki dla kucającego. Wejście do szafki: E 0,5 s, skrzypnięcie słychać z 5 m. W środku widok przez szpary. Potwór, który widział/słyszał gracza przy chowaniu, otwiera szafkę i atakuje. Inne przy przeszukiwaniu zaglądają do szafki w promieniu 7 m z szansą 10% + 15% za każdą udaną ucieczkę przez schowanie (maks. 70%)
+  - Nie zrobione: prycze/łóżka i szafy do sufitu (stoły i szafki na razie wystarczą); ujęcie spod stołu (zostaje zwykła kamera, bezpiecznik może przełączyć)
 - [ ] 16g. Projekt poziomów pod ucieczkę: mniej ślepych zaułków, częściej pokoje z 2+ wyjściami, pętle przez sąsiednie pokoje; sprawdzić, czy zmiana piętra gubi pościg
 
 Źródła: [itemlevel.net: R.E.P.O. hiding guide](https://itemlevel.net/repo-how-to-hide-from-monsters-guide/),

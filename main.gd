@@ -126,6 +126,7 @@ func _on_connected() -> void:
 	if multiplayer.is_server():
 		game_state.coins_dropped.connect(_drop_coins)
 		game_state.rescued.connect(_on_rescued)
+		game_state.player_hid.connect(director.on_player_hid)
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_despawn_player)
 		_build_map(map_seed, room_count)
@@ -393,6 +394,9 @@ func _update_hud() -> void:
 	var me_node: Player = players.get_node_or_null(str(me))
 	if me_node and me_node.help_target:
 		status += "  %s %d%%" % [Player.HELP_NAMES[me_node.help_kind], int(me_node.help_progress * 100)]
+	if game_state.is_hidden(me):
+		status = "W SZAFCE (E - wyjdź)  " + status
+	$HUD/Slats.visible = game_state.is_hidden(me)
 	if Time.get_ticks_msec() < _threat_until:
 		status += "\n" + _threat_text
 	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrót  F latarka  E (trzymaj) pomóż / wyjdź windą  H bandaż  F1 ukryj\nujęcie: %s\n%s  graczy: %d" % [
