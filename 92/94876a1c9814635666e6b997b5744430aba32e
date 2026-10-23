@@ -1,0 +1,75 @@
+rooms/corridor.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,210-244
+rooms/storage.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,381-415
+assets/sfx/kenney/impactMetal_heavy_004.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+assets/sfx/kenney/impactMetal_heavy_001.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+monster/monster.tscn
+  s_f5557ab97914ea::t_58ce0c39a2618d 1,8,109-115
+rooms/room.gd
+  s_f5557ab97914ea::t_b8be5d2afe8e03 12,41-42
+assets/sfx/kenney/impactMetal_heavy_000.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+tests/abduct_test.gd.uid
+  s_f5557ab97914ea::t_58ce0c39a2618d 1
+rooms/hall.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,299-333
+rooms/turn.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,152-186
+rooms/ramp.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,199-233
+assets/sfx/kenney/impactMetal_medium_004.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+monster/monster.gd
+  s_f5557ab97914ea::t_58ce0c39a2618d 20,23,29-30,95-98,167-172,180-186,204-206,298-334,337-360,369-370
+  s_f5557ab97914ea::t_ccc23d9ac6d264 335-336
+assets/sfx/kenney/impactMetal_heavy_002.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+assets/sfx/kenney/impactMetal_medium_003.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+assets/sfx/kenney/impactMetal_medium_001.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+rooms/stairwell.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,191-225
+game/monster_director.gd
+  s_f5557ab97914ea::t_58ce0c39a2618d 26,137,151-161
+rooms/materials/vent.tres
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1-6
+assets/sfx/vent_bangs.tres
+  s_f5557ab97914ea::t_fdcefd25a9a122 3-12,19-36
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1-2,13-18
+assets/sfx/kenney/impactMetal_medium_000.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+rooms/closet.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,157-191
+assets/sfx/kenney/impactMetal_heavy_003.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+tools/gen_rooms.py
+  s_f5557ab97914ea::t_b8be5d2afe8e03 33,35,69,182-188,245,267,310,325,343,361,380,403
+rooms/junction.tscn
+  s_f5557ab97914ea::t_b8be5d2afe8e03 1,14,181-215
+tests/vent_test.gd
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-31
+assets/sfx/kenney/impactMetal_medium_002.ogg.import
+  s_f5557ab97914ea::t_58ce0c39a2618d 1-19
+progress.md
+  ai_agent 182-183
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "9294876a1c9814635666e6b997b5744430aba32e",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
