@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -8,12 +8,18 @@
 [ext_resource type="Material" path="res://rooms/materials/wall.tres" id="6"]
 [ext_resource type="Material" path="res://rooms/materials/wood.tres" id="7"]
 [ext_resource type="Material" path="res://rooms/materials/metal.tres" id="8"]
+[ext_resource type="Material" path="res://rooms/materials/rust.tres" id="9"]
+[ext_resource type="Material" path="res://rooms/materials/door_lamp.tres" id="10"]
 
 [sub_resource type="BoxShape3D" id="zone_Low"]
 size = Vector3(10, 9.5, 4.6)
 
 [sub_resource type="BoxShape3D" id="zone_High"]
 size = Vector3(10, 9.5, 4.6)
+
+[sub_resource type="BoxMesh" id="lamp_mesh"]
+size = Vector3(0.7, 0.08, 0.35)
+material = ExtResource("10")
 
 
 [node name="Stairwell" type="Node3D"]
@@ -95,6 +101,18 @@ polygon = PackedVector2Array(-5, 0, 3.5, 0, 3.5, 2.5, -1.5, 5, -5, 5)
 depth = 4
 material = ExtResource("5")
 
+[node name="Solid3" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.4, 0.4, -3.5)
+size = Vector3(0.8, 0.8, 0.7)
+material = ExtResource("7")
+
+[node name="Solid4" type="CSGCylinder3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.3, 5.6, 3.4)
+radius = 0.4
+height = 1.2
+sides = 10
+material = ExtResource("9")
+
 [node name="Doorways" type="Node3D" parent="."]
 
 [node name="Low" type="Marker3D" parent="Doorways"]
@@ -145,10 +163,15 @@ follow = 0.3
 
 [node name="Lights" type="Node3D" parent="."]
 
+[node name="Fixture0" type="MeshInstance3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.35, 0)
+mesh = SubResource("lamp_mesh")
+cast_shadow = 0
+
 [node name="Light0" type="OmniLight3D" parent="Lights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.1, 0)
 light_color = Color(0.75, 0.85, 1, 1)
-light_energy = 0.8
+light_energy = 1.04
 shadow_enabled = true
 omni_range = 10
 distance_fade_enabled = true

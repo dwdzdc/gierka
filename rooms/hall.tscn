@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -8,12 +8,18 @@
 [ext_resource type="Material" path="res://rooms/materials/wall.tres" id="6"]
 [ext_resource type="Material" path="res://rooms/materials/wood.tres" id="7"]
 [ext_resource type="Material" path="res://rooms/materials/metal.tres" id="8"]
+[ext_resource type="Material" path="res://rooms/materials/rust.tres" id="9"]
+[ext_resource type="Material" path="res://rooms/materials/door_lamp.tres" id="10"]
 
 [sub_resource type="BoxShape3D" id="zone_West"]
 size = Vector3(9, 5, 12)
 
 [sub_resource type="BoxShape3D" id="zone_East"]
 size = Vector3(9, 5, 12)
+
+[sub_resource type="BoxMesh" id="lamp_mesh"]
+size = Vector3(0.7, 0.08, 0.35)
+material = ExtResource("10")
 
 
 [node name="Hall" type="Node3D"]
@@ -93,6 +99,65 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.6, 1, -3)
 size = Vector3(0.6, 2, 3)
 material = ExtResource("8")
 
+[node name="Solid4" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.2, 1, -5.65)
+size = Vector3(0.85, 2, 0.6)
+material = ExtResource("8")
+
+[node name="Solid5" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.3, 1, -5.65)
+size = Vector3(0.85, 2, 0.6)
+material = ExtResource("8")
+
+[node name="Solid6" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.4, 1, -5.65)
+size = Vector3(0.85, 2, 0.6)
+material = ExtResource("8")
+
+[node name="Solid7" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 0.25, -2.6)
+size = Vector3(0.45, 0.5, 0.45)
+material = ExtResource("7")
+
+[node name="Solid8" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.2, 0.25, -2.6)
+size = Vector3(0.45, 0.5, 0.45)
+material = ExtResource("7")
+
+[node name="Solid9" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 0.5, -5.5)
+size = Vector3(3, 1, 0.9)
+material = ExtResource("9")
+
+[node name="Solid10" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2, 1.15, -5.5)
+size = Vector3(0.6, 0.3, 0.35)
+material = ExtResource("8")
+
+[node name="Solid11" type="CSGCylinder3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.9, 0.6, -4.6)
+radius = 0.4
+height = 1.2
+sides = 10
+material = ExtResource("9")
+
+[node name="Solid12" type="CSGCylinder3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0.6, -5.3)
+radius = 0.4
+height = 1.2
+sides = 10
+material = ExtResource("9")
+
+[node name="Solid13" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.5, 5.6)
+size = Vector3(16, 0.25, 0.25)
+material = ExtResource("8")
+
+[node name="Solid14" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.15, 5.65)
+size = Vector3(16, 0.15, 0.15)
+material = ExtResource("9")
+
 [node name="Doorways" type="Node3D" parent="."]
 
 [node name="East" type="Marker3D" parent="Doorways"]
@@ -143,16 +208,38 @@ follow = 0
 
 [node name="Lights" type="Node3D" parent="."]
 
+[node name="Fixture0" type="MeshInstance3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 4.75, 0)
+mesh = SubResource("lamp_mesh")
+cast_shadow = 0
+
 [node name="Light0" type="OmniLight3D" parent="Lights"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.6, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 4.5, 0)
 light_color = Color(1, 0.82, 0.6, 1)
-light_energy = 1
+light_energy = 1.43
 shadow_enabled = true
-omni_range = 12
+omni_range = 10
 distance_fade_enabled = true
 distance_fade_begin = 30.0
 distance_fade_shadow = 20.0
 distance_fade_length = 10.0
+
+[node name="Fixture1" type="MeshInstance3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 4.75, 0)
+mesh = SubResource("lamp_mesh")
+cast_shadow = 0
+
+[node name="Light1" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 4.5, 0)
+light_color = Color(1, 0.82, 0.6, 1)
+light_energy = 1.3
+shadow_enabled = true
+omni_range = 10
+distance_fade_enabled = true
+distance_fade_begin = 30.0
+distance_fade_shadow = 20.0
+distance_fade_length = 10.0
+script = ExtResource("4")
 
 [node name="LootSpawns" type="Node3D" parent="."]
 

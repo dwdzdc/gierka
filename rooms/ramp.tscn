@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -8,12 +8,18 @@
 [ext_resource type="Material" path="res://rooms/materials/wall.tres" id="6"]
 [ext_resource type="Material" path="res://rooms/materials/wood.tres" id="7"]
 [ext_resource type="Material" path="res://rooms/materials/metal.tres" id="8"]
+[ext_resource type="Material" path="res://rooms/materials/rust.tres" id="9"]
+[ext_resource type="Material" path="res://rooms/materials/door_lamp.tres" id="10"]
 
 [sub_resource type="BoxShape3D" id="zone_Lower"]
 size = Vector3(9, 9, 4)
 
 [sub_resource type="BoxShape3D" id="zone_Upper"]
 size = Vector3(9, 9, 4)
+
+[sub_resource type="BoxMesh" id="lamp_mesh"]
+size = Vector3(0.7, 0.08, 0.35)
+material = ExtResource("10")
 
 
 [node name="Ramp" type="Node3D"]
@@ -89,6 +95,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.5, 2.5, 0)
 size = Vector3(3, 5, 4)
 material = ExtResource("5")
 
+[node name="Solid2" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 8.4, -1.75)
+size = Vector3(16, 0.2, 0.2)
+material = ExtResource("8")
+
+[node name="Solid3" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.8, 0.4, 1.4)
+size = Vector3(0.8, 0.8, 0.8)
+material = ExtResource("7")
+
 [node name="Doorways" type="Node3D" parent="."]
 
 [node name="Low" type="Marker3D" parent="Doorways"]
@@ -139,10 +155,15 @@ follow = 0.4
 
 [node name="Lights" type="Node3D" parent="."]
 
+[node name="Fixture0" type="MeshInstance3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 4.05, 0)
+mesh = SubResource("lamp_mesh")
+cast_shadow = 0
+
 [node name="Light0" type="OmniLight3D" parent="Lights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 3.8, 0)
 light_color = Color(0.75, 0.85, 1, 1)
-light_energy = 0.7
+light_energy = 0.91
 shadow_enabled = true
 omni_range = 8
 distance_fade_enabled = true
@@ -150,10 +171,15 @@ distance_fade_begin = 30.0
 distance_fade_shadow = 20.0
 distance_fade_length = 10.0
 
+[node name="Fixture1" type="MeshInstance3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 8.85, 0)
+mesh = SubResource("lamp_mesh")
+cast_shadow = 0
+
 [node name="Light1" type="OmniLight3D" parent="Lights"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 8.6, 0)
 light_color = Color(1, 0.82, 0.6, 1)
-light_energy = 0.6
+light_energy = 0.78
 shadow_enabled = true
 omni_range = 7
 distance_fade_enabled = true

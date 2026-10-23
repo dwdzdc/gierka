@@ -16,6 +16,7 @@ DOOR_W = 2.0
 DOOR_H = 2.6
 FLOOR_STEP = 5.0  # wysokość piętra (rampa, klatka schodowa)
 CAMERA_FOV = 68.0
+LIGHT_SCALE = 1.3  # wspólne strojenie jasności wszystkich lamp
 
 EXT = [
     ("Script", "res://rooms/room.gd"),
@@ -26,8 +27,10 @@ EXT = [
     ("Material", "res://rooms/materials/wall.tres"),
     ("Material", "res://rooms/materials/wood.tres"),
     ("Material", "res://rooms/materials/metal.tres"),
+    ("Material", "res://rooms/materials/rust.tres"),
+    ("Material", "res://rooms/materials/door_lamp.tres"),
 ]
-EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8}
+EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10}
 # Obrót markera drzwi (stopnie wokół Y), żeby jego -Z wskazywało na zewnątrz danej ściany.
 SIDE_YAW = {"N": 0, "W": 90, "S": 180, "E": -90}
 
@@ -63,7 +66,8 @@ def wall_pieces(length, h, doors):
 
 def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=()):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
-    solids: [("box", pos, size, mat)] albo [("prism", [(x, y), ...], z0, z1, mat)] (profil w XY, wyciągnięty wzdłuż Z)
+    solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
+            albo [("prism", [(x, y), ...], z0, z1, mat)] (profil w XY, wyciągnięty wzdłuż Z)
     zones: [(nazwa, (x0, x1, z0, z1), poz. kamery, cel kamery, follow, priorytet[, (y0, y1)])]"""
     nodes, subs = [], []
 
@@ -71,6 +75,13 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         nodes.append(
             f'[node name="{node_name}" type="CSGBox3D" parent="Geometry"]\n'
             f"transform = {tf(*pos)}\nsize = Vector3({v(*size)})\n"
+            f'material = ExtResource("{EXT_ID[mat]}")\n'
+        )
+
+    def cyl(node_name, pos, radius, height, mat):
+        nodes.append(
+            f'[node name="{node_name}" type="CSGCylinder3D" parent="Geometry"]\n'
+            f"transform = {tf(*pos)}\nradius = {radius:g}\nheight = {height:g}\nsides = 10\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
 
@@ -103,6 +114,8 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
     for i, solid in enumerate(solids):
         if solid[0] == "box":
             box(f"Solid{i}", solid[1], solid[2], solid[3])
+        elif solid[0] == "cyl":
+            cyl(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
         else:
             prism(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
 
@@ -142,11 +155,17 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         )
 
     nodes.append('[node name="Lights" type="Node3D" parent="."]\n')
+    if lights:
+        subs.append('[sub_resource type="BoxMesh" id="lamp_mesh"]\nsize = Vector3(0.7, 0.08, 0.35)\n'
+                    f'material = ExtResource("{EXT_ID["lamp"]}")\n')
     for i, (pos, color, energy, rng, flicker) in enumerate(lights):
+        # Widoczna oprawa przy suficie nad źródłem światła (bez kolizji, tylko wygląd).
+        nodes.append(f'[node name="Fixture{i}" type="MeshInstance3D" parent="Lights"]\n'
+                     f"transform = {tf(pos[0], pos[1] + 0.25, pos[2])}\nmesh = SubResource(\"lamp_mesh\")\ncast_shadow = 0\n")
         script = f'script = ExtResource("{EXT_ID["flicker"]}")\n' if flicker else ""
         nodes.append(
             f'[node name="Light{i}" type="OmniLight3D" parent="Lights"]\n'
-            f"transform = {tf(*pos)}\nlight_color = Color({v(*color)}, 1)\nlight_energy = {energy:g}\n"
+            f"transform = {tf(*pos)}\nlight_color = Color({v(*color)}, 1)\nlight_energy = {energy * LIGHT_SCALE:g}\n"
             f"shadow_enabled = true\nomni_range = {rng:g}\n"
             # Wygaszanie z odległością: na dużych mapach dalekie światła nic nie kosztują.
             f"distance_fade_enabled = true\ndistance_fade_begin = 30.0\ndistance_fade_shadow = 20.0\ndistance_fade_length = 10.0\n{script}"
@@ -183,12 +202,24 @@ build(
         ("box", (5.5, 0.6, 4.2), (1.2, 1.2, 1.2), "wood"),      # skrzynie
         ("box", (4.2, 0.45, 4.6), (0.9, 0.9, 0.9), "wood"),
         ("box", (-7.6, 1.0, -3), (0.6, 2.0, 3), "metal"),       # szafki pod zachodnią ścianą
+        # rząd szafek pracowniczych pod północną ścianą
+        ("box", (-6.2, 1.0, -5.65), (0.85, 2.0, 0.6), "metal"),
+        ("box", (-5.3, 1.0, -5.65), (0.85, 2.0, 0.6), "metal"),
+        ("box", (-4.4, 1.0, -5.65), (0.85, 2.0, 0.6), "metal"),
+        ("box", (-4.8, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),  # krzesła przy stole
+        ("box", (-3.2, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),
+        ("box", (3.5, 0.5, -5.5), (3.0, 1.0, 0.9), "rust"),     # stół warsztatowy
+        ("box", (4.2, 1.15, -5.5), (0.6, 0.3, 0.35), "metal"),  # skrzynka z narzędziami
+        ("cyl", (6.9, 0.6, -4.6), 0.4, 1.2, "rust"),             # beczki
+        ("cyl", (6.0, 0.6, -5.3), 0.4, 1.2, "rust"),
+        ("box", (0, 4.5, 5.6), (16, 0.25, 0.25), "metal"),       # rury pod sufitem
+        ("box", (0, 4.15, 5.65), (16, 0.15, 0.15), "rust"),
     ],
     zones=[
         ("West", (-8, 1, -6, 6), (7.6, 4.6, -5.6), (-4, 0.6, 2), 0.0, 0),
         ("East", (-1, 8, -6, 6), (-7.6, 4.6, -5.6), (4, 0.6, 2), 0.0, 0),
     ],
-    lights=[((0, 4.6, 0), WARM, 1.0, 12.0, False)],
+    lights=[((-4, 4.5, 0), WARM, 1.1, 10.0, False), ((4, 4.5, 0), WARM, 1.0, 10.0, True)],
     loot=[("Loot0", (-4, 0.95, -3.5))],
     ambient=[("Ambient0", (-7, 1, 5))],
     spawns=[("Spawn0", (-5, 0.05, 1.5), -90), ("Spawn1", (-5, 0.05, 0), -90),
@@ -202,12 +233,17 @@ build(
     solids=[
         ("box", (3, 0.4, 1.4), (0.8, 0.8, 0.8), "wood"),
         ("box", (-4, 1.0, -1.65), (1.4, 2.0, 0.5), "metal"),  # szafka przy ścianie
+        ("box", (1.5, 0.6, -1.7), (1.6, 1.2, 0.45), "rust"),   # niska szafka
+        ("cyl", (5.6, 0.6, 1.5), 0.4, 1.2, "rust"),             # beczka
+        ("box", (-1.5, 0.3, 1.6), (0.9, 0.6, 0.6), "wood"),     # skrzynka
+        ("box", (0, 3.6, -1.75), (16, 0.2, 0.2), "metal"),      # rury wzdłuż ściany
+        ("box", (0, 3.3, -1.8), (16, 0.12, 0.12), "rust"),
     ],
     zones=[
         ("WestHalf", (-8, 1, -2, 2), (7.6, 3.6, 1.4), (-5, 0.8, 0), 0.35, 0),
         ("EastHalf", (-1, 8, -2, 2), (-7.6, 3.6, -1.4), (5, 0.8, 0), 0.35, 0),
     ],
-    lights=[((0, 3.6, 0), COLD, 0.9, 9.0, True)],
+    lights=[((-4, 3.6, 0), COLD, 0.8, 7.0, False), ((4, 3.6, 0), COLD, 0.8, 7.0, True)],
     ambient=[("Ambient0", (5, 3.4, 0))],
 )
 
@@ -216,12 +252,28 @@ build(
     "Storage", 20, 20, 6.0,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
-        ("box", (1.5, 1.1, -3.5), (10, 2.2, 1.0), "metal"),   # regał A
-        ("box", (1.5, 1.1, 3.5), (10, 2.2, 1.0), "metal"),    # regał B
+        ("box", (2.0, 1.1, -3.5), (9, 2.2, 1.0), "metal"),    # regał A
+        ("box", (2.0, 1.1, 3.5), (9, 2.2, 1.0), "metal"),     # regał B
         ("box", (8.8, 0.6, -8.8), (1.2, 1.2, 1.2), "wood"),
         ("box", (8.8, 0.6, -7.4), (1.2, 1.2, 1.2), "wood"),
         ("box", (8.8, 1.8, -8.8), (1.2, 1.2, 1.2), "wood"),
         ("box", (-8.8, 0.5, -8.8), (1.0, 1.0, 1.0), "wood"),
+        # towar na regałach
+        ("box", (1.0, 2.5, -3.5), (1.2, 0.6, 0.8), "wood"),
+        ("box", (3.0, 2.45, -3.5), (0.9, 0.5, 0.8), "wood"),
+        ("box", (2.0, 2.5, 3.5), (1.4, 0.6, 0.8), "wood"),
+        ("box", (5.0, 2.4, 3.5), (0.7, 0.4, 0.7), "metal"),
+        # palety ze skrzyniami w alejkach przy ścianach
+        ("box", (0, 0.08, -8.6), (1.4, 0.16, 1.2), "wood"),
+        ("box", (0, 0.65, -8.6), (1.1, 1.0, 1.0), "wood"),
+        ("box", (3.5, 0.08, 8.6), (1.4, 0.16, 1.2), "wood"),
+        ("box", (3.5, 0.55, 8.6), (1.2, 0.8, 1.0), "wood"),
+        ("box", (3.5, 1.25, 8.6), (0.8, 0.6, 0.8), "wood"),
+        # beczki w kącie
+        ("cyl", (-8.6, 0.6, 8.6), 0.4, 1.2, "rust"),
+        ("cyl", (-7.7, 0.6, 8.7), 0.4, 1.2, "rust"),
+        ("cyl", (-8.5, 0.6, 7.7), 0.4, 1.2, "rust"),
+        ("box", (-9.6, 1.1, -5.5), (0.6, 2.2, 3.0), "metal"),   # szafa przy zachodniej ścianie
     ],
     zones=[
         ("Entry", (-10, -2.5, -10, 10), (2, 5.6, -9.6), (-7, 0.6, 2), 0.25, 0),
@@ -231,7 +283,8 @@ build(
         # Pas za regałami przy wschodnich drzwiach: widok znad środka magazynu.
         ("EastEnd", (6.5, 10, -10, 10), (0, 5.7, 0), (9, 0.6, 0), 0.25, 1),
     ],
-    lights=[((2, 5.6, 0), (1.0, 0.75, 0.5), 1.0, 12.0, True), ((-7, 5.6, -6), (0.6, 0.75, 1.0), 0.9, 10.0, False)],
+    lights=[((-6, 5.5, 0), (1.0, 0.75, 0.5), 1.0, 11.0, False), ((4, 5.5, -7), (0.6, 0.75, 1.0), 0.9, 10.0, False),
+            ((4, 5.5, 7), (1.0, 0.75, 0.5), 0.9, 10.0, True), ((4, 5.5, 0), (1.0, 0.75, 0.5), 0.8, 9.0, False)],
     loot=[("Loot0", (8.8, 2.45, -8.8)), ("Loot1", (-8.8, 1.05, -8.8))],
     ambient=[("Ambient0", (9, 1, 9)), ("Ambient1", (0, 5, -7))],
 )
@@ -240,7 +293,11 @@ build(
 build(
     "Turn", 6, 6, 4.0,
     doors=[("West", "W", 0, 0), ("North", "N", 0, 0)],
-    solids=[("box", (2.2, 0.5, -2.2), (0.9, 1.0, 0.9), "wood")],
+    solids=[
+        ("box", (2.2, 0.5, -2.2), (0.9, 1.0, 0.9), "wood"),
+        ("cyl", (-2.3, 0.6, 2.3), 0.4, 1.2, "rust"),
+        ("box", (0.8, 3.5, 2.75), (4, 0.2, 0.2), "metal"),  # rura
+    ],
     zones=[("All", (-3, 3, -3, 3), (2.8, 3.6, 2.8), (-1.5, 0.5, -1.5), 0.25, 0)],
     lights=[((0, 3.6, 0), COLD, 0.6, 6.0, True)],
     ambient=[("Ambient0", (2.2, 3.2, -2.2))],
@@ -250,7 +307,14 @@ build(
 build(
     "Junction", 10, 10, 4.5,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0), ("North", "N", 0, 0)],
-    solids=[("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood")],
+    solids=[
+        ("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood"),
+        ("cyl", (4.1, 0.6, 4.1), 0.4, 1.2, "rust"),
+        ("cyl", (3.3, 0.6, 4.4), 0.4, 1.2, "rust"),
+        ("box", (-4.3, 1.0, -4.4), (1.2, 2.0, 0.6), "metal"),   # szafa
+        ("box", (3.8, 0.5, -4.4), (2.0, 1.0, 0.8), "rust"),     # stół warsztatowy
+        ("box", (3.6, 1.15, -4.4), (0.5, 0.3, 0.3), "metal"),
+    ],
     zones=[("All", (-5, 5, -5, 5), (0, 4.2, 4.8), (0, 0.5, -2.5), 0.2, 0)],
     lights=[((0, 4.1, -1), WARM, 0.8, 10.0, False)],
     ambient=[("Ambient0", (-4, 1, -4))],
@@ -264,6 +328,9 @@ build(
         ("box", (2.5, 0.5, -2.5), (1, 1, 1), "wood"),
         ("box", (2.6, 0.4, 2.6), (0.8, 0.8, 0.8), "wood"),
         ("box", (0.5, 1.0, -3.2), (2.0, 2.0, 0.6), "metal"),
+        ("box", (3.2, 1.0, 0.2), (0.6, 2.0, 2.4), "metal"),     # regał przy wschodniej ścianie
+        ("cyl", (-2.6, 0.6, -2.6), 0.4, 1.2, "rust"),
+        ("box", (-2.4, 0.3, 2.6), (1.0, 0.6, 0.7), "wood"),
     ],
     zones=[("All", (-3.5, 3.5, -3.5, 3.5), (3.2, 3.6, 3.2), (-2, 0.6, -1), 0.2, 0)],
     lights=[((0.5, 3.6, 0), WARM, 0.6, 6.0, True)],
@@ -277,6 +344,8 @@ build(
     solids=[
         ("prism", [(-5, 0), (5, 0), (5, S)], -2, 2, "concrete"),
         ("box", (6.5, S / 2, 0), (3, S, 4), "concrete"),  # górny podest
+        ("box", (0, S + 3.4, -1.75), (16, 0.2, 0.2), "metal"),  # rury pod sufitem
+        ("box", (-6.8, 0.4, 1.4), (0.8, 0.8, 0.8), "wood"),
     ],
     zones=[
         ("Lower", (-8, 1, -2, 2), (7.6, S + 3.4, 1.4), (-4, 0.8, 0), 0.4, 0),
@@ -296,6 +365,8 @@ build(
         ("box", (4.25, S / 4, 0), (1.5, S / 2, 8), "concrete"),  # półpiętro
         # bieg 2 + górny podest jako jedna pełna bryła (bez pustki pod spodem)
         ("prism", [(-5, 0), (3.5, 0), (3.5, S / 2), (-1.5, S), (-5, S)], 0, 4, "concrete"),
+        ("box", (-4.4, 0.4, -3.5), (0.8, 0.8, 0.7), "wood"),
+        ("cyl", (-4.3, S + 0.6, 3.4), 0.4, 1.2, "rust"),
     ],
     zones=[
         # Każda kamera stoi nad "swoją" stroną klatki, żeby bryła drugiego biegu nie zasłaniała drzwi.
