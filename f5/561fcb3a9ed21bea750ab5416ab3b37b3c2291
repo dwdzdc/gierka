@@ -1,0 +1,19 @@
+progress.md
+  s_f5557ab97914ea::t_40fdf955be2da4 45-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "f5561fcb3a9ed21bea750ab5416ab3b37b3c2291",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "unknown"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
