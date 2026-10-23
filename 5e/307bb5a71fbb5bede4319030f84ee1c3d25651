@@ -1,0 +1,55 @@
+tests/blood_test.gd
+  ai_agent 2-3,18
+tests/stairs_test.gd
+  ai_agent 1-45
+tests/test_maps.gd.uid
+  ai_agent 1
+tests/noise_test.gd
+  ai_agent 2-3,13
+tests/perception_test.gd
+  ai_agent 2-3,13-18,24,34,50-51
+tests/walk_test.gd
+  ai_agent 2-3,12
+tests/monster_states_test.gd
+  ai_agent 2-3,23,32,37,41,43,45,49-50
+tests/monster_test.gd
+  ai_agent 2-3,12
+tests/navmesh_test.gd
+  ai_agent 2-3,11,16-18,25
+tests/track_test.gd
+  ai_agent 2-3,14,36
+README.md
+  ai_agent 46,54-58,64
+main.gd
+  ai_agent 2,5-8,19,31-38,54-59,88,104,106,112-158,167,174-179,181-186,188,203,239
+tests/map_test.gd.uid
+  ai_agent 1
+main.tscn
+  ai_agent 1,132-142
+tests/visibility_test.gd
+  ai_agent 2-3,18,20,33,35
+tests/downed_test.gd
+  ai_agent 2-3,16
+game/map_generator.gd.uid
+  ai_agent 1
+tests/bandage_test.gd
+  ai_agent 2-3,13
+progress.md
+  ai_agent 40-42,50
+tests/aisle_camera_test.gd
+  ai_agent 2-3,13-15,23,40,42,47
+tests/test_maps.gd
+  ai_agent 1-10
+tests/net_test.gd
+  ai_agent 37-40
+tests/map_test.gd
+  ai_agent 1-78
+tests/bleeding_test.gd
+  ai_agent 2-3,13
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "5e307bb5a71fbb5bede4319030f84ee1c3d25651",
+  "prompts": {}
+}
