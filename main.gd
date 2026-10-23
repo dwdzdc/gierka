@@ -24,6 +24,7 @@ const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 @onready var room_parent: Node3D = $Navigation/Rooms
 @onready var game_state: GameState = $GameState
 @onready var director: MonsterDirector = $MonsterDirector
+@onready var fake_alarms: FakeAlarms = $FakeAlarms
 @onready var blood_trail: BloodTrail = $BloodTrail
 @onready var camera_director: CameraDirector = $CameraDirector
 @onready var listener: AudioListener3D = $Listener
@@ -201,6 +202,7 @@ func _on_disconnected(_reason: String) -> void:
 ## Potwory (przez reżysera) i monety na świeżo złożonej mapie.
 func _populate_round() -> void:
 	director.start_round(rooms, monsters)
+	fake_alarms.start()
 	await navigation_ready
 	_spawn_loot()
 
@@ -216,6 +218,7 @@ func _start_next_round(seed_value: int, count: int) -> void:
 	$Summary.visible = false
 	if multiplayer.is_server():
 		director.stop()
+		fake_alarms.stop()
 		for node in monsters.get_children() + loot.get_children():
 			node.queue_free()
 		blood_trail.clear_all()
@@ -354,6 +357,7 @@ func _on_player_hit(peer_id: int, _amount: int) -> void:
 			blood_trail.add_drop(victim.global_position, 1.4)  # rozbryzg przy trafieniu
 	if peer_id != multiplayer.get_unique_id():
 		return
+	$TensionAudio.spike(0.5)
 	var cam := get_viewport().get_camera_3d() as FixedCamera
 	if cam:
 		cam.shake(0.25)

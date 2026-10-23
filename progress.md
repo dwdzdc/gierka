@@ -155,9 +155,9 @@ Ustalenia (23.10):
 
 ## Faza 7: napięcie i niepewność
 
-- [ ] 38. Rozmyty „poziom zagrożenia”: ambient gaśnie, wchodzą serce i oddech
-- [ ] 39. Fałszywe alarmy z `AmbientPoints`
-- [ ] 40. Strojenie proporcji sygnałów prawdziwych i fałszywych
+- [x] 38. Rozmyty „poziom zagrożenia” (`fx/tension_audio.gd`): ambient gaśnie, wchodzą serce (szybsze przy większym zagrożeniu) i oddech. Liczony z odległości do potworów (pościg i szyb nad głową liczą się mocniej), z falującym mnożnikiem i opóźnieniem, żeby nie był radarem
+- [x] 39. Fałszywe alarmy z `AmbientPoints` (`game/fake_alarms.gd`): co 12–28 s skrzypnięcie / łomot / metaliczny stuk / kroki jak potwora, 6–20 m od losowego gracza, u wszystkich w tym samym miejscu; bliski alarm podbija serce
+- [~] 40. Strojenie proporcji: parametry wystawione (`FakeAlarms.weights`, interwały, promienie w `TensionAudio`), prawdziwe strojenie wymaga playtestu
 
 ## Faza 8: po MVP
 

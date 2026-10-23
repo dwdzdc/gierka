@@ -65,6 +65,46 @@ def growl() -> np.ndarray:
     return signal * envelope(n, 0.15, 0.35)
 
 
+def ambient_drone() -> np.ndarray:
+    """~8 s pętla: niski, falujący szum maszynowni + delikatne buczenie. Końce zgrane do zapętlenia."""
+    seconds = 8.0
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    # Częstotliwości dobrane tak, żeby mieściły się całkowicie w 8 s (pętla bez trzasku).
+    hum = 0.25 * np.sin(2 * np.pi * 55 * t) + 0.12 * np.sin(2 * np.pi * 82.5 * t)
+    swell = 0.6 + 0.4 * np.sin(2 * np.pi * t / seconds)
+    wind = band_noise(seconds, 60, 400) * (0.5 + 0.5 * np.sin(2 * np.pi * 2 * t / seconds + 1.0))
+    return (hum + 0.6 * wind) * swell
+
+
+def heartbeat() -> np.ndarray:
+    """1 s pętla: "lub-dub" przy 60 BPM (tempo zmienia pitch_scale w grze)."""
+    n = RATE
+    t = np.arange(n) / RATE
+    out = np.zeros(n)
+    for start, level in [(0.0, 1.0), (0.22, 0.7)]:
+        s0 = int(start * RATE)
+        k = np.arange(int(0.12 * RATE))
+        thump = np.sin(2 * np.pi * 48 * k / RATE) * np.exp(-k / (0.03 * RATE)) * level
+        out[s0:s0 + len(k)] += thump
+    return out
+
+
+def panic_breath() -> np.ndarray:
+    """~1.6 s pętla: szybki, płytki oddech postaci (wyższy niż oddech potwora)."""
+    parts = []
+    for seconds, low, high, level in [(0.45, 700, 3000, 0.7), (0.1, 0, 0, 0.0), (0.55, 500, 2400, 0.9), (0.5, 0, 0, 0.0)]:
+        n = int(seconds * RATE)
+        if level == 0:
+            parts.append(np.zeros(n))
+            continue
+        parts.append(band_noise(seconds, low, high) * envelope(n, 0.3, 0.5) * level)
+    return np.concatenate(parts)
+
+
 if __name__ == "__main__":
+    save("ambient_drone.wav", ambient_drone(), 0.5)
+    save("heartbeat.wav", heartbeat(), 0.9)
+    save("panic_breath.wav", panic_breath(), 0.5)
     save("monster_breath.wav", breath_loop(), 0.7)
     save("monster_growl.wav", growl(), 0.8)

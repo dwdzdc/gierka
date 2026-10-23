@@ -108,6 +108,7 @@ var _step_timer := 0.0
 
 
 func _ready() -> void:
+	add_to_group(&"monsters")
 	_apply_profile(MonsterProfile.load_by_id(profile_id))
 	home = global_position
 	# Stan jest replikowany, więc setter (i sygnał) odpala się też u klientów: efekty są lokalne.

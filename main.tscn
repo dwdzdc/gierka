@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=21 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
@@ -9,6 +9,11 @@
 [ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/coins.tres" id="11"]
 [ext_resource type="Script" path="res://game/monster_director.gd" id="12"]
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/monster_growl.wav" id="13"]
+[ext_resource type="Script" path="res://fx/tension_audio.gd" id="14"]
+[ext_resource type="AudioStream" path="res://assets/sfx/generated/ambient_drone.wav" id="15"]
+[ext_resource type="AudioStream" path="res://assets/sfx/generated/heartbeat.wav" id="16"]
+[ext_resource type="AudioStream" path="res://assets/sfx/generated/panic_breath.wav" id="17"]
+[ext_resource type="Script" path="res://game/fake_alarms.gd" id="18"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -78,6 +83,21 @@ stream = ExtResource("9")
 volume_db = 4.0
 unit_size = 4.0
 max_distance = 20.0
+
+[node name="TensionAudio" type="Node" parent="."]
+script = ExtResource("14")
+
+[node name="Ambient" type="AudioStreamPlayer" parent="TensionAudio"]
+stream = ExtResource("15")
+
+[node name="Heartbeat" type="AudioStreamPlayer" parent="TensionAudio"]
+stream = ExtResource("16")
+
+[node name="Breath" type="AudioStreamPlayer" parent="TensionAudio"]
+stream = ExtResource("17")
+
+[node name="FakeAlarms" type="Node" parent="."]
+script = ExtResource("18")
 
 [node name="ThreatSound" type="AudioStreamPlayer" parent="."]
 stream = ExtResource("13")
