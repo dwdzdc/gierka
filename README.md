@@ -66,7 +66,7 @@ otwórz projekt (import zrobi się sam) i wciśnij **F5**.
 ## Gra po sieci
 
 Host klika **Hostuj grę**: w lewym górnym rogu pojawia się jego IP. Reszta wpisuje to IP
-i klika **Dołącz**. Port 7777/UDP, do 4 graczy.
+i klika **Dołącz**. Port 7777/UDP, do 5 graczy.
 
 - Ta sama sieć lokalna: IP z HUD hosta (`192.168.x.x`).
 - Przez internet: [Tailscale](https://tailscale.com) u wszystkich i IP hosta `100.x.x.x`,

@@ -7,7 +7,7 @@ signal connected  # lokalny gracz jest w sesji (host wystartował albo klient si
 signal disconnected(reason: String)
 
 const DEFAULT_PORT := 7777
-const MAX_CLIENTS := 3  # host + 3 = 4 graczy
+const MAX_CLIENTS := 4  # host + 4 = 5 graczy (więcej wymaga skalowania trudności, patrz progress.md)
 
 ## Powód ostatniego rozłączenia. Autoload przeżywa przeładowanie sceny, więc menu może go pokazać.
 var last_disconnect_reason := ""
