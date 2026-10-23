@@ -89,7 +89,10 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
 - [x] 16f. Kamera przy chowaniu: osobne ujęcie z wnętrza szafki (szpara), a pod stołem zwykłe ujęcie bez „uciekania” kamery (bezpiecznik ma wiedzieć, że gracz jest schowany celowo)
   - Zrobione: szafki (`props/locker.tscn`, 8 sztuk w 5 typach pokoi), stoły z prześwitem 1,1 m (hala, skrzyżowanie, magazyn) jako wyspy do krążenia i kryjówki dla kucającego. Wejście do szafki: E 0,5 s, skrzypnięcie słychać z 5 m. W środku widok przez szpary. Potwór, który widział/słyszał gracza przy chowaniu, otwiera szafkę i atakuje. Inne przy przeszukiwaniu zaglądają do szafki w promieniu 7 m z szansą 10% + 15% za każdą udaną ucieczkę przez schowanie (maks. 70%)
   - Nie zrobione: prycze/łóżka i szafy do sufitu (stoły i szafki na razie wystarczą); ujęcie spod stołu (zostaje zwykła kamera, bezpiecznik może przełączyć)
-- [ ] 16g. Projekt poziomów pod ucieczkę: mniej ślepych zaułków, częściej pokoje z 2+ wyjściami, pętle przez sąsiednie pokoje; sprawdzić, czy zmiana piętra gubi pościg
+- [~] 16g. Projekt poziomów pod ucieczkę: mniej ślepych zaułków, częściej pokoje z 2+ wyjściami, pętle przez sąsiednie pokoje; sprawdzić, czy zmiana piętra gubi pościg
+  - Zrobione: schowek (ślepy zaułek) losowany rzadziej, skrzyżowanie częściej; generator łączy dwa wolne przejścia w tym samym miejscu w pętlę zamiast je zamurować. Mapa 20 pokoi: 3–6 ślepych zaułków
+  - Problem: pętle prawie nie powstają (0 na 10 testowych map), bo wymiary pokoi nie leżą na wspólnej siatce i przejścia rzadko trafiają w ten sam punkt
+- [ ] 16h. Wymiary pokoi (ze ścianami) jako wielokrotności 2 m, żeby przejścia leżały na wspólnej siatce i pętle mogły powstawać; ewentualnie aktywne domykanie pętli (dobieranie korytarza łączącego dwa bliskie wolne przejścia)
 
 Źródła: [itemlevel.net: R.E.P.O. hiding guide](https://itemlevel.net/repo-how-to-hide-from-monsters-guide/),
 [gfinityesports.com: R.E.P.O. monsters](https://www.gfinityesports.com/article/repo-all-monsters-and-best-strategies-against-them),

@@ -13,9 +13,9 @@ const START_ROOM := "res://rooms/hall.tscn"
 const ROOM_TYPES := {
 	"res://rooms/corridor.tscn": 3.0,
 	"res://rooms/turn.tscn": 2.0,
-	"res://rooms/junction.tscn": 2.0,
+	"res://rooms/junction.tscn": 2.5,
 	"res://rooms/storage.tscn": 1.0,
-	"res://rooms/closet.tscn": 1.0,
+	"res://rooms/closet.tscn": 0.6,  # ślepy zaułek: rzadziej, żeby łatwiej było uciec potworowi
 	"res://rooms/ramp.tscn": 1.0,
 	"res://rooms/stairwell.tscn": 1.0,
 }
@@ -30,6 +30,9 @@ var connections: Array[Dictionary] = []
 var _rng := RandomNumberGenerator.new()
 var _parent: Node3D
 var _open: Array[Dictionary] = []  # wolne przejścia: {"room": Room, "door": Marker3D}
+var _dead: Array[Dictionary] = []  # przejścia, do których nic się nie zmieściło
+## Ile pętli (dodatkowych połączeń) powstało w ostatniej mapie.
+var loops := 0
 var _door_counts := {}  # ścieżka -> liczba przejść (cache)
 
 
@@ -65,10 +68,38 @@ func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
 		var open: Dictionary = _open[index]
 		_open.remove_at(index)
 		if not _attach_any(open):
-			_cap(open)  # tu nic się nie zmieściło
+			_dead.append(open)  # tu nic się nie zmieściło
+	_open.append_array(_dead)
+	_dead.clear()
+	_connect_loops()
 	for open in _open:
 		_cap(open)
 	_open.clear()
+
+
+## Dwa wolne przejścia w tym samym miejscu, zwrócone do siebie = przejście między sąsiednimi
+## pokojami. Zamiast je zamurować, łączymy: powstaje pętla, więc mniej ślepych zaułków.
+func _connect_loops() -> void:
+	loops = 0
+	var i := 0
+	while i < _open.size():
+		var a: Transform3D = _open[i].room.transform * _open[i].door.transform
+		var matched := -1
+		for j in range(i + 1, _open.size()):
+			var b: Transform3D = _open[j].room.transform * _open[j].door.transform
+			if a.origin.distance_to(b.origin) < 0.05 and a.basis.z.dot(b.basis.z) < -0.99:
+				matched = j
+				break
+		if matched == -1:
+			i += 1
+			continue
+		var other: Dictionary = _open[matched]
+		connections.append({"a": _open[i].door, "b": other.door})
+		_open[i].room.add_door_frame(_open[i].door)
+		other.room.add_door_frame(other.door)
+		loops += 1
+		_open.remove_at(matched)
+		_open.remove_at(i)
 
 
 func _clear() -> void:
@@ -77,6 +108,7 @@ func _clear() -> void:
 	rooms.clear()
 	connections.clear()
 	_open.clear()
+	_dead.clear()
 
 
 ## Stała mapa (do testów): łańcuch [[ścieżka, przejście poprzedniego, przejście nowego], ...].
