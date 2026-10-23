@@ -18,18 +18,19 @@ size = Vector3(7, 3, 2.5)
 
 [node name="Corridor" type="Node3D"]
 script = ExtResource("1")
+bounds = AABB(-6.2, -0.2, -1.45, 12.4, 3.4, 2.9)
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true
 
 [node name="Floor" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
-size = Vector3(12, 0.2, 2.9)
+size = Vector3(12.4, 0.2, 2.9)
 material = ExtResource("5")
 
 [node name="Ceiling" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 0)
-size = Vector3(12, 0.2, 2.9)
+size = Vector3(12.4, 0.2, 2.9)
 material = ExtResource("5")
 
 [node name="WallN0" type="CSGBox3D" parent="Geometry"]
@@ -42,12 +43,42 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 1.35)
 size = Vector3(12.4, 3, 0.2)
 material = ExtResource("6")
 
-[node name="Prop0" type="CSGBox3D" parent="Geometry"]
+[node name="WallE0" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 1.5, -1.025)
+size = Vector3(0.2, 3, 0.45)
+material = ExtResource("6")
+
+[node name="WallE1" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 2.7, 0)
+size = Vector3(0.2, 0.6, 1.6)
+material = ExtResource("6")
+
+[node name="WallE2" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.1, 1.5, 1.025)
+size = Vector3(0.2, 3, 0.45)
+material = ExtResource("6")
+
+[node name="WallW0" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.1, 1.5, -1.025)
+size = Vector3(0.2, 3, 0.45)
+material = ExtResource("6")
+
+[node name="WallW1" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.1, 2.7, 0)
+size = Vector3(0.2, 0.6, 1.6)
+material = ExtResource("6")
+
+[node name="WallW2" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.1, 1.5, 1.025)
+size = Vector3(0.2, 3, 0.45)
+material = ExtResource("6")
+
+[node name="Solid0" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.35, 0.75)
 size = Vector3(0.7, 0.7, 0.7)
 material = ExtResource("7")
 
-[node name="Prop1" type="CSGBox3D" parent="Geometry"]
+[node name="Solid1" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.9, -0.95)
 size = Vector3(1.2, 1.8, 0.5)
 material = ExtResource("8")
@@ -55,10 +86,10 @@ material = ExtResource("8")
 [node name="Doorways" type="Node3D" parent="."]
 
 [node name="West" type="Marker3D" parent="Doorways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -6.2, 0, 0)
 
 [node name="East" type="Marker3D" parent="Doorways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 6.2, 0, 0)
 
 [node name="CameraZones" type="Node3D" parent="."]
 
