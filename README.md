@@ -10,7 +10,8 @@ Potrzebny Godot **4.7** (standardowy, nie .NET/Mono).
 **Linux**
 
 ```sh
-# Flatpak (najprościej, działa na większości dystrybucji)
+# Arch: sudo pacman -S godot   (albo z AUR: yay -S godot-bin)
+# Flatpak (działa na większości dystrybucji)
 flatpak install flathub org.godotengine.Godot
 flatpak run org.godotengine.Godot --path /ścieżka/do/gierka
 
@@ -20,8 +21,14 @@ flatpak run org.godotengine.Godot --path /ścieżka/do/gierka
 
 **macOS**: `brew install --cask godot`, potem `godot --path /ścieżka/do/gierka`.
 
-Przy pierwszym uruchomieniu Godot importuje projekt (kilka sekund). Można też otworzyć
-edytor bez `--path`, zaimportować `project.godot` i odpalić F5.
+**Po sklonowaniu (i po pullu z nowymi skryptami) najpierw zaimportuj projekt**, inaczej
+gra wysypie się na `Could not find type ...`: cache klas (`.godot/`) nie jest w repo.
+
+```sh
+godot --headless --path /ścieżka/do/gierka --import
+```
+
+Otwarcie projektu w edytorze robi to samo.
 
 ## Gra po sieci
 
