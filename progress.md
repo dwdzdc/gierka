@@ -171,6 +171,8 @@ Ustalenia (23.10):
 
 ## HUD (po playteście 23.10)
 
+- [ ] Kody testowe (pomysł 23.10, do potwierdzenia): tylko host i tylko po starcie z `-- --cheats` (albo build debugowy). F2–F6 spawn wybranego typu potwora w pokoju obok, F7 następny etap od razu, F8 nieśmiertelność, F9 usuń wszystkie potwory. Uwaga: bez flagi łatwo odpalić przypadkiem w normalnej grze, a w wydaniu muszą zniknąć
+
 - [x] Stały status w lewym górnym rogu: tylko HP, monety, bandaże i bieżące komunikaty, mniejsza czcionka z obrysem
 - [x] Statystyki pod przytrzymanym Tab: sekcje Gracze (tabela), Runda, Sieć, Sterowanie; debug (ujęcie, stany potworów) tylko po F1. Uwaga: stany potworów graczom zdradzałyby za dużo, więc są tylko w debugu
 - [x] Konflikt klawiszy: Tab przełączał podgląd kolegi po śmierci, teraz robi to Spacja (martwy i tak nie skacze)
