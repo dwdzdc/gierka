@@ -1,0 +1,17 @@
+game/map_generator.gd
+  ai_agent 133-134
+progress.md
+  ai_agent 55
+rooms/materials/door_frame.tres
+  ai_agent 1-8
+rooms/room.gd
+  ai_agent 16-17,51-75
+rooms/materials/door_lamp.tres
+  ai_agent 1-5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "4829a2a471979dc0670562ec201d1566f883b753",
+  "prompts": {}
+}
