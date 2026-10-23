@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
@@ -14,6 +14,7 @@
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/heartbeat.wav" id="16"]
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/panic_breath.wav" id="17"]
 [ext_resource type="Script" path="res://game/fake_alarms.gd" id="18"]
+[ext_resource type="Script" path="res://game/debug_menu.gd" id="19"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -299,3 +300,6 @@ text = "KONIEC RUNDY"
 [node name="NextRoundButton" type="Button" parent="Summary/Center/Panel/Margin/Items"]
 unique_name_in_owner = true
 text = "Następna runda (R)"
+
+[node name="DebugMenu" type="CanvasLayer" parent="."]
+script = ExtResource("19")

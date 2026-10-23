@@ -171,7 +171,7 @@ Ustalenia (23.10):
 
 ## HUD (po playteście 23.10)
 
-- [ ] Kody testowe (pomysł 23.10, do potwierdzenia): tylko host i tylko po starcie z `-- --cheats` (albo build debugowy). F2–F6 spawn wybranego typu potwora w pokoju obok, F7 następny etap od razu, F8 nieśmiertelność, F9 usuń wszystkie potwory. Uwaga: bez flagi łatwo odpalić przypadkiem w normalnej grze, a w wydaniu muszą zniknąć
+- [x] Menu testowe (klawisz `, `game/debug_menu.gd`) zamiast klawiszy F (łatwo dokładać kolejne narzędzia: jedna linia w `_build_actions`). Tylko host, tylko build deweloperski albo `-- --cheats`. Na start: spawn każdego typu potwora w pokoju obok, następny etap, zamrożenie i usunięcie potworów, nieśmiertelność, leczenie, +100 monet, teleport do windy
 
 - [x] Stały status w lewym górnym rogu: tylko HP, monety, bandaże i bieżące komunikaty, mniejsza czcionka z obrysem
 - [x] Statystyki pod przytrzymanym Tab: sekcje Gracze (tabela), Runda, Sieć, Sterowanie; debug (ujęcie, stany potworów) tylko po F1. Uwaga: stany potworów graczom zdradzałyby za dużo, więc są tylko w debugu

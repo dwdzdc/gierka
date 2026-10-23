@@ -45,6 +45,8 @@ var players := {}
 ## Gdzie jest wyjście z mapy (ustawia main po złożeniu mapy). Tylko host.
 var exit_position := Vector3.INF
 var round_over := false
+## Menu testowe: gracze, którym nic nie robią potwory ani krwawienie (tylko host).
+var invulnerable := {}
 
 var _tick := 0.0
 
@@ -166,6 +168,8 @@ func remove_player(peer_id: int) -> void:
 ## Sprawnego rani (i może otworzyć krwawienie), powalonego dobija.
 func damage(peer_id: int, amount: int) -> void:
 	assert(multiplayer.is_server())
+	if invulnerable.get(peer_id, false):
+		return
 	match life(peer_id):
 		Life.OK:
 			if randf() < BLEED_CHANCE:
@@ -180,6 +184,8 @@ func damage(peer_id: int, amount: int) -> void:
 ## Natychmiastowa śmierć bez powalenia (np. egzekucja potwora).
 func execute(peer_id: int) -> void:
 	assert(multiplayer.is_server())
+	if invulnerable.get(peer_id, false):
+		return
 	if is_alive(peer_id):
 		_notify_hit.rpc(peer_id, MAX_HP)
 		_kill(peer_id)
@@ -188,7 +194,7 @@ func execute(peer_id: int) -> void:
 ## Porwanie: gracz jest niesiony przez potwora `monster_name` i traci `damage_per_second` HP.
 func abduct(peer_id: int, monster_name: String, damage_per_second: int) -> void:
 	assert(multiplayer.is_server())
-	if not is_alive(peer_id):
+	if not is_alive(peer_id) or invulnerable.get(peer_id, false):
 		return
 	var entry: Dictionary = players[peer_id]
 	entry.life = Life.CARRIED
@@ -215,6 +221,26 @@ func release(peer_id: int) -> void:
 	entry.life = Life.OK if entry.hp > 0 else Life.DEAD
 	entry.carried_by = ""
 	entry.carry_dps = 0
+	_broadcast()
+
+
+func set_invulnerable(peer_id: int, value: bool) -> void:
+	assert(multiplayer.is_server())
+	invulnerable[peer_id] = value
+
+
+## Menu testowe: pełne HP, bez krwawienia, bandaże na start, z powrotem na nogi.
+func debug_heal(peer_id: int) -> void:
+	assert(multiplayer.is_server())
+	if not players.has(peer_id) or life(peer_id) in [Life.DEAD, Life.EXTRACTED]:
+		return
+	var entry: Dictionary = players[peer_id]
+	entry.hp = MAX_HP
+	entry.bleeding = false
+	entry.bleed_out = 0
+	entry.bandages = maxi(entry.bandages, START_BANDAGES)
+	entry.life = Life.OK
+	entry.carried_by = ""
 	_broadcast()
 
 
