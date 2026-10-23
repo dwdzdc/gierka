@@ -1,0 +1,34 @@
+game/debug_menu.gd.uid
+  s_f5557ab97914ea::t_0cc09b8783e216 1
+game/debug_menu.gd
+  s_f5557ab97914ea::t_64a265dc930e26 1-79,81-135
+  s_f5557ab97914ea::t_0cc09b8783e216 80
+README.md
+  ai_agent 52
+project.godot
+  s_f5557ab97914ea::t_0cc09b8783e216 112-116
+game/game_state.gd
+  s_f5557ab97914ea::t_0cc09b8783e216 48-49,171-172,187-188,197,227-243
+progress.md
+  ai_agent 174
+main.tscn
+  s_f5557ab97914ea::t_0cc09b8783e216 1,17,303-305
+tests/debug_menu_test.gd
+  s_f5557ab97914ea::t_0cc09b8783e216 1-36
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "c93434156cac843e514ed119ab5c672d6e60e8e2",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
