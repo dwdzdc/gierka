@@ -49,7 +49,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 12. Generator: pokoje doklejane po `Doorways` (obrót o 90°, test kolizji AABB), deterministyczny z seeda, przy zablokowaniu próbuje kolejnych wariantów seeda. 8 typów pokoi, w tym rampa i klatka schodowa (piętra co 3 m)
 - [x] 13. Zaślepki niepołączonych drzwi, hala jako strefa startowa (PlayerSpawns), potwór startuje w najdalszym płaskim pokoju
 - [x] 14. Nawigacja wypiekana w runtime dla wygenerowanej mapy (2 klatki po złożeniu)
-- [~] 15. Modyfikacje z seeda: loot (losowy, host), światła (10% zgaszonych, 20% migocze). Zablokowanych przejść brak: zablokowanie zwykłego połączenia mogłoby odciąć część mapy, ma sens dopiero przy pętlach (16h)
+- [~] 15. Modyfikacje z seeda: loot (losowy, host), światła (20% pokoi ciemnych, w jasnych 20% lamp migocze). Zablokowanych przejść brak: zablokowanie zwykłego połączenia mogłoby odciąć część mapy, ma sens dopiero przy pętlach (16h)
 
 ### Po playteście generatora (23.10)
 
@@ -191,7 +191,8 @@ Ustalenia (23.10):
 - [x] 41a. Krwawienie widać na ekranie: pulsująca czerwona winieta w rytmie utraty HP (1/s), intensywność rośnie, gdy HP spada; przy każdym ubytku bardzo lekki wstrząs, wyraźnie słabszy niż po ciosie potwora
   - Uwaga: ciągłe trzęsienie przy stałych kamerach męczy i utrudnia czytanie kadru, dlatego wstrząs tylko przy ubytku i słaby
   - Potwierdzone 23.10: pulsowanie OK
-- [ ] 41b. Ciemniej: ~20% pomieszczeń całkiem ciemnych (losowane z seeda, zamiast obecnych 10% zgaszonych lamp), reszta jak teraz
+- [x] 41b. Ciemniej: ~20% pomieszczeń całkiem ciemnych (losowane z seeda, zamiast obecnych 10% zgaszonych lamp), reszta jak teraz
+  - Zrobione: `MapGenerator.DARK_ROOM_CHANCE = 0.2` (hala zawsze jasna), w jasnych pokojach 20% lamp migocze. Pomiar na 10 mapach × 20 pokoi: 25% ciemnych. Nie pilnuje jeszcze, żeby ciemny pokój nie był jedyną drogą do windy
   - Potwierdzone 23.10: 20% ciemnych pokoi (pustość wynikała z ciemności wszędzie, teraz kontrast); proporcja do strojenia po testach, jedna stała
   - Uwaga: kłóci się częściowo z 15g (pokoje wyglądały na puste, bo w ciemności nie było widać mebli; światło podbite o 30%). Dlatego kontrast między pokojami zamiast równego przyciemnienia wszystkiego. Ciemny pokój nie powinien być jedyną drogą do windy, a przynajmniej nie bez baterii w zasięgu
 - [ ] 41c. Bateria latarki: ograniczony czas świecenia (np. 4–5 min), migotanie przy słabej baterii, baterie do znalezienia na mapie (nowy typ znaleziska obok monet), podniesienie doładowuje

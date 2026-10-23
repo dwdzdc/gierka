@@ -62,7 +62,9 @@ func generate(parent: Node3D, map_seed: int, room_count: int) -> Array[Room]:
 
 # --- Zmienność z seeda (krok 15/15h) ---------------------------------------------
 
-const LIGHT_OFF_CHANCE := 0.1
+## Część pokoi jest całkiem ciemna (bez hali startowej): tam latarka ma sens.
+## W oświetlonych pokojach część lamp migocze.
+const DARK_ROOM_CHANCE := 0.2
 const LIGHT_FLICKER_CHANCE := 0.2
 const FLICKER_SCRIPT := preload("res://fx/flicker_light.gd")
 const WOOD := preload("res://rooms/materials/wood.tres")
@@ -71,16 +73,19 @@ const CLUTTER_PER_ROOM := Vector2i(2, 5)
 const CLUTTER_KEEP_CLEAR := 2.8  # tyle metrów przed drzwiami, wyjściem i kryjówkami zostaje pusto
 
 
-## Ten sam typ pokoju za każdym razem trochę inny: zgaszone/migoczące lampy i drobne
+## Ten sam typ pokoju za każdym razem trochę inny: ciemne pokoje, migoczące lampy i drobne
 ## rekwizyty przy ścianach. Wszystko z RNG mapy, więc u każdego peera identycznie.
 func _decorate() -> void:
 	for room in rooms:
+		var dark := room != rooms[0] and _rng.randf() < DARK_ROOM_CHANCE
 		for light in room.find_children("*", "OmniLight3D", true, false):
-			var roll := _rng.randf()
-			if roll < LIGHT_OFF_CHANCE:
+			if dark:
 				light.visible = false
-			elif roll < LIGHT_OFF_CHANCE + LIGHT_FLICKER_CHANCE and light.get_script() == null:
+			elif _rng.randf() < LIGHT_FLICKER_CHANCE and light.get_script() == null:
 				light.set_script(FLICKER_SCRIPT)
+		if dark:
+			for fixture in room.find_children("Fixture*", "MeshInstance3D", true, false):
+				fixture.visible = false  # zgaszona oprawa nie świeci
 		if room.bounds.size.y < 8.0:  # bez ramp i schodów (pochyłe podłogi)
 			_add_clutter(room)
 
