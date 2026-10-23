@@ -16,6 +16,8 @@ extends CharacterBody3D
 @export var run_step_interval := 0.32
 @export var walk_noise_radius := 4.0
 @export var run_noise_radius := 10.0
+## Ile sekund trzeba trzymać E przy powalonym koledze, żeby go podnieść.
+@export var revive_time := 3.0
 
 @onready var flashlight: SpotLight3D = $Flashlight
 
@@ -26,6 +28,10 @@ var _step_timer := 0.0
 var _smoothed_speed := 0.0
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
+
+## Pomaganie koledze (tylko u właściciela postaci, do HUD-a).
+var help_target: Player
+var help_progress := 0.0
 
 
 func _enter_tree() -> void:
@@ -42,17 +48,24 @@ func _ready() -> void:
 		get_tree().call_group(&"camera_director", &"set_target", self)
 
 
-func is_alive() -> bool:
-	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
-	return game_state == null or game_state.is_alive(get_multiplayer_authority())
+func _game_state() -> GameState:
+	return get_tree().get_first_node_in_group(&"game_state")
 
 
-## Martwy leży na ziemi. Liczone u każdego z GameState, nic dodatkowego nie trzeba synchronizować.
+## Sprawny = może chodzić i działać (nie powalony, nie martwy). Bez GameState (testy) zawsze.
+func is_up() -> bool:
+	var game_state := _game_state()
+	return game_state == null or game_state.is_up(get_multiplayer_authority())
+
+
+## Powalony albo martwy leży na ziemi. Liczone u każdego z GameState, bez dodatkowej synchronizacji.
 func _process(_delta: float) -> void:
-	var dead := not is_alive()
-	$Body.rotation.x = PI / 2.0 if dead else 0.0
-	$Body.position.y = 0.35 if dead else 0.85
-	$Visor.visible = not dead
+	var game_state := _game_state()
+	var life := GameState.Life.OK if game_state == null else game_state.life(get_multiplayer_authority())
+	var lying := life != GameState.Life.OK
+	$Body.rotation.x = PI / 2.0 if lying else 0.0
+	$Body.position.y = 0.35 if lying else 0.85
+	$Visor.visible = life != GameState.Life.DEAD
 
 
 ## Host przenosi gracza (np. respawn). Pozycją steruje właściciel, więc host musi go poprosić.
@@ -73,7 +86,7 @@ func _tint_body() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_multiplayer_authority() or not is_alive():
+	if not is_multiplayer_authority() or not is_up():
 		return
 	if event.is_action_pressed("toggle_flashlight"):
 		flashlight.visible = not flashlight.visible
@@ -88,10 +101,41 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
-	var desired := Vector3.ZERO if _quick_turning or not is_alive() else _tank_movement(delta)
+	var helping := _update_help(delta)
+	var desired := Vector3.ZERO if _quick_turning or helping or not is_up() else _tank_movement(delta)
 	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
 	move_and_slide()
+
+
+## Trzymanie E przy powalonym koledze: po `revive_time` s prosimy hosta o podniesienie.
+## Licznik jest lokalny (to tylko "animacja" czekania), decyzję i tak podejmuje host.
+## Zwraca true, gdy właśnie pomagamy (wtedy stoimy w miejscu).
+func _update_help(delta: float) -> bool:
+	help_target = _nearest_downed_teammate() if is_up() and Input.is_action_pressed("interact") else null
+	if help_target == null:
+		help_progress = 0.0
+		return false
+	help_progress += delta / revive_time
+	if help_progress >= 1.0:
+		help_progress = 0.0
+		_game_state().request_revive.rpc_id(1, help_target.get_multiplayer_authority())
+	return true
+
+
+func _nearest_downed_teammate() -> Player:
+	var game_state := _game_state()
+	if game_state == null:
+		return null
+	var best: Player = null
+	for node in get_tree().get_nodes_in_group(&"players"):
+		var other := node as Player
+		if other == self or not game_state.is_downed(other.get_multiplayer_authority()):
+			continue
+		if global_position.distance_to(other.global_position) <= GameState.HELP_DISTANCE:
+			if best == null or global_position.distance_to(other.global_position) < global_position.distance_to(best.global_position):
+				best = other
+	return best
 
 
 func _tank_movement(delta: float) -> Vector3:
@@ -115,7 +159,7 @@ func _footsteps(delta: float) -> void:
 		measured = 0.0
 	# Wygładzenie: pozycje z sieci przychodzą nierówno, więc surowa prędkość skacze.
 	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-10.0 * delta))
-	if _smoothed_speed < 0.5 or not is_alive():
+	if _smoothed_speed < 0.5 or not is_up():
 		_step_timer = 0.0
 		return
 	_step_timer -= delta

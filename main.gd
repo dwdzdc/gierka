@@ -7,8 +7,8 @@ extends Node3D
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
 const MONSTER_SCENE := preload("res://monster/monster.tscn")
-## Tymczasowe, do czasu powalenia i podnoszenia (faza 5).
-const RESPAWN_DELAY := 8.0
+## Tymczasowe, do czasu pętli rundy (faza 6): gdy zginą wszyscy, wszyscy wracają na start.
+const WIPE_RESET_DELAY := 5.0
 
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
@@ -55,6 +55,8 @@ func _ready() -> void:
 ## "Uszy" są przy postaci, ale obrócone jak bieżąca kamera: dźwięk z lewej strony
 ## ekranu słychać z lewej. Domyślnie słuchałaby kamera, czyli z drugiego końca pokoju.
 func _process(_delta: float) -> void:
+	if $HUD.visible:
+		_update_hud()  # postęp podnoszenia zmienia się co klatkę
 	var cam := get_viewport().get_camera_3d()
 	if camera_director.target == null or cam == null:
 		return
@@ -84,7 +86,7 @@ func _on_connected() -> void:
 	menu.visible = false
 	$HUD.visible = true
 	if multiplayer.is_server():
-		game_state.player_died.connect(_respawn_later)
+		game_state.player_died.connect(_on_player_died)
 		multiplayer.peer_connected.connect(_spawn_player)
 		multiplayer.peer_disconnected.connect(_despawn_player)
 		_spawn_player(multiplayer.get_unique_id())
@@ -113,14 +115,18 @@ func _spawn_monster() -> void:
 	monster.state_changed.connect(func(_s: Monster.State) -> void: _update_hud())
 
 
-func _respawn_later(peer_id: int) -> void:
-	await get_tree().create_timer(RESPAWN_DELAY).timeout
-	var player: Player = players.get_node_or_null(str(peer_id))
-	if player == null:
-		return  # gracz w międzyczasie wyszedł
-	game_state.revive(peer_id)
-	var marker := spawn_points.get_child(randi() % spawn_points.get_child_count()) as Node3D
-	player.respawn_at.rpc_id(peer_id, marker.global_transform)
+func _on_player_died(_peer_id: int) -> void:
+	for peer_id in game_state.players:
+		if game_state.is_alive(peer_id):
+			return
+	await get_tree().create_timer(WIPE_RESET_DELAY).timeout
+	var i := 0
+	for player in players.get_children():
+		var peer_id: int = player.get_multiplayer_authority()
+		game_state.reset_player(peer_id)
+		var marker := spawn_points.get_child(i % spawn_points.get_child_count()) as Node3D
+		player.respawn_at.rpc_id(peer_id, marker.global_transform)
+		i += 1
 
 
 func _on_player_hit(peer_id: int, _amount: int) -> void:
@@ -156,8 +162,18 @@ func _update_hud() -> void:
 	var me := multiplayer.get_unique_id()
 	if multiplayer.is_server() and monsters.get_child_count() > 0:
 		role += "  potwor: %s" % Monster.State.keys()[monsters.get_child(0).state]
-	var status := "HP %d" % game_state.hp(me) if game_state.is_alive(me) else "NIE ZYJESZ - powrot za chwile"
-	if game_state.is_bleeding(me):
-		status += "  KRWAWISZ"
-	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
+	var status := ""
+	match game_state.life(me):
+		GameState.Life.OK:
+			status = "HP %d" % game_state.hp(me)
+			if game_state.is_bleeding(me):
+				status += "  KRWAWISZ"
+		GameState.Life.DOWNED:
+			status = "POWALONY - wykrwawisz sie za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me)
+		GameState.Life.DEAD:
+			status = "NIE ZYJESZ"
+	var me_node: Player = players.get_node_or_null(str(me))
+	if me_node and me_node.help_target:
+		status += "  PODNOSZENIE %d%%" % int(me_node.help_progress * 100)
+	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  E (trzymaj) podnies kolege  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
 		status, shot, role, players.get_child_count()]
