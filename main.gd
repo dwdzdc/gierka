@@ -381,7 +381,7 @@ func _on_round_finished(results: Array) -> void:
 		lines.append("%s   %s   wyniesione: %d   wynik rundy: %d   suma: %d" % [
 			r.name, "wydostał się" if r.survived else "zginął", r.banked, r.score, r.session])
 	lines.append("")
-	lines.append("Zero-sum: %d%% wyniesionych monet idzie do puli dzielonej po równo między ocalałych." % int(GameState.SHARED_FRACTION * 100))
+	lines.append("Zero-sum: każdy oddaje %d%% wyniesionych monet; jego część dzielą po równo on i ci, którzy wyszli po nim." % int(GameState.SHARED_FRACTION * 100))
 	lines.append("R albo przycisk: następna runda" if multiplayer.is_server() else "Czekaj, aż host zacznie następną rundę.")
 	%SummaryText.text = "\n".join(lines)
 	%NextRoundButton.visible = multiplayer.is_server()

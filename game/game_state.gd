@@ -35,8 +35,9 @@ const START_BANDAGES := 2
 ## Jak blisko trzeba stać, żeby pomóc koledze / wyjść (host to sprawdza).
 const HELP_DISTANCE := 2.0
 const EXIT_DISTANCE := 2.5
-## Punktacja zero-sum: tyle wyniesionych monet idzie do wspólnej puli ocalałych,
-## reszta zostaje temu, kto je wyniósł.
+## Punktacja zero-sum: tyle wyniesionych monet idzie do wspólnej puli,
+## reszta zostaje temu, kto je wyniósł. Twoja część puli dzieli się między ciebie
+## i tych, którzy wyszli PO tobie: wcześniejsze wyjście nie korzysta z ryzyka reszty.
 const SHARED_FRACTION := 0.5
 
 ## peer_id -> {"name", "hp", "life", "bleeding", "bleed_out", "bandages",
@@ -45,6 +46,7 @@ var players := {}
 ## Gdzie jest wyjście z mapy (ustawia main po złożeniu mapy). Tylko host.
 var exit_position := Vector3.INF
 var round_over := false
+var _extract_counter := 0  # kolejność wyjść w rundzie (1 = pierwszy)
 ## Menu testowe: gracze, którym nic nie robią potwory ani krwawienie (tylko host).
 var invulnerable := {}
 
@@ -257,6 +259,7 @@ func add_coins(peer_id: int, amount: int, position: Vector3) -> void:
 func reset_for_round() -> void:
 	assert(multiplayer.is_server())
 	round_over = false
+	_extract_counter = 0
 	for peer_id in players:
 		players[peer_id] = _fresh_entry(players[peer_id])
 	_broadcast()
@@ -302,7 +305,7 @@ func _kill(peer_id: int) -> void:
 func _fresh_entry(keep: Dictionary) -> Dictionary:
 	return {"name": keep.get("name", "?"), "session": keep.get("session", 0),
 		"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0,
-		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": ""}
+		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": "", "extract_order": 0}
 
 
 ## Runda się kończy, gdy nikt nie został na mapie (każdy zginął albo wyszedł).
@@ -320,24 +323,51 @@ func _check_round_end() -> void:
 	_announce_results.rpc(results)
 
 
-## Zero-sum: część wyniesionych monet trafia do wspólnej puli i jest dzielona po równo
-## między ocalałych; reszta zostaje temu, kto ją wyniósł. Zmarli dostają 0.
+## Zero-sum: każdy ocalały oddaje SHARED_FRACTION wyniesionych monet, a ta część dzieli się
+## po równo między niego i ocalałych, którzy wyszli PO nim. Reszta zostaje temu, kto ją wyniósł.
+## Zmarli dostają 0. Suma wyników = suma wyniesionych monet.
+## Przykład: A wychodzi pierwszy ze 100, B później ze 100 -> A: 50 + 25 = 75, B: 50 + 25 + 50 = 125.
 func compute_results() -> Array:
 	var survivors := []
-	var pool := 0.0
 	for peer_id in players:
 		if life(peer_id) == Life.EXTRACTED:
 			survivors.append(peer_id)
-			pool += players[peer_id].banked * SHARED_FRACTION
+	var shares := {}
+	for peer_id in survivors:
+		shares[peer_id] = players[peer_id].banked * (1.0 - SHARED_FRACTION)
+	for giver in survivors:
+		var order: int = players[giver].extract_order
+		var receivers := survivors.filter(func(id: int) -> bool: return players[id].extract_order >= order)
+		for receiver in receivers:
+			shares[receiver] += players[giver].banked * SHARED_FRACTION / receivers.size()
+	var scores := _round_preserving_total(shares, survivors)
 	var results := []
 	for peer_id in players:
 		var entry: Dictionary = players[peer_id]
 		var score := 0
 		if peer_id in survivors:
-			score = roundi(entry.banked * (1.0 - SHARED_FRACTION) + pool / survivors.size())
+			score = scores[peer_id]
 		results.append({"peer_id": peer_id, "name": entry.name, "survived": peer_id in survivors,
 			"banked": entry.banked, "score": score, "session": entry.session + score})
 	return results
+
+
+## Zaokrąglanie, które nie gubi ani nie dodaje monet: w dół, a brakujące jednostki
+## dostają ci z największą częścią ułamkową (przy remisie: kto wcześniej na liście).
+func _round_preserving_total(shares: Dictionary, ids: Array) -> Dictionary:
+	var result := {}
+	var total := 0.0
+	var floored := 0
+	for id in ids:
+		total += shares[id]
+		result[id] = floori(shares[id])
+		floored += result[id]
+	var by_fraction := ids.duplicate()
+	by_fraction.sort_custom(func(a: int, b: int) -> bool:
+		return shares[a] - floori(shares[a]) > shares[b] - floori(shares[b]))
+	for i in roundi(total) - floored:
+		result[by_fraction[i % by_fraction.size()]] += 1
+	return result
 
 
 func _broadcast() -> void:
@@ -460,6 +490,8 @@ func request_extract() -> void:
 	entry.banked += entry.coins
 	entry.coins = 0
 	entry.life = Life.EXTRACTED
+	_extract_counter += 1
+	entry.extract_order = _extract_counter
 	entry.bleeding = false
 	_broadcast()
 	player_extracted.emit(peer_id)

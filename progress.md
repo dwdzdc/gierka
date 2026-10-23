@@ -154,7 +154,7 @@ Ustalenia (23.10):
   wyniesionych później przez innych, więc najbezpieczniej jest wyjść od razu i czekać na pulę.
   To psuje dylemat. Propozycja: udział w puli tylko z monet wyniesionych do chwili twojego
   wyjścia (kto wychodzi pierwszy, nie korzysta z ryzyka reszty).
-- [ ] 35b. Poprawić podział puli wg powyższej propozycji (do potwierdzenia)
+- [x] 35b. Podział puli: każdy oddaje 50% wyniesionych, a jego część dzielą po równo on i ci, którzy wyszli PO nim. Kto wychodzi pierwszy, nie korzysta z ryzyka reszty; kto zostaje najdłużej, zbiera najwięcej. Zaokrąglanie zachowuje sumę (`tests/score_test.gd`)
 - Uwaga (ryzyko): przy zero-sum śmierć kolegi zwiększa twój udział, więc podnoszenie
   powalonego jest ekonomicznie wbrew twojemu interesowi. To zgodne z filarem
   „współpraca vs chciwość”, ale może premiować porzucanie drużyny. Jeśli w playteście tak
