@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Bandaże: H opatruje siebie (2 s), E opatruje krwawiącego kolegę; bandaże się zużywają.
 
 var main: Node3D
@@ -8,6 +10,7 @@ var log: Array[String] = []
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
 
 func _say(text: String) -> void:

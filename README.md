@@ -43,7 +43,7 @@ i klika **Dołącz**. Port 7777/UDP, do 4 graczy.
 Bez menu, z terminala:
 
 ```sh
-godot --path . -- --host
+godot --path . -- --host --rooms=12 --seed=1234   # liczba pokoi i seed mapy opcjonalnie
 godot --path . -- --join=192.168.1.23
 ```
 
@@ -51,11 +51,17 @@ godot --path . -- --join=192.168.1.23
 
 WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · F1: HUD · Esc: wyjście
 
+## Pokoje
+
+Greyboxy pokoi generuje `python3 tools/gen_rooms.py` (nadpisuje `rooms/*.tscn`).
+Kontrakt pokoju i drzwi: `rooms/room.gd`. Składanie mapy: `game/map_generator.gd`.
+
 ## Testy
 
 ```sh
 godot --headless --path . -s tests/walk_test.gd        # przejście przez pokoje, log cięć kamery
 godot --headless --path . -s tests/visibility_test.gd  # gdzie kamera nie widzi postaci
+godot --headless --path . -s tests/map_test.gd -- --rooms=20  # generator: kolizje, determinizm, dostępność
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1

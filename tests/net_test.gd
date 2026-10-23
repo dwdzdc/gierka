@@ -34,6 +34,10 @@ func _physics_process(_d: float) -> bool:
 	if frames == 400:
 		var role := "HOST" if main.multiplayer.is_server() else "KLIENT"
 		print("%s (id %d) widzi %d graczy:" % [role, main.multiplayer.get_unique_id(), players.get_child_count()])
+		var sig := ""
+		for r in main.rooms:
+			sig += "%s@%s " % [r.name, r.global_position.snapped(Vector3.ONE * 0.1)]
+		print("  mapa: seed %d, %d pokoi, podpis hash=%d" % [main.map_seed, main.rooms.size(), sig.hash()])
 		print("  game_state: ", main.get_node("GameState").players)
 		print("  decale krwi: %d" % main.get_node("BloodTrail").get_child_count())
 		for m in main.get_node("Monsters").get_children():

@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Potwór bez graczy w pobliżu: powinien patrolować, czyli przemieszczać się po mapie.
 
 var main: Node3D
@@ -7,6 +9,7 @@ var visited := {}
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
 
 func _physics_process(_d: float) -> bool:

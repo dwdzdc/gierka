@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Teleportuje gracza po siatce punktów w każdym pokoju (różne kierunki) i liczy,
 # w ilu miejscach po ustabilizowaniu się kamery postaci nie widać.
 
@@ -13,8 +15,9 @@ var cuts := 0
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
-	for x in range(-4, 29, 1):
+	for x in range(-5, 31, 1):
 		for z in range(-5, 6, 1):
 			spots.append(Vector3(x + 0.5, 0.05, z + 0.5))
 
@@ -27,9 +30,9 @@ func _physics_process(_d: float) -> bool:
 		if "--no-guard" in OS.get_cmdline_user_args():
 			director.occlusion_grace = 1e9
 		director.camera_changed.connect(func(_z): cuts += 1)
-	if frames < 2:
+	if frames < 10:  # mapa składana w klatce 2; kolizje CSG są dopiero chwilę później
 		return false
-	var step := (frames - 2) % 50
+	var step := (frames - 10) % 50
 	if step == 0:
 		while idx < spots.size():
 			var s := spots[idx]

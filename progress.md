@@ -37,9 +37,9 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 ## Faza 2: modularne pokoje
 
 - [x] 11. Scena bazowa pokoju według kontraktu (NavMesh liczony dla całej mapy, nie per pokój)
-- [ ] 12. Generator: graf pokoi doklejanych po `Doorways`, test kolizji AABB, seed
-- [ ] 13. Zaślepki niepołączonych drzwi, strefa startowa
-- [~] 14. Nawigacja wypiekana w runtime. Działa na ręcznie złożonej mapie, generator jeszcze nie istnieje
+- [x] 12. Generator: pokoje doklejane po `Doorways` (obrót o 90°, test kolizji AABB), deterministyczny z seeda, przy zablokowaniu próbuje kolejnych wariantów seeda. 8 typów pokoi, w tym rampa i klatka schodowa (piętra co 3 m)
+- [x] 13. Zaślepki niepołączonych drzwi, hala jako strefa startowa (PlayerSpawns), potwór startuje w najdalszym płaskim pokoju
+- [x] 14. Nawigacja wypiekana w runtime dla wygenerowanej mapy (2 klatki po złożeniu)
 - [ ] 15. Modyfikacje z seeda: loot, zablokowane przejścia, światła
 
 ## Faza 3: sieć
@@ -47,7 +47,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 16. Menu host/join po IP (ENet), port 7777, do 4 graczy
 - [~] 17. Spawn graczy i synchronizacja pozycji, obrotu i latarki. Animacji jeszcze nie ma (brak modelu)
 - [x] 18. Kamera tylko dla lokalnego gracza
-- [~] 19. Host rozsyła seed, klienci składają tę samą mapę. Na razie mapa stała, wróci razem z generatorem (12)
+- [x] 19. Host rozsyła seed i liczbę pokoi, klient składa identyczną mapę i dopiero wtedy dostaje postać. Liczba pokoi ustawiana w menu hosta (3–30)
 - [x] 20. GameState z autorytetem hosta (HP, życie graczy), host rozsyła pełną kopię przez RPC. Żądania klient→host dojdą, gdy będzie co żądać (np. bandaż)
 
 ## Faza 4: potwór (baza)

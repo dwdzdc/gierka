@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Powalenie i podnoszenie w jednym procesie: drugi gracz (peer 2) dodany ręcznie.
 # 1) gracz 2 powalony, gracz 1 trzyma E obok -> po 3 s gracz 2 wstaje z 30 HP
 # 2) gracz 2 znów powalony, nikt nie pomaga -> po 30 s umiera
@@ -11,6 +13,7 @@ var log: Array[String] = []
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
 
 func _say(text: String) -> void:

@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Zgłoszony przypadek: gracz wraca środkową alejką magazynu w stronę drzwi.
 # Oczekiwane ujęcie: Storage/MiddleAisle (kamera z tyłu, widać, co przed postacią).
 
@@ -8,9 +10,9 @@ var director
 var frames := 0
 var cases := [
 	# [start, kierunek obrotu y]: wejście ze wschodniego końca blisko regału B i blisko regału A
-	[Vector3(28.3, 0.05, 2.4), Vector3(21, 0.05, 1.7)],
-	[Vector3(28.3, 0.05, -2.2), Vector3(21, 0.05, -1.2)],
-	[Vector3(28.3, 0.05, 0.3), Vector3(21, 0.05, 0.3)],
+	[Vector3(29.1, 0.05, 2.4), Vector3(21.8, 0.05, 1.7)],
+	[Vector3(29.1, 0.05, -2.2), Vector3(21.8, 0.05, -1.2)],
+	[Vector3(29.1, 0.05, 0.3), Vector3(21.8, 0.05, 0.3)],
 ]
 var idx := 0
 var shots := []
@@ -18,6 +20,7 @@ var at_mid := ""
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
 
 func _physics_process(_d: float) -> bool:
@@ -34,14 +37,14 @@ func _physics_process(_d: float) -> bool:
 	# Kamera w chwili, gdy gracz jest w połowie alejki (x=24) i w połowie drogi do jej końca (x=22.5).
 	if director.current_zone == null:
 		return false
-	if p.global_position.x < 24.0 and at_mid == "":
+	if p.global_position.x < 24.8 and at_mid == "":
 		at_mid = director.current_zone.name
-	if p.global_position.x < 22.5 and at_mid.find("/") == -1 and at_mid != "":
+	if p.global_position.x < 23.3 and at_mid.find("/") == -1 and at_mid != "":
 		at_mid += "/" + director.current_zone.name
 	if local == 0:
 		if idx > 0:
 			var ok := at_mid == "MiddleAisle/MiddleAisle"
-			print("%s start=%s ujęcia=%s w alejce (x=24/x=22.5)=%s" % ["OK " if ok else "ZLE", cases[idx - 1][0], shots, at_mid])
+			print("%s start=%s ujęcia=%s w alejce (x=24.8/x=23.3)=%s" % ["OK " if ok else "ZLE", cases[idx - 1][0], shots, at_mid])
 		at_mid = ""
 		if idx >= cases.size():
 			return true

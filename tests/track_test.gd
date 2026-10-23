@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Potwór tropi krew: ranny gracz przeszedł z korytarza do kąta hali i tam leży powalony.
 # Potwór startuje przy początku śladu w korytarzu, plecami do hali.
 
@@ -9,6 +11,7 @@ var log: Array[String] = []
 
 func _initialize() -> void:
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
 
 func _physics_process(_d: float) -> bool:
@@ -30,7 +33,7 @@ func _physics_process(_d: float) -> bool:
 		gs.players[1].bleed_out = 999
 		gs._broadcast()
 		m = main.get_node("Monsters").get_child(0)
-		m.global_position = Vector3(14, 0.05, 0)
+		m.global_position = Vector3(14.4, 0.05, 0)
 		m.rotation.y = -PI / 2  # patrzy na +X, w głąb korytarza
 		m.state_changed.connect(func(s): log.append("t=%.1f %s d=%.1f" % [(frames - 2) / 60.0, m.State.keys()[s], m.global_position.distance_to(p.global_position)]))
 	if t > 0 and t % 60 == 0 and main.get_node("GameState").life(1) == 2 and not log[-1].begins_with("gracz"):

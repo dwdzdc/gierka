@@ -1,9 +1,6 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
-[ext_resource type="PackedScene" path="res://rooms/hall.tscn" id="2"]
-[ext_resource type="PackedScene" path="res://rooms/corridor.tscn" id="3"]
-[ext_resource type="PackedScene" path="res://rooms/storage.tscn" id="4"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
 [ext_resource type="Shader" path="res://fx/retro_post.gdshader" id="7"]
 [ext_resource type="Script" path="res://game/game_state.gd" id="8"]
@@ -44,14 +41,6 @@ navigation_mesh = SubResource("navmesh")
 
 [node name="Rooms" type="Node3D" parent="Navigation"]
 
-[node name="Hall" parent="Navigation/Rooms" instance=ExtResource("2")]
-
-[node name="Corridor" parent="Navigation/Rooms" instance=ExtResource("3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 0)
-
-[node name="Storage" parent="Navigation/Rooms" instance=ExtResource("4")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 0)
-
 [node name="Players" type="Node3D" parent="."]
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
@@ -63,23 +52,6 @@ spawn_path = NodePath("../Players")
 [node name="MonsterSpawner" type="MultiplayerSpawner" parent="."]
 _spawnable_scenes = PackedStringArray("res://monster/monster.tscn")
 spawn_path = NodePath("../Monsters")
-
-[node name="MonsterSpawn" type="Marker3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 27, 0.05, 5)
-
-[node name="SpawnPoints" type="Node3D" parent="."]
-
-[node name="Spawn0" type="Marker3D" parent="SpawnPoints"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.5, 0.05, 1.5)
-
-[node name="Spawn1" type="Marker3D" parent="SpawnPoints"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -2.5, 0.05, 0.3)
-
-[node name="Spawn2" type="Marker3D" parent="SpawnPoints"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.7, 0.05, 1.5)
-
-[node name="Spawn3" type="Marker3D" parent="SpawnPoints"]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -3.7, 0.05, 0.3)
 
 [node name="GameState" type="Node" parent="."]
 script = ExtResource("8")
@@ -156,6 +128,18 @@ theme_override_constants/separation = 20
 [node name="Title" type="Label" parent="Menu/Center/Panel/Margin/Items"]
 text = "GIERKA"
 horizontal_alignment = 1
+
+[node name="RoomsRow" type="HBoxContainer" parent="Menu/Center/Panel/Margin/Items"]
+
+[node name="RoomsLabel" type="Label" parent="Menu/Center/Panel/Margin/Items/RoomsRow"]
+size_flags_horizontal = 3
+text = "Liczba pokoi (host)"
+
+[node name="RoomCount" type="SpinBox" parent="Menu/Center/Panel/Margin/Items/RoomsRow"]
+unique_name_in_owner = true
+min_value = 3.0
+max_value = 30.0
+value = 8.0
 
 [node name="HostButton" type="Button" parent="Menu/Center/Panel/Margin/Items"]
 unique_name_in_owner = true

@@ -1,4 +1,6 @@
 extends SceneTree
+
+const Maps = preload("res://tests/test_maps.gd")
 # Krwawiący gracz idzie przez halę: krople co ~0.7 m, decale u wszystkich.
 # Potem powalenie: kałuża co 3 s. Na koniec zrzut ekranu (z oknem) do sprawdzenia wyglądu.
 
@@ -13,6 +15,7 @@ func _initialize() -> void:
 		if a.begins_with("--shot="):
 			shot_path = a.trim_prefix("--shot=")
 	main = load("res://main.tscn").instantiate()
+	main.map_layout = Maps.CLASSIC
 	root.add_child.call_deferred(main)
 
 func _physics_process(_d: float) -> bool:
