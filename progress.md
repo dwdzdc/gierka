@@ -169,6 +169,12 @@ Ustalenia (23.10):
 - [x] 36b. Narastająca trudność: co etap (3 min + 15 s na pokój) nowy potwór w pokoju najdalszym od graczy (maks. 4), wszystkie zmysły +10% na etap; ryk i napis w HUD
 - [ ] 37. Checkpoint MVP: playtest we dwóch
 
+## HUD (po playteście 23.10)
+
+- [x] Stały status w lewym górnym rogu: tylko HP, monety, bandaże i bieżące komunikaty, mniejsza czcionka z obrysem
+- [x] Statystyki pod przytrzymanym Tab: sekcje Gracze (tabela), Runda, Sieć, Sterowanie; debug (ujęcie, stany potworów) tylko po F1. Uwaga: stany potworów graczom zdradzałyby za dużo, więc są tylko w debugu
+- [x] Konflikt klawiszy: Tab przełączał podgląd kolegi po śmierci, teraz robi to Spacja (martwy i tak nie skacze)
+
 ## Faza 7: napięcie i niepewność
 
 - [x] 38. Rozmyty „poziom zagrożenia” (`fx/tension_audio.gd`): ambient gaśnie, wchodzą serce (szybsze przy większym zagrożeniu) i oddech. Liczony z odległości do potworów (pościg i szyb nad głową liczą się mocniej), z falującym mnożnikiem i opóźnieniem, żeby nie był radarem
@@ -199,11 +205,13 @@ przydzielić rewir do pilnowania.
 - [ ] 47b. Ruch: po podłodze (NavMesh, jest) i po ścianach/suficie
 - [x] 47c. Zachowania: patrol i „Obserwator” (stoi, rozgląda się, krzyczy przy zobaczeniu gracza: hałas ściąga inne potwory, bliskiego atakuje)
 - [x] 47c2. Zachowanie „strażnik”: pilnuje swojego rewiru (przydziela go reżyser) i zajmuje się swoimi sprawami, dopóki gracz nie podejdzie blisko; wtedy reaguje, a po ucieczce gracza wraca na rewir
+  - Pomysł (23.10): strażnik zmienia miejsce, robi gniazda w różnych pokojach. Uwaga: jego sens to przewidywalny rewir; częste przenosiny zrobiłyby z niego wolnego patrolowca. Zrobione jako kompromis: przenosi gniazdo co 3–4 min do pokoju 12–40 m dalej i ≥15 m od graczy, nowe gniazdo zostawia ślad krwi na podłodze (poszlaka dla graczy)
 - [x] 47c3. Typ potwora = zestaw właściwości (profil danych, np. Resource w Godocie), nie osobna klasa. Na start: prędkości (patrol, pościg), sposób poruszania (podłoga / ściany / sufit / wentylacja), czy porywa, obrażenia przy porwaniu (na sekundę), obrażenia zwykłego ataku, strategia ataku, ostrość wzroku i słuchu (zasięg i czułość, 0 = brak zmysłu). Nowy potwór to głównie nowy profil + model. Nie kopiujemy potworów 1:1 z innych gier (np. ślepy pies z LC to tylko przykład kombinacji „bez wzroku, świetny słuch”)
 - [x] 47c5. Atak egzekucyjny jako opcja profilu (Rzeźnik: ślepy, świetny słuch, zabija od razu, rozbryzg na podłodze i ścianie): natychmiastowe zabicie bez powalenia i bez możliwości odratowania, z dużą plamą krwi na ścianie/podłodze (np. potwór ślepy, ale zabija od jednego trafienia)
 - [x] 47c7. Polowanie na słuch: z bliska (7 m × słuch) potwór rozpoznaje, kto hałasuje, i goni go jak widzianego. Bez tego ślepy potwór nigdy by nie zaatakował
 - [x] 47c6. Wentylacja (jak w Alien: Isolation): sieć szybów nad pokojami z kratkami w ścianach/sufitach. Potwory z tą umiejętnością przemieszczają się nią poza wzrokiem graczy i wychodzą z kratek. Słychać je w szybach (dudnienie nad głową = poszlaka). Generator dokłada kratki do modułów i łączy je w sieć; reżyser używa szybów do szybkiego przerzucania potwora
   - Zrobione w wersji uproszczonej: kratka w suficie każdego pokoju, a szyby to abstrakcyjna sieć (prosta linia między kratkami, 6 m/s), bez modelowanych kanałów. Reżyser przerzuca szybami łowcę i porywacza przy dystansie > 20 m. W szybie potwór jest niewidoczny, słychać metaliczne dudnienie (do 14 m), wychodzi zeskokiem z kratki
+  - Po playteście: wejście do szybu jest widoczne (stan VENT_CLIMB: potwór przez 1,2 s podchodzi pod kratkę i wciska się w sufit), nie znika już w miejscu
 - [ ] 47c4. (może kiedyś) Potwór stacjonarny w stylu barnacle z Half-Life: nie rusza się, łapie gracza, który wejdzie w zasięg
 - [ ] 47d. Atak: wręcz (jest), zdalny (pocisk albo efekt na odległość)
 - [x] 47e. Atak: porwanie gracza żywcem (jak smoker, jockey i charger w Left 4 Dead 2). Potwór chwyta gracza i zabiera go do swojego gniazda na uboczu (np. najdalszy pokój albo ślepy zaułek). Porwany powoli traci życie już w czasie porwania, a w gnieździe jest powoli zjadany. Koledzy mogą go jeszcze odbić, ale to ciężki moment. Wleczenie zostawia ślad krwi (powiązane z 44)

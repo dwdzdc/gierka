@@ -4,6 +4,7 @@ extends SceneTree
 #  -- --case=guard     strażnik: goni, ale za smyczą wraca do rewiru
 #  -- --case=watcher   obserwator: nie rusza się, krzyczy (hałas w miejscu gracza)
 #  -- --case=director  etapy: nowe potwory i ostrzejsze zmysły; wskaźnik zagrożenia odsyła łowcę
+#  -- --case=nest      strażnik przenosi gniazdo do innego pokoju
 
 const Maps = preload("res://tests/test_maps.gd")
 var main: Node3D
@@ -40,6 +41,15 @@ func _physics_process(_d: float) -> bool:
 			director.stage_seconds_per_room = 0.0
 			director.start_round(main.rooms, main.get_node("Monsters"))
 			m = main.get_node("Monsters").get_child(0)
+			return false
+		if case == "nest":
+			main.get_node("Players/1").global_position = Vector3(-5, 0.05, 1.5)
+			m = director.spawn("guard", main.rooms[2])
+			director.rooms = main.rooms
+			director.monsters_parent = main.get_node("Monsters")
+			director._active = true
+			director._relocate[m] = 1.0
+			log.append("gniazdo przed: %s" % m.home.snapped(Vector3.ONE))
 			return false
 		m = director.spawn(case, main.rooms[2])  # magazyn
 		m.global_position = Vector3(37.8, 0.05, 0)
@@ -78,6 +88,11 @@ func _physics_process(_d: float) -> bool:
 		"watcher":
 			if f == 60 * 8:
 				_say("obserwator przesunął się o %.2f m, krzyków: %d, stan gracza: %s" % [m.global_position.distance_to(Vector3(37.8, 0.05, 0)), screams, gs.Life.keys()[gs.life(1)]])
+				print("\n".join(log))
+				return true
+		"nest":
+			if f == 60 * 30:
+				log.append("gniazdo po: %s, strażnik w %s (odległość od nowego gniazda %.1f)" % [m.home.snapped(Vector3.ONE), m.global_position.snapped(Vector3.ONE), m.global_position.distance_to(m.home)])
 				print("\n".join(log))
 				return true
 		"director":

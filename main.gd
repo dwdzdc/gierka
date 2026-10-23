@@ -33,7 +33,8 @@ const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 @onready var address_input: LineEdit = %Address
 @onready var status_label: Label = %Status
 
-var _show_debug := true
+var _show_debug := false  # F1: debug w panelu statystyk (ujęcie, stany potworów)
+var _stage := 0  # znany etap trudności (klienci dostają go z ogłoszeń reżysera)
 
 ## Mapa. Host ustawia seed i liczbę pokoi; klient dostaje je od hosta.
 var map_seed := 0
@@ -91,6 +92,10 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if $HUD.visible:
 		_update_hud()  # postęp akcji "trzymaj klawisz" zmienia się co klatkę
+		var stats_open := Input.is_action_pressed("show_stats")
+		$HUD/StatsPanel.visible = stats_open
+		if stats_open:
+			%StatsText.text = _stats_text()
 	var cam := get_viewport().get_camera_3d()
 	if cam == null or not is_instance_valid(camera_director.target):
 		return
@@ -102,7 +107,6 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_tree().quit()
 	elif event.is_action_pressed("toggle_debug"):
 		_show_debug = not _show_debug
-		info_label.visible = _show_debug
 	elif event.is_action_pressed("spectate_next"):
 		_spectate_index += 1
 		_update_spectating()
@@ -338,6 +342,7 @@ func _on_round_finished(results: Array) -> void:
 
 ## Nowy etap trudności: ryk z daleka i napis na kilka sekund.
 func _on_new_threat(stage: int, monster_name: String) -> void:
+	_stage = stage
 	_threat_text = "Coś się zmieniło w kompleksie... (etap %d%s)" % [stage, "" if monster_name == "" else ", nowy potwór: " + monster_name]
 	_threat_until = Time.get_ticks_msec() + 6000
 	$ThreatSound.play()
@@ -370,40 +375,70 @@ func _on_camera_changed(_zone: CameraZone) -> void:
 	_update_hud()
 
 
+const LIFE_NAMES := {GameState.Life.OK: "w grze", GameState.Life.DOWNED: "powalony",
+	GameState.Life.DEAD: "nie żyje", GameState.Life.EXTRACTED: "wydostał się", GameState.Life.CARRIED: "porwany"}
+
+
+## Stały status (lewy górny róg): tylko to, co potrzebne w tej chwili. Reszta pod Tab.
 func _update_hud() -> void:
-	var zone := camera_director.current_zone
-	var shot := "-" if not is_instance_valid(zone) else "%s/%s" % [zone.owner.name, zone.name]
-	var role := "host, adres: %s" % ", ".join(Net.local_addresses()) if multiplayer.is_server() else "klient"
-	role += "  mapa: seed %d, pokoi %d" % [map_seed, rooms.size()]
 	var me := multiplayer.get_unique_id()
-	if multiplayer.is_server():
-		for monster in director.monsters():
-			role += "  %s: %s" % [monster.profile.display_name, Monster.State.keys()[monster.state]]
-		role += "  etap %d" % director.stage
-	var watching := ""
-	if is_instance_valid(camera_director.target) and camera_director.target.name != str(me):
-		watching = "  Oglądasz: %s [Tab]" % game_state.player_name(camera_director.target.get_multiplayer_authority())
-	var status := ""
+	var lines: Array[String] = []
 	match game_state.life(me):
 		GameState.Life.OK:
-			status = "HP %d  monety: %d  bandaże: %d" % [game_state.hp(me), game_state.coins(me), game_state.bandages(me)]
+			lines.append("HP %d    monety %d    bandaże %d" % [game_state.hp(me), game_state.coins(me), game_state.bandages(me)])
 			if game_state.is_bleeding(me):
-				status += "  KRWAWISZ (H - bandaż)"
+				lines.append("KRWAWISZ  (H - bandaż)")
+			if game_state.is_hidden(me):
+				lines.append("W SZAFCE  (E - wyjdź)")
 		GameState.Life.DOWNED:
-			status = "POWALONY - wykrwawisz się za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me)
+			lines.append("POWALONY - wykrwawisz się za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me))
 		GameState.Life.CARRIED:
-			status = "PORWANY! HP %d - koledzy mogą cię odbić (E przy tobie)" % game_state.hp(me)
+			lines.append("PORWANY!  HP %d - koledzy mogą cię odbić (E przy tobie)" % game_state.hp(me))
 		GameState.Life.DEAD:
-			status = "NIE ŻYJESZ (monety przepadły)" + watching
+			lines.append("NIE ŻYJESZ (monety przepadły)")
 		GameState.Life.EXTRACTED:
-			status = "WYDOSTAŁEŚ SIĘ (wyniesione: %d)%s" % [game_state.players.get(me, {}).get("banked", 0), watching]
+			lines.append("WYDOSTAŁEŚ SIĘ (wyniesione: %d)" % game_state.players.get(me, {}).get("banked", 0))
+	if is_instance_valid(camera_director.target) and camera_director.target.name != str(me):
+		lines.append("Oglądasz: %s  (Spacja - następny)" % game_state.player_name(camera_director.target.get_multiplayer_authority()))
 	var me_node: Player = players.get_node_or_null(str(me))
 	if me_node and me_node.help_target:
-		status += "  %s %d%%" % [Player.HELP_NAMES[me_node.help_kind], int(me_node.help_progress * 100)]
-	if game_state.is_hidden(me):
-		status = "W SZAFCE (E - wyjdź)  " + status
-	$HUD/Slats.visible = game_state.is_hidden(me)
+		lines.append("%s %d%%" % [Player.HELP_NAMES[me_node.help_kind], int(me_node.help_progress * 100)])
 	if Time.get_ticks_msec() < _threat_until:
-		status += "\n" + _threat_text
-	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrót  F latarka  E (trzymaj) pomóż / wyjdź windą  H bandaż  F1 ukryj\nujęcie: %s\n%s  graczy: %d" % [
-		status, shot, role, players.get_child_count()]
+		lines.append(_threat_text)
+	lines.append("[Tab] statystyki")
+	info_label.text = "\n".join(lines)
+	$HUD/Slats.visible = game_state.is_hidden(me)
+
+
+## Panel pod Tab: sekcje zamiast jednej długiej linii.
+func _stats_text() -> String:
+	var me := multiplayer.get_unique_id()
+	var t := "[b]GRACZE[/b]\n[table=5]"
+	for header in ["Gracz", "Stan", "HP", "Monety", "Wyniesione"]:
+		t += "[cell][color=#999999]%s[/color][/cell]" % header
+	for peer_id in game_state.players:
+		var entry: Dictionary = game_state.players[peer_id]
+		var state: String = LIFE_NAMES.get(game_state.life(peer_id), "?")
+		if game_state.is_hidden(peer_id):
+			state = "w szafce"
+		var name: String = entry.name + (" (ty)" if peer_id == me else "")
+		for value in [name, state, str(entry.hp), str(entry.coins), str(entry.banked)]:
+			t += "[cell]%s[/cell]" % value
+	t += "[/table]\n\n"
+	t += "[b]RUNDA[/b]\nmapa: seed %d, pokoi %d    etap trudności: %d\n\n" % [map_seed, rooms.size(), director.stage if multiplayer.is_server() else _stage]
+	t += "[b]SIEĆ[/b]\n"
+	if multiplayer.is_server():
+		t += "host, adres do dołączenia: %s (port %d)\n\n" % [", ".join(Net.local_addresses()), Net.DEFAULT_PORT]
+	else:
+		t += "klient\n\n"
+	t += "[b]STEROWANIE[/b]\n"
+	t += "WASD ruch (tank)    Shift bieg    Ctrl/C kucanie    Spacja skok    Q obrót 180°    F latarka\n"
+	t += "E (trzymaj): podnieś / odbij / bandaż kolegi / szafka / winda    H bandaż    F1 debug    R następna runda (host)\n"
+	if _show_debug:
+		var zone := camera_director.current_zone
+		t += "\n[b]DEBUG[/b]\nujęcie: %s\n" % ("-" if not is_instance_valid(zone) else "%s/%s" % [zone.owner.name, zone.name])
+		for node in monsters.get_children():
+			var monster := node as Monster
+			if monster and monster.profile:
+				t += "%s: %s\n" % [monster.profile.display_name, Monster.State.keys()[monster.state]]
+	return t

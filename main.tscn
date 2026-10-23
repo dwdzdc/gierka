@@ -172,12 +172,41 @@ mouse_filter = 2
 color = Color(0.01, 0.01, 0.01, 1)
 
 [node name="Info" type="Label" parent="HUD"]
-offset_left = 20.0
-offset_top = 16.0
-offset_right = 900.0
-offset_bottom = 140.0
-theme_override_colors/font_color = Color(0.85, 0.85, 0.75, 0.8)
-theme_override_font_sizes/font_size = 24
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 1100.0
+offset_bottom = 160.0
+theme_override_colors/font_color = Color(0.85, 0.85, 0.75, 0.85)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.8)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+
+[node name="StatsPanel" type="PanelContainer" parent="HUD"]
+visible = false
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -560.0
+offset_top = 60.0
+offset_right = 560.0
+offset_bottom = 120.0
+grow_horizontal = 2
+
+[node name="Margin" type="MarginContainer" parent="HUD/StatsPanel"]
+theme_override_constants/margin_left = 28
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 28
+theme_override_constants/margin_bottom = 20
+
+[node name="StatsText" type="RichTextLabel" parent="HUD/StatsPanel/Margin"]
+unique_name_in_owner = true
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+theme_override_font_sizes/normal_font_size = 19
+theme_override_font_sizes/bold_font_size = 21
+theme_override_constants/table_h_separation = 28
+theme_override_constants/table_v_separation = 4
 
 [node name="Menu" type="CanvasLayer" parent="."]
 layer = 3

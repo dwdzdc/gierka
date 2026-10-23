@@ -24,6 +24,10 @@ const MENACE_LIMIT := 30.0  # po przekroczeniu łowca jest odsyłany daleko
 const MENACE_COOLDOWN := 35.0  # tyle sekund łowca nie jest przybliżany po odesłaniu
 const SENSE_BOOST_PER_STAGE := 0.1
 const VENT_MIN_DISTANCE := 20.0  # dalsze przerzuty potworów z wentylacją idą szybami
+## Strażnik co jakiś czas przenosi gniazdo (rzadko, żeby rewir był nadal przewidywalny).
+const GUARD_RELOCATE_SECONDS := Vector2(180.0, 240.0)
+const GUARD_NEST_DISTANCE := Vector2(12.0, 40.0)  # jak daleko od starego gniazda
+const GUARD_NEST_SAFE_DISTANCE := 15.0  # nowe gniazdo nie przy graczach
 
 ## Czas etapu: bazowo + na każdy pokój (większa mapa = więcej czasu na eksplorację).
 var stage_base_seconds := 180.0
@@ -38,6 +42,7 @@ var _stage_timer := 0.0
 var _goal_timer := 0.0
 var _menace := {}  # Monster -> float
 var _cooldown := {}  # Monster -> sekundy do końca "oddechu"
+var _relocate := {}  # strażnik -> sekundy do przeniesienia gniazda
 var _active := false
 ## "Nauka" (Alien: Isolation): ile razy gracze uciekli potworom, chowając się w szafce.
 ## Im więcej, tym częściej potwory zaglądają do szafek przy przeszukiwaniu.
@@ -74,6 +79,7 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 	_goal_timer = GOAL_INTERVAL
 	_menace.clear()
 	_cooldown.clear()
+	_relocate.clear()
 	_active = true
 	spawn(SPAWN_ORDER[0], _farthest_room_from_players())
 
@@ -126,6 +132,7 @@ func _physics_process(delta: float) -> void:
 		_next_stage()
 	for monster in monsters():
 		_update_menace(monster, delta)
+		_update_guard_nest(monster, delta)
 	_goal_timer -= delta
 	if _goal_timer <= 0.0:
 		_goal_timer = GOAL_INTERVAL
@@ -166,6 +173,38 @@ func _update_menace(monster: Monster, delta: float) -> void:
 		_menace[monster] = 0.0
 		_cooldown[monster] = MENACE_COOLDOWN
 		_send(monster, _farthest_room_from_players())
+
+
+## Strażnik rzadko przenosi gniazdo do innego pokoju z dala od graczy. Nowe gniazdo zostawia
+## ślad (krew i szczątki na podłodze), więc uważni gracze zauważą, że rewir się przesunął.
+func _update_guard_nest(monster: Monster, delta: float) -> void:
+	if monster.profile.behavior != MonsterProfile.Behavior.GUARD:
+		return
+	if not _relocate.has(monster):
+		_relocate[monster] = randf_range(GUARD_RELOCATE_SECONDS.x, GUARD_RELOCATE_SECONDS.y)
+	_relocate[monster] -= delta
+	if _relocate[monster] > 0.0 or monster.state != Monster.State.PATROL:
+		return
+	_relocate[monster] = randf_range(GUARD_RELOCATE_SECONDS.x, GUARD_RELOCATE_SECONDS.y)
+	var candidates: Array[Room] = []
+	for room in rooms:
+		var from_home := room.global_position.distance_to(monster.home)
+		if room.bounds.size.y < 8.0 and from_home >= GUARD_NEST_DISTANCE.x and from_home <= GUARD_NEST_DISTANCE.y \
+				and _distance_to_nearest_player(room.global_position) >= GUARD_NEST_SAFE_DISTANCE:
+			candidates.append(room)
+	if candidates.is_empty():
+		return
+	var nest := candidates[randi() % candidates.size()]
+	monster.home = nest.global_position
+	monster.director_goal = nest.global_position
+	_mark_nest(nest.global_position)
+
+
+func _mark_nest(position: Vector3) -> void:
+	var trail: BloodTrail = get_tree().get_first_node_in_group(&"blood_trail")
+	if trail:
+		for i in 4:
+			trail.add_drop(position + Vector3(randf_range(-1.5, 1.5), 0.0, randf_range(-1.5, 1.5)), 1.8)
 
 
 ## Łowca w patrolu dostaje okolicę graczy (pokój obok, nie dokładną pozycję).
