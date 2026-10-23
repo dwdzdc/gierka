@@ -42,6 +42,9 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:state")
 properties/2/spawn = true
 properties/2/replication_mode = 2
+properties/3/path = NodePath(".:profile_id")
+properties/3/spawn = true
+properties/3/replication_mode = 0
 
 [node name="Monster" type="CharacterBody3D"]
 collision_layer = 4

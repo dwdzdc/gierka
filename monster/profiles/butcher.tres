@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="MonsterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://monster/monster_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "butcher"
+display_name = "Rzeźnik"
+behavior = 1
+body_color = Color(0.2, 0.05, 0.04, 1)
+eye_color = Color(0.3, 0.3, 0.3, 1)
+height_scale = 1.15
+patrol_speed = 1.3
+investigate_speed = 2.2
+hunt_speed = 3.4
+retreat_speed = 3.0
+sight_range_dark = 0.0
+sight_range_flashlight = 0.0
+sight_angle_deg = 0
+hearing = 1.8
+smell_radius = 8.0
+attack_style = 1
+attack_damage = 100
+attack_windup = 0.9
+carry_damage_per_second = 3
+feed_damage_per_second = 6
+can_use_vents = false

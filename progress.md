@@ -143,7 +143,7 @@ Ustalenia (23.10):
 - [x] 34. Ekstrakcja: winda w hali (zielona futryna, trzymaj E 2 s), wydostany/martwy gracz ogląda kamery żyjącego kolegi (Tab = następny)
 - [x] 35. Punktacja zero-sum (`GameState.SHARED_FRACTION`) i ekran podsumowania (wynik rundy + suma sesji)
 - [x] 36. Następna runda z nowym seedem (host: R albo przycisk); suma sesji zostaje. Reset po wybiciu wszystkich zastąpiony końcem rundy
-- [ ] 36b. Narastająca trudność: nowi potwory co kilka minut, ostrzejsze zmysły
+- [x] 36b. Narastająca trudność: co etap (3 min + 15 s na pokój) nowy potwór w pokoju najdalszym od graczy (maks. 4), wszystkie zmysły +10% na etap; ryk i napis w HUD
 - [ ] 37. Checkpoint MVP: playtest we dwóch
 
 ## Faza 7: napięcie i niepewność
@@ -172,12 +172,13 @@ dokąd potwór ma iść (rewir, okolica graczy, odesłanie daleko). **Zmysły** 
 gracza lokalnie i każdy typ ma je inne. Nie każdy potwór poluje: reżyser może też tylko
 przydzielić rewir do pilnowania.
 
-- [ ] 47a. Rozbicie `Monster` na części: reżyser (wspólny), ruch, zmysły, zachowanie, atak
+- [x] 47a. Reżyser (`game/monster_director.gd`) + profile danych (`MonsterProfile`, `monster/profiles/*.tres`). Ruch/zmysły/zachowanie/atak to na razie pola profilu i gałęzie w `monster.gd`, nie osobne węzły; rozbić na komponenty, gdy dojdzie zachowanie, które się w to nie mieści (np. chodzenie po ścianach)
 - [ ] 47b. Ruch: po podłodze (NavMesh, jest) i po ścianach/suficie
-- [ ] 47c. Zachowanie: patrol (jest) i „obserwator” (stoi w miejscu i patrzy, nie patroluje)
-- [ ] 47c2. Zachowanie „strażnik”: pilnuje swojego rewiru (przydziela go reżyser) i zajmuje się swoimi sprawami, dopóki gracz nie podejdzie blisko; wtedy reaguje, a po ucieczce gracza wraca na rewir
-- [ ] 47c3. Typ potwora = zestaw właściwości (profil danych, np. Resource w Godocie), nie osobna klasa. Na start: prędkości (patrol, pościg), sposób poruszania (podłoga / ściany / sufit / wentylacja), czy porywa, obrażenia przy porwaniu (na sekundę), obrażenia zwykłego ataku, strategia ataku, ostrość wzroku i słuchu (zasięg i czułość, 0 = brak zmysłu). Nowy potwór to głównie nowy profil + model. Nie kopiujemy potworów 1:1 z innych gier (np. ślepy pies z LC to tylko przykład kombinacji „bez wzroku, świetny słuch”)
-- [ ] 47c5. Atak egzekucyjny jako opcja profilu: natychmiastowe zabicie bez powalenia i bez możliwości odratowania, z dużą plamą krwi na ścianie/podłodze (np. potwór ślepy, ale zabija od jednego trafienia)
+- [x] 47c. Zachowania: patrol i „Obserwator” (stoi, rozgląda się, krzyczy przy zobaczeniu gracza: hałas ściąga inne potwory, bliskiego atakuje)
+- [x] 47c2. Zachowanie „strażnik”: pilnuje swojego rewiru (przydziela go reżyser) i zajmuje się swoimi sprawami, dopóki gracz nie podejdzie blisko; wtedy reaguje, a po ucieczce gracza wraca na rewir
+- [x] 47c3. Typ potwora = zestaw właściwości (profil danych, np. Resource w Godocie), nie osobna klasa. Na start: prędkości (patrol, pościg), sposób poruszania (podłoga / ściany / sufit / wentylacja), czy porywa, obrażenia przy porwaniu (na sekundę), obrażenia zwykłego ataku, strategia ataku, ostrość wzroku i słuchu (zasięg i czułość, 0 = brak zmysłu). Nowy potwór to głównie nowy profil + model. Nie kopiujemy potworów 1:1 z innych gier (np. ślepy pies z LC to tylko przykład kombinacji „bez wzroku, świetny słuch”)
+- [x] 47c5. Atak egzekucyjny jako opcja profilu (Rzeźnik: ślepy, świetny słuch, zabija od razu, rozbryzg na podłodze i ścianie): natychmiastowe zabicie bez powalenia i bez możliwości odratowania, z dużą plamą krwi na ścianie/podłodze (np. potwór ślepy, ale zabija od jednego trafienia)
+- [x] 47c7. Polowanie na słuch: z bliska (7 m × słuch) potwór rozpoznaje, kto hałasuje, i goni go jak widzianego. Bez tego ślepy potwór nigdy by nie zaatakował
 - [ ] 47c6. Wentylacja (jak w Alien: Isolation): sieć szybów nad pokojami z kratkami w ścianach/sufitach. Potwory z tą umiejętnością przemieszczają się nią poza wzrokiem graczy i wychodzą z kratek. Słychać je w szybach (dudnienie nad głową = poszlaka). Generator dokłada kratki do modułów i łączy je w sieć; reżyser używa szybów do szybkiego przerzucania potwora
 - [ ] 47c4. (może kiedyś) Potwór stacjonarny w stylu barnacle z Half-Life: nie rusza się, łapie gracza, który wejdzie w zasięg
 - [ ] 47d. Atak: wręcz (jest), zdalny (pocisk albo efekt na odległość)

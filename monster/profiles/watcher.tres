@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="MonsterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://monster/monster_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "watcher"
+display_name = "Obserwator"
+behavior = 3
+body_color = Color(0.06, 0.08, 0.06, 1)
+eye_color = Color(0.6, 1, 0.3, 1)
+height_scale = 1.4
+patrol_speed = 0.0
+investigate_speed = 0.0
+hunt_speed = 0.0
+retreat_speed = 0.0
+sight_range_dark = 10.0
+sight_range_flashlight = 20.0
+sight_angle_deg = 160
+hearing = 0.8
+smell_radius = 0.0
+attack_style = 0
+attack_damage = 40
+attack_windup = 0.5
+carry_damage_per_second = 3
+feed_damage_per_second = 6
+can_use_vents = false

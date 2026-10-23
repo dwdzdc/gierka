@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="MonsterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://monster/monster_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "guard"
+display_name = "Strażnik"
+behavior = 2
+body_color = Color(0.12, 0.1, 0.05, 1)
+eye_color = Color(1, 0.6, 0.1, 1)
+height_scale = 1.25
+patrol_speed = 1.1
+investigate_speed = 2.0
+hunt_speed = 3.6
+retreat_speed = 3.0
+sight_range_dark = 9.0
+sight_range_flashlight = 16.0
+sight_angle_deg = 140
+hearing = 0.6
+smell_radius = 3.0
+attack_style = 0
+attack_damage = 50
+attack_windup = 0.8
+carry_damage_per_second = 3
+feed_damage_per_second = 6
+can_use_vents = false

@@ -15,7 +15,6 @@ extends Node3D
 signal navigation_ready
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
-const MONSTER_SCENE := preload("res://monster/monster.tscn")
 const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 
 @onready var navigation: NavigationRegion3D = $Navigation
@@ -24,6 +23,7 @@ const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 @onready var loot: Node3D = $Loot
 @onready var room_parent: Node3D = $Navigation/Rooms
 @onready var game_state: GameState = $GameState
+@onready var director: MonsterDirector = $MonsterDirector
 @onready var blood_trail: BloodTrail = $BloodTrail
 @onready var camera_director: CameraDirector = $CameraDirector
 @onready var listener: AudioListener3D = $Listener
@@ -45,6 +45,8 @@ var map_connections: Array[Dictionary] = []
 var coins_per_room := 2
 
 var _spectate_index := 0
+var _threat_text := ""
+var _threat_until := 0
 
 
 func _ready() -> void:
@@ -54,6 +56,8 @@ func _ready() -> void:
 	game_state.player_hit.connect(_on_player_hit)
 	game_state.coins_picked.connect(_on_coins_picked)
 	game_state.round_finished.connect(_on_round_finished)
+	director.new_threat.connect(_on_new_threat)
+	director.monster_spawned.connect(func(m: Monster) -> void: m.state_changed.connect(func(_s: Monster.State) -> void: _update_hud()))
 	Net.connected.connect(_on_connected)
 	Net.disconnected.connect(_on_disconnected)
 	%HostButton.pressed.connect(_on_host_pressed)
@@ -190,9 +194,9 @@ func _on_disconnected(_reason: String) -> void:
 
 # --- Runda (host) ----------------------------------------------------------------
 
-## Potwór i monety na świeżo złożonej mapie.
+## Potwory (przez reżysera) i monety na świeżo złożonej mapie.
 func _populate_round() -> void:
-	_spawn_monster()
+	director.start_round(rooms, monsters)
 	await navigation_ready
 	_spawn_loot()
 
@@ -207,6 +211,7 @@ func request_next_round() -> void:
 func _start_next_round(seed_value: int, count: int) -> void:
 	$Summary.visible = false
 	if multiplayer.is_server():
+		director.stop()
 		for node in monsters.get_children() + loot.get_children():
 			node.queue_free()
 		blood_trail.clear_all()
@@ -234,20 +239,6 @@ func _spawn_player(peer_id: int) -> void:
 func _spawn_transform(index: int) -> Transform3D:
 	var spawns := rooms[0].get_player_spawns()
 	return spawns[index % spawns.size()].global_transform
-
-
-## Potwór startuje w środku najdalszego płaskiego pokoju (bez ramp i schodów, które mają 2 piętra).
-func _spawn_monster() -> void:
-	var start := rooms[0].global_position
-	var lair := rooms[0]
-	for room in rooms:
-		var flat := room.bounds.size.y < 8.0
-		if flat and room.global_position.distance_to(start) > lair.global_position.distance_to(start):
-			lair = room
-	var monster: Monster = MONSTER_SCENE.instantiate()
-	monster.transform = Transform3D(Basis(), lair.global_position + Vector3.UP * 0.05)
-	monsters.add_child(monster, true)
-	monster.state_changed.connect(func(_s: Monster.State) -> void: _update_hud())
 
 
 ## Monety: na znacznikach LootSpawns i w losowych miejscach pokoi. Dalej od hali = cenniejsze
@@ -332,6 +323,13 @@ func _on_round_finished(results: Array) -> void:
 	$Summary.visible = true
 
 
+## Nowy etap trudności: ryk z daleka i napis na kilka sekund.
+func _on_new_threat(stage: int, monster_name: String) -> void:
+	_threat_text = "Coś się zmieniło w kompleksie... (etap %d%s)" % [stage, "" if monster_name == "" else ", nowy potwór: " + monster_name]
+	_threat_until = Time.get_ticks_msec() + 6000
+	$ThreatSound.play()
+
+
 func _on_coins_picked(_peer_id: int, position: Vector3) -> void:
 	$CoinSound.global_position = position + Vector3.UP * 0.5
 	$CoinSound.play()
@@ -364,10 +362,10 @@ func _update_hud() -> void:
 	var role := "host, adres: %s" % ", ".join(Net.local_addresses()) if multiplayer.is_server() else "klient"
 	role += "  mapa: seed %d, pokoi %d" % [map_seed, rooms.size()]
 	var me := multiplayer.get_unique_id()
-	if multiplayer.is_server() and monsters.get_child_count() > 0:
-		var monster := monsters.get_child(0) as Monster
-		if monster:
-			role += "  potwór: %s" % Monster.State.keys()[monster.state]
+	if multiplayer.is_server():
+		for monster in director.monsters():
+			role += "  %s: %s" % [monster.profile.display_name, Monster.State.keys()[monster.state]]
+		role += "  etap %d" % director.stage
 	var watching := ""
 	if is_instance_valid(camera_director.target) and camera_director.target.name != str(me):
 		watching = "  Oglądasz: %s [Tab]" % game_state.player_name(camera_director.target.get_multiplayer_authority())
@@ -386,5 +384,7 @@ func _update_hud() -> void:
 	var me_node: Player = players.get_node_or_null(str(me))
 	if me_node and me_node.help_target:
 		status += "  %s %d%%" % [Player.HELP_NAMES[me_node.help_kind], int(me_node.help_progress * 100)]
+	if Time.get_ticks_msec() < _threat_until:
+		status += "\n" + _threat_text
 	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrót  F latarka  E (trzymaj) pomóż / wyjdź windą  H bandaż  F1 ukryj\nujęcie: %s\n%s  graczy: %d" % [
 		status, shot, role, players.get_child_count()]

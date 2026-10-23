@@ -1,0 +1,62 @@
+class_name MonsterProfile
+extends Resource
+## Typ potwora jako dane. Nowy potwór to głównie nowy plik .tres w monster/profiles/
+## (edytowalny w inspektorze Godota), a nie nowy kod. Kod dochodzi tylko wtedy,
+## gdy potwór potrzebuje zupełnie nowego zachowania.
+
+## HUNTER: reżyser kieruje go w okolicę graczy. PATROLLER: chodzi losowo po mapie.
+## GUARD: pilnuje rewiru wokół gniazda. WATCHER: stoi w miejscu, wypatruje i krzyczy.
+enum Behavior { HUNTER, PATROLLER, GUARD, WATCHER }
+## HIT_AND_RETREAT: cios i odejście. EXECUTE: natychmiastowa śmierć bez powalenia.
+## ABDUCT: porywa żywego gracza do gniazda.
+enum AttackStyle { HIT_AND_RETREAT, EXECUTE, ABDUCT }
+
+const DIRECTORY := "res://monster/profiles/%s.tres"
+
+@export var id := "hunter"
+@export var display_name := "Łowca"
+@export var behavior := Behavior.HUNTER
+
+@export_group("Wygląd")
+@export var body_color := Color(0.08, 0.06, 0.06)
+@export var eye_color := Color(1, 0.15, 0.1)
+@export var height_scale := 1.0
+
+@export_group("Prędkości")
+@export var patrol_speed := 1.5
+@export var investigate_speed := 2.4
+## Chód gracza to 2.2, bieg 4.6: pościg wolniejszy niż bieg daje szansę ucieczki kosztem hałasu.
+@export var hunt_speed := 3.8
+@export var retreat_speed := 3.4
+
+@export_group("Zmysły")
+## 0 = ślepy. Gracz z latarką jest widoczny z dalszej odległości.
+@export var sight_range_dark := 6.0
+@export var sight_range_flashlight := 14.0
+@export_range(0.0, 360.0) var sight_angle_deg := 120.0
+## Mnożnik zasięgu hałasu: 1.0 = słyszy tak daleko, jak hałas "niesie". 0 = głuchy.
+@export var hearing := 1.0
+## Z jakiej odległości wyczuwa krew (0 = nie tropi).
+@export var smell_radius := 5.0
+
+@export_group("Atak")
+@export var attack_style := AttackStyle.HIT_AND_RETREAT
+@export var attack_damage := 35
+@export var attack_windup := 0.6
+@export var attack_range := 1.4
+@export var attack_reach := 2.0
+## Porywanie: ile HP na sekundę traci porwany w drodze i w gnieździe.
+@export var carry_damage_per_second := 3
+@export var feed_damage_per_second := 6
+
+@export_group("Ruch")
+@export var can_use_vents := false
+
+@export_group("Strażnik")
+## Promień rewiru wokół gniazda i jak daleko poza niego goni.
+@export var territory_radius := 9.0
+@export var leash := 16.0
+
+
+static func load_by_id(profile_id: String) -> MonsterProfile:
+	return load(DIRECTORY % profile_id) as MonsterProfile

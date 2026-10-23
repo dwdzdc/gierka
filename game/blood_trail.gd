@@ -60,6 +60,22 @@ func add_drop(position: Vector3, size := 1.0) -> void:
 	_spawn_decal.rpc(position, size, randf() * TAU)
 
 
+## Duży rozbryzg (egzekucja): kałuża na podłodze i plama na najbliższej ścianie.
+func add_splatter(position: Vector3) -> void:
+	assert(multiplayer.is_server())
+	for i in 6:
+		var offset := Vector3(randf_range(-1.2, 1.2), 0.0, randf_range(-1.2, 1.2))
+		add_drop(position + offset, 2.5)
+	# Ściana: szukamy najbliższej w czterech kierunkach na wysokości tułowia.
+	var space := get_world_3d().direct_space_state
+	var chest := position + Vector3.UP * 1.2
+	for direction in [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT]:
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(chest, chest + direction * 3.0, 1))
+		if not hit.is_empty():
+			_spawn_wall_decal.rpc(hit.position, hit.normal)
+			break
+
+
 ## Najświeższa kropla w promieniu `radius`, nowsza niż `newer_than`. Pusty słownik, gdy brak.
 func freshest_near(position: Vector3, radius: float, newer_than := -INF) -> Dictionary:
 	var best := {}
@@ -100,6 +116,21 @@ func _spawn_decal(position: Vector3, size: float, angle: float) -> void:
 	add_child(decal)
 	if get_child_count() > MAX_DECALS:
 		get_child(0).queue_free()
+
+
+## Plama na ścianie: decal rzutuje wzdłuż swojej osi -Y, więc obracamy go "w ścianę".
+@rpc("authority", "call_local", "reliable")
+func _spawn_wall_decal(position: Vector3, normal: Vector3) -> void:
+	var decal := Decal.new()
+	decal.texture_albedo = DROP_TEXTURE
+	decal.texture_emission = DROP_TEXTURE
+	decal.emission_energy = 0.25
+	decal.cull_mask = 1
+	decal.size = Vector3(2.2, 0.6, 1.6)
+	var up := normal
+	var side := up.cross(Vector3.UP).normalized()
+	decal.transform = Transform3D(Basis(side, up, side.cross(up)), position + normal * 0.2)
+	add_child(decal)
 
 
 @rpc("authority", "call_local", "reliable")

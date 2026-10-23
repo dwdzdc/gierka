@@ -1,15 +1,18 @@
 class_name Monster
 extends CharacterBody3D
-## Potwór. AI działa wyłącznie u hosta; klienci dostają pozycję, obrót i `state`
-## przez MultiplayerSynchronizer (np. do dźwięków i efektów po ich stronie).
-## Typy potworów (niewidzialny itd.) będą dziedziczyć z tej klasy i zmieniać
-## parametry albo nadpisywać reakcje.
+## Potwór. AI działa wyłącznie u hosta; klienci dostają pozycję, obrót, `state` i `profile_id`
+## przez MultiplayerSynchronizer (wygląd i dźwięki liczą lokalnie).
+##
+## Dwie warstwy AI:
+##   - reżyser (MonsterDirector) decyduje zgrubnie, dokąd iść: `director_goal`, gniazdo `home`;
+##   - zmysły potwora (wzrok, słuch, węch) szukają gracza lokalnie.
+## Typ potwora = MonsterProfile (dane), nie osobna klasa.
 ##
 ## Stany:
-##   PATROL      – chodzi między losowymi punktami
-##   INVESTIGATE – idzie sprawdzić hałas albo miejsce, gdzie zgubił gracza, rozgląda się
-##   HUNT        – widzi gracza i goni
-##   ATTACK      – zamach (telegrafowany), potem cios
+##   PATROL      – chodzi (cel od reżysera, losowo albo po rewirze); obserwator stoi i się rozgląda
+##   INVESTIGATE – sprawdza hałas albo miejsce, gdzie zgubił gracza, rozgląda się
+##   HUNT        – widzi gracza i goni (obserwator: stoi, patrzy i krzyczy)
+##   ATTACK      – zamach (telegrafowany), potem cios / egzekucja / porwanie
 ##   RETREAT     – po ataku odchodzi daleko; daje graczom szansę na reakcję
 ##   TRACK       – idzie śladem krwi od kropli do kropli, w stronę najświeższych
 
@@ -19,41 +22,46 @@ enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK }
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
 
+const SCREAM_RADIUS := 28.0
+## Z bliska potwór rozpoznaje po dźwięku, KTO hałasuje, i goni go jak widzianego
+## (ślepy potwór poluje tylko tak). Ile metrów (przy słuchu 1.0) i jak długo pamięta.
+const HEAR_HUNT_DISTANCE := 7.0
+const HEAR_MEMORY := 1.2
+const SCREAM_INTERVAL := 3.0
+
+## Typ potwora (ustawiany przed dodaniem do drzewa; replikowany przy spawnie).
+@export var profile_id := "hunter"
+
 @export var turn_speed := 8.0
-
-@export_group("Prędkości")
-@export var patrol_speed := 1.5
-@export var investigate_speed := 2.4
-## Szybciej niż chód gracza (2.2), wolniej niż bieg (4.6): ucieczka jest możliwa, ale kosztuje hałas.
-@export var hunt_speed := 3.8
-@export var retreat_speed := 3.4
-
-@export_group("Zachowanie")
 @export var patrol_pause := Vector2(1.0, 3.0)  # losowa pauza między punktami patrolu (s)
 @export var investigate_linger := 3.0  # ile się rozgląda na miejscu (s)
 @export var lose_sight_time := 1.5  # po tylu sekundach bez kontaktu przestaje gonić
-@export var attack_range := 1.4
-@export var attack_windup := 0.6
-@export var attack_damage := 35
-## Cios trafia, jeśli po zamachu gracz wciąż jest bliżej niż to i mniej więcej przed potworem.
-@export var attack_reach := 2.0
 @export var retreat_time := 5.0
 @export var retreat_min_distance := 10.0
-
-@export_group("Tropienie krwi")
-## Z jakiej odległości wyczuwa krew i jak stare krople jeszcze go interesują (s).
-@export var smell_radius := 5.0
 @export var blood_memory := 90.0
-
-@export_group("Percepcja")
-## Mnożnik promienia hałasu: 1.0 = słyszy dokładnie tak daleko, jak "niesie" hałas.
-@export var hearing := 1.0
-@export var sight_range_dark := 6.0
-## Gracz z włączoną latarką jest widoczny z dużo dalszej odległości.
-@export var sight_range_flashlight := 14.0
-@export_range(0.0, 360.0) var sight_angle_deg := 120.0
 @export var eye_height := 1.8
 @export_flags_3d_physics var sight_blockers := 1
+
+var profile: MonsterProfile
+# Parametry z profilu (kopiowane w _ready, żeby dało się je stroić w trakcie, np. w testach).
+var patrol_speed: float
+var investigate_speed: float
+var hunt_speed: float
+var retreat_speed: float
+var sight_range_dark: float
+var sight_range_flashlight: float
+var sight_angle_deg: float
+var hearing: float
+var smell_radius: float
+var attack_range: float
+var attack_windup: float
+var attack_damage: int
+var attack_reach: float
+
+## Ustawiane przez reżysera (tylko host).
+var director_goal := Vector3.INF  # dokąd iść w patrolu; INF = brak polecenia
+var home := Vector3.ZERO  # gniazdo / środek rewiru
+var sense_boost := 1.0  # narastająca trudność: mnożnik zasięgu zmysłów
 
 var state := State.PATROL:
 	set(value):
@@ -69,6 +77,8 @@ var state := State.PATROL:
 var seen_player: Player
 var last_seen_position := Vector3.ZERO
 var heard_position := Vector3.ZERO
+var heard_player: Player  # kto ostatnio hałasował blisko (polowanie na słuch)
+var _heard_player_time := -INF
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _sight_timer := 0.0
@@ -86,6 +96,8 @@ var _step_timer := 0.0
 
 
 func _ready() -> void:
+	_apply_profile(MonsterProfile.load_by_id(profile_id))
+	home = global_position
 	# Stan jest replikowany, więc setter (i sygnał) odpala się też u klientów: efekty są lokalne.
 	state_changed.connect(_on_state_visual)
 	_last_position = global_position
@@ -96,12 +108,47 @@ func _ready() -> void:
 		NoiseBus.noise_made.connect(_on_noise)
 
 
+func _apply_profile(new_profile: MonsterProfile) -> void:
+	profile = new_profile
+	patrol_speed = profile.patrol_speed
+	investigate_speed = profile.investigate_speed
+	hunt_speed = profile.hunt_speed
+	retreat_speed = profile.retreat_speed
+	sight_range_dark = profile.sight_range_dark
+	sight_range_flashlight = profile.sight_range_flashlight
+	sight_angle_deg = profile.sight_angle_deg
+	hearing = profile.hearing
+	smell_radius = profile.smell_radius
+	attack_range = profile.attack_range
+	attack_windup = profile.attack_windup
+	attack_damage = profile.attack_damage
+	attack_reach = profile.attack_reach
+	# Wygląd: kolor ciała i oczu, wzrost.
+	var body_material := StandardMaterial3D.new()
+	body_material.albedo_color = profile.body_color
+	body_material.roughness = 1.0
+	$Body.material_override = body_material
+	var eye_material := StandardMaterial3D.new()
+	eye_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	eye_material.albedo_color = profile.eye_color
+	for eye in [$EyeL, $EyeR]:
+		eye.material_override = eye_material
+	for part in [$Body, $EyeL, $EyeR, $Shape]:
+		part.scale = Vector3.ONE * profile.height_scale
+		part.position.y *= profile.height_scale
+	eye_height = 1.8 * profile.height_scale
+
+
+func is_watcher() -> bool:
+	return profile.behavior == MonsterProfile.Behavior.WATCHER
+
+
 ## Zamach widać i u hosta, i u klientów: oczy rozbłyskują i rosną.
 func _on_state_visual(new_state: State) -> void:
 	var attacking := new_state == State.ATTACK
 	var tween := create_tween().set_parallel()
 	for eye in [$EyeL, $EyeR]:
-		tween.tween_property(eye, "scale", Vector3.ONE * (3.0 if attacking else 1.0), 0.15)
+		tween.tween_property(eye, "scale", Vector3.ONE * profile.height_scale * (3.0 if attacking else 1.0), 0.15)
 	match new_state:
 		State.HUNT:
 			$Voice.play()
@@ -155,15 +202,16 @@ func _enter(new_state: State) -> void:
 
 ## Decyduje, co robić w tej klatce. Zwraca prędkość, z jaką iść po ścieżce agenta.
 func _think(delta: float) -> float:
-	# Przejścia wspólne: zobaczenie gracza przerywa patrol i sprawdzanie tropu,
+	# Przejścia wspólne: zobaczenie gracza przerywa patrol, sprawdzanie i tropienie,
 	# a hałas przerywa patrol albo przekierowuje sprawdzanie.
-	if seen_player and state in [State.PATROL, State.INVESTIGATE, State.TRACK]:
-		_prey = seen_player
+	var sensed := sensed_prey()
+	if sensed and state in [State.PATROL, State.INVESTIGATE, State.TRACK]:
+		_prey = sensed
 		_enter(State.HUNT)
-	elif _heard_new and state in [State.PATROL, State.INVESTIGATE]:
+	elif _heard_new and state in [State.PATROL, State.INVESTIGATE] and not is_watcher():
 		_enter(State.INVESTIGATE)
 		agent.target_position = heard_position
-	elif state in [State.PATROL, State.INVESTIGATE]:
+	elif state in [State.PATROL, State.INVESTIGATE] and smell_radius > 0.0:
 		_smell_timer -= delta
 		if _smell_timer <= 0.0:
 			_smell_timer = 0.5
@@ -174,7 +222,7 @@ func _think(delta: float) -> float:
 
 	match state:
 		State.PATROL:
-			return _patrol(delta)
+			return _watch(delta) if is_watcher() else _patrol(delta)
 		State.INVESTIGATE:
 			return _investigate(delta)
 		State.HUNT:
@@ -194,15 +242,32 @@ func _patrol(delta: float) -> float:
 	_timer -= delta
 	if _timer > 0.0:
 		return 0.0
-	var point := random_floor_point()
+	var point := _next_patrol_point()
 	if point != Vector3.ZERO:
 		agent.target_position = point
 		_timer = randf_range(patrol_pause.x, patrol_pause.y)
 	return 0.0
 
 
+## Dokąd iść w patrolu: polecenie reżysera, rewir strażnika albo losowo po mapie.
+func _next_patrol_point() -> Vector3:
+	if director_goal != Vector3.INF:
+		var goal := director_goal
+		director_goal = Vector3.INF
+		return goal
+	if profile.behavior == MonsterProfile.Behavior.GUARD:
+		return random_floor_point_near(home, profile.territory_radius)
+	return random_floor_point()
+
+
+## Obserwator: stoi w miejscu i powoli się rozgląda. Krzyk przy zobaczeniu gracza to jego "atak".
+func _watch(delta: float) -> float:
+	rotate_y(0.5 * delta)
+	return 0.0
+
+
 func _investigate(delta: float) -> float:
-	if not agent.is_navigation_finished():
+	if not agent.is_navigation_finished() and not is_watcher():
 		return investigate_speed
 	# Na miejscu: rozgląda się, obracając się w kółko.
 	_timer += delta
@@ -213,8 +278,9 @@ func _investigate(delta: float) -> float:
 
 
 func _hunt(delta: float) -> float:
-	if seen_player:
-		_prey = seen_player
+	var sensed := sensed_prey()
+	if sensed:
+		_prey = sensed
 		_timer = 0.0
 	else:
 		_timer += delta
@@ -223,11 +289,33 @@ func _hunt(delta: float) -> float:
 			_enter(State.INVESTIGATE)
 			agent.target_position = last_seen_position
 			return investigate_speed
+	if is_watcher():
+		return _scream(delta)
+	# Strażnik nie goni w nieskończoność: poza smyczą wraca do rewiru.
+	if profile.behavior == MonsterProfile.Behavior.GUARD and global_position.distance_to(home) > profile.leash:
+		_enter(State.PATROL)
+		agent.target_position = random_floor_point_near(home, profile.territory_radius * 0.5)
+		return patrol_speed
 	agent.target_position = last_seen_position
-	if seen_player and global_position.distance_to(seen_player.global_position) <= attack_range:
+	if sensed and global_position.distance_to(sensed.global_position) <= attack_range:
 		_enter(State.ATTACK)
 		return 0.0
 	return hunt_speed
+
+
+## Obserwator widzi gracza: patrzy na niego i co kilka sekund krzyczy. Krzyk to hałas,
+## który ściąga inne potwory w miejsce gracza. Bliskiego gracza atakuje.
+func _scream(delta: float) -> float:
+	if is_instance_valid(_prey):
+		face(_prey.global_position - global_position, delta)
+		if global_position.distance_to(_prey.global_position) <= attack_range:
+			_enter(State.ATTACK)
+			return 0.0
+	_timer -= delta
+	if _state_time > 0.5 and fmod(_state_time, SCREAM_INTERVAL) < delta and is_instance_valid(_prey):
+		$Voice.play()
+		NoiseBus.emit_noise(_prey.global_position, SCREAM_RADIUS, self)
+	return 0.0
 
 
 func _track() -> float:
@@ -247,7 +335,7 @@ func _smell_blood() -> Dictionary:
 	if trail == null:
 		return {}
 	var newer_than := maxf(_track_time, trail.now() - blood_memory)
-	return trail.freshest_near(global_position, smell_radius, newer_than)
+	return trail.freshest_near(global_position, smell_radius * sense_boost, newer_than)
 
 
 func _follow_drop(drop: Dictionary) -> void:
@@ -260,7 +348,10 @@ func _attack(delta: float) -> float:
 		face(_prey.global_position - global_position, delta)
 	if _state_time >= attack_windup:
 		_on_attack_land()
-		_start_retreat()
+		if is_watcher():
+			_enter(State.PATROL)
+		else:
+			_start_retreat()
 	return 0.0
 
 
@@ -270,9 +361,18 @@ func _on_attack_land() -> void:
 		return
 	var to_prey := (_prey.global_position - global_position) * Vector3(1, 0, 1)
 	var forward := -global_transform.basis.z
-	if to_prey.length() <= attack_reach and rad_to_deg(forward.angle_to(to_prey.normalized())) < 70.0:
-		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
-		game_state.damage(_prey.get_multiplayer_authority(), attack_damage)
+	if to_prey.length() > attack_reach or rad_to_deg(forward.angle_to(to_prey.normalized())) >= 70.0:
+		return
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	var peer_id := _prey.get_multiplayer_authority()
+	match profile.attack_style:
+		MonsterProfile.AttackStyle.EXECUTE:
+			var trail: BloodTrail = get_tree().get_first_node_in_group(&"blood_trail")
+			if trail:
+				trail.add_splatter(_prey.global_position)
+			game_state.execute(peer_id)
+		_:
+			game_state.damage(peer_id, attack_damage)
 
 
 func _start_retreat() -> void:
@@ -294,11 +394,29 @@ func _retreat() -> float:
 
 # --- Percepcja -----------------------------------------------------------------
 
-func _on_noise(position: Vector3, radius: float, _source: Node) -> void:
-	if global_position.distance_to(position) <= radius * hearing:
+func _on_noise(position: Vector3, radius: float, source: Node) -> void:
+	if source == self:
+		return
+	var distance := global_position.distance_to(position)
+	if distance <= radius * hearing * sense_boost:
 		heard_position = position
 		_heard_new = true
 		heard.emit(position)
+		if source is Player and distance <= HEAR_HUNT_DISTANCE * hearing * sense_boost:
+			heard_player = source
+			_heard_player_time = Time.get_ticks_msec() / 1000.0
+
+
+## Gracz, którego potwór teraz "czuje": widzi go albo przed chwilą słyszał z bliska.
+func sensed_prey() -> Player:
+	if seen_player:
+		return seen_player
+	if is_instance_valid(heard_player) and Time.get_ticks_msec() / 1000.0 - _heard_player_time <= HEAR_MEMORY:
+		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+		if game_state == null or game_state.is_alive(heard_player.get_multiplayer_authority()):
+			last_seen_position = heard_player.global_position
+			return heard_player
+	return null
 
 
 ## Wzrok liczony 10 razy na sekundę, a nie co klatkę: raycasty są tanie, ale bez sensu co klatkę.
@@ -308,6 +426,8 @@ func _update_sight(delta: float) -> void:
 		return
 	_sight_timer = 0.1
 	seen_player = null
+	if sight_range_dark <= 0.0 and sight_range_flashlight <= 0.0:
+		return  # ślepy
 	var best_distance := INF
 	for node in get_tree().get_nodes_in_group(&"players"):
 		var player := node as Player
@@ -327,7 +447,7 @@ func can_see(player: Player) -> bool:
 	var eye := global_position + Vector3.UP * eye_height
 	var target := player.global_position + Vector3.UP * 1.2
 	var to_target := target - eye
-	var max_range := sight_range_flashlight if player.flashlight.visible else sight_range_dark
+	var max_range := (sight_range_flashlight if player.flashlight.visible else sight_range_dark) * sense_boost
 	if to_target.length() > max_range:
 		return false
 	var forward := -global_transform.basis.z
@@ -346,9 +466,25 @@ func random_floor_point() -> Vector3:
 	var map := agent.get_navigation_map()
 	for i in 10:
 		var point := NavigationServer3D.map_get_random_point(map, agent.navigation_layers, false)
-		if point != Vector3.ZERO and point.y < global_position.y + 0.8:
+		if point != Vector3.ZERO and absf(point.y - global_position.y) < 0.8:
+			return point
+	# Na innym piętrze nie ma punktów na naszej wysokości: bierzemy dowolny poza dachami.
+	for i in 10:
+		var point := NavigationServer3D.map_get_random_point(map, agent.navigation_layers, false)
+		if point != Vector3.ZERO:
 			return point
 	return Vector3.ZERO
+
+
+## Losowy punkt podłogi w promieniu `radius` od `center` (rewir, okolica celu).
+func random_floor_point_near(center: Vector3, radius: float) -> Vector3:
+	var map := agent.get_navigation_map()
+	for i in 10:
+		var offset := Vector3(randf_range(-radius, radius), 0.0, randf_range(-radius, radius))
+		var point := NavigationServer3D.map_get_closest_point(map, center + offset)
+		if point != Vector3.ZERO and absf(point.y - center.y) < 1.0:
+			return point
+	return NavigationServer3D.map_get_closest_point(map, center)
 
 
 func _steer(speed: float, delta: float) -> void:

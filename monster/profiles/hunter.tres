@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="MonsterProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://monster/monster_profile.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "hunter"
+display_name = "Łowca"
+behavior = 0
+body_color = Color(0.08, 0.06, 0.06, 1)
+eye_color = Color(1, 0.15, 0.1, 1)
+height_scale = 1.0
+patrol_speed = 1.5
+investigate_speed = 2.4
+hunt_speed = 3.8
+retreat_speed = 3.4
+sight_range_dark = 6.0
+sight_range_flashlight = 14.0
+sight_angle_deg = 120
+hearing = 1.0
+smell_radius = 5.0
+attack_style = 0
+attack_damage = 35
+attack_windup = 0.6
+carry_damage_per_second = 3
+feed_damage_per_second = 6
+can_use_vents = true
