@@ -9,6 +9,7 @@ extends Node3D
 ##   AmbientPoints – Marker3D na zdarzenia otoczenia (fałszywe alarmy)
 ##   PlayerSpawns  – (opcjonalnie) Marker3D startu graczy; ma je pokój startowy
 ##   ExitPoint/Exit – (opcjonalnie) wyjście z mapy (ekstrakcja); ma je pokój startowy
+##   Vents         – Marker3D tuż pod kratkami wentylacji w suficie (potwory z wentylacją)
 ## Generator mapy składa pokoje po Doorways. Kamery i strefy jadą razem z pokojem.
 
 const DOOR_SIZE := Vector2(2.0, 2.6)
@@ -35,6 +36,10 @@ func get_ambient_points() -> Array[Marker3D]:
 
 func get_player_spawns() -> Array[Marker3D]:
 	return _markers(&"PlayerSpawns")
+
+
+func get_vents() -> Array[Marker3D]:
+	return _markers(&"Vents")
 
 
 func get_exit() -> Marker3D:

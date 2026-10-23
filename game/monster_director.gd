@@ -23,6 +23,7 @@ const NEAR_DISTANCE := 12.0  # "blisko graczy" dla wskaźnika zagrożenia
 const MENACE_LIMIT := 30.0  # po przekroczeniu łowca jest odsyłany daleko
 const MENACE_COOLDOWN := 35.0  # tyle sekund łowca nie jest przybliżany po odesłaniu
 const SENSE_BOOST_PER_STAGE := 0.1
+const VENT_MIN_DISTANCE := 20.0  # dalsze przerzuty potworów z wentylacją idą szybami
 
 ## Czas etapu: bazowo + na każdy pokój (większa mapa = więcej czasu na eksplorację).
 var stage_base_seconds := 180.0
@@ -133,9 +134,7 @@ func _update_menace(monster: Monster, delta: float) -> void:
 		# Dość nacisku: odeślij daleko i daj graczom odetchnąć.
 		_menace[monster] = 0.0
 		_cooldown[monster] = MENACE_COOLDOWN
-		monster._enter(Monster.State.PATROL)
-		monster.director_goal = _farthest_room_from_players().global_position
-		monster.agent.target_position = monster.director_goal
+		_send(monster, _farthest_room_from_players())
 
 
 ## Łowca w patrolu dostaje okolicę graczy (pokój obok, nie dokładną pozycję).
@@ -149,7 +148,17 @@ func _give_goal(monster: Monster) -> void:
 		return
 	var room := _room_near(target.global_position, 8.0, 22.0)
 	if room:
-		monster.director_goal = room.global_position
+		_send(monster, room)
+
+
+## Wysyła potwora do pokoju: daleko i z wentylacją = szybem (niewidoczny, słychać go nad głową),
+## inaczej normalnie, jako cel patrolu.
+func _send(monster: Monster, room: Room) -> void:
+	if monster.global_position.distance_to(room.global_position) > VENT_MIN_DISTANCE and monster.vent_travel_to(room):
+		return
+	monster._enter(Monster.State.PATROL)
+	monster.director_goal = room.global_position
+	monster.agent.target_position = room.global_position
 
 
 func _farthest_room_from_players() -> Room:

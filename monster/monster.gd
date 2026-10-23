@@ -17,14 +17,17 @@ extends CharacterBody3D
 ##   TRACK       – idzie śladem krwi od kropli do kropli, w stronę najświeższych
 ##   CARRY       – niesie porwanego gracza do gniazda (porwany powoli traci życie)
 ##   FEED        – w gnieździe zjada porwanego (szybciej traci życie); koledzy mogą go odbić
+##   VENT        – przemieszcza się szybem wentylacyjnym: niewidoczny, słychać dudnienie nad głową
 
 # Nowe stany dopisujemy na końcu: wartość enum leci przez sieć jako liczba.
-enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED }
+enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT }
 
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
 
 const SCREAM_RADIUS := 28.0
+const VENT_SPEED := 6.0  # m/s w szybie
+const VENT_ENTER_DISTANCE := 1.3  # jak blisko pod kratką trzeba stanąć, żeby wejść
 ## Z bliska potwór rozpoznaje po dźwięku, KTO hałasuje, i goni go jak widzianego
 ## (ślepy potwór poluje tylko tak). Ile metrów (przy słuchu 1.0) i jak długo pamięta.
 const HEAR_HUNT_DISTANCE := 7.0
@@ -89,6 +92,10 @@ var _state_time := 0.0  # ile sekund trwa bieżący stan
 var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
 var _prey: Player  # cel polowania/ataku
 var _victim: Player  # porwany (CARRY/FEED)
+# Przejście wentylacją: {"entry": Vector3, "exit": Vector3} (kratki), czas w szybie.
+var _vent_plan := {}
+var _vent_progress := 0.0
+var _vent_bang_timer := 0.0
 var _heard_new := false
 var _smell_timer := 0.0
 var _track_time := -INF  # czas najświeższej kropli, do której już doszedł
@@ -157,6 +164,12 @@ func _on_state_visual(new_state: State) -> void:
 			$Voice.play()
 		State.ATTACK:
 			$Swing.play()
+	# W szybie potwora nie widać i nie da się w niego wpaść.
+	var in_vent := new_state == State.VENT
+	for part in [$Body, $EyeL, $EyeR]:
+		part.visible = not in_vent
+	collision_layer = 0 if in_vent else 4
+	collision_mask = 0 if in_vent else 1
 	# Podczas pościgu oddech jest głośniejszy i szybszy.
 	var hunting := new_state in [State.HUNT, State.ATTACK]
 	_breath_player.volume_db = 4.0 if hunting else -2.0
@@ -164,6 +177,13 @@ func _on_state_visual(new_state: State) -> void:
 
 
 func _process(delta: float) -> void:
+	if state == State.VENT:
+		# Dudnienie w szybie: nieregularne, metaliczne, słychać je przez sufit.
+		_vent_bang_timer -= delta
+		if _vent_bang_timer <= 0.0:
+			_vent_bang_timer = randf_range(0.25, 0.6)
+			$VentSound.play()
+		return
 	var measured := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / maxf(delta, 0.0001)
 	_last_position = global_position
 	if measured > 20.0:
@@ -180,6 +200,9 @@ func _process(delta: float) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
+		return
+	if state == State.VENT:
+		_move_in_vent(delta)
 		return
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
@@ -272,6 +295,69 @@ func _victim_still_held() -> bool:
 	return game_state.carrier(_victim.get_multiplayer_authority()) == name
 
 
+# --- Wentylacja ----------------------------------------------------------------
+
+## Polecenie reżysera: dostań się do `target_room` szybami. False, jeśli potwór nie umie
+## albo nie ma kratek (wtedy reżyser każe iść normalnie).
+func vent_travel_to(target_room: Room) -> bool:
+	if not profile.can_use_vents or target_room.get_vents().is_empty():
+		return false
+	var entry := _nearest_vent()
+	if entry == Vector3.INF:
+		return false
+	_vent_plan = {"entry": entry, "exit": target_room.get_vents()[0].global_position}
+	_enter(State.PATROL)
+	agent.target_position = _floor_below(entry)
+	return true
+
+
+func _approach_vent() -> float:
+	var entry: Vector3 = _vent_plan.entry
+	var flat := (entry - global_position) * Vector3(1, 0, 1)
+	if flat.length() <= VENT_ENTER_DISTANCE or agent.is_navigation_finished():
+		_vent_progress = 0.0
+		_enter(State.VENT)
+		global_position = entry
+		velocity = Vector3.ZERO
+		return 0.0
+	return investigate_speed
+
+
+func _move_in_vent(delta: float) -> void:
+	var entry: Vector3 = _vent_plan.entry
+	var exit: Vector3 = _vent_plan.exit
+	var length := maxf(entry.distance_to(exit), 0.1)
+	_vent_progress = minf(_vent_progress + delta * VENT_SPEED / length, 1.0)
+	global_position = entry.lerp(exit, _vent_progress)
+	if _vent_progress >= 1.0:
+		# Wyjście: zeskok z kratki w suficie. Grawitacja zrobi resztę.
+		_vent_plan = {}
+		# Cały potwór (z głową) musi zmieścić się pod sufitem, inaczej fizyka wypchnie go na dach.
+		global_position = exit - Vector3.UP * (2.1 * profile.height_scale + 0.1)
+		velocity = Vector3.ZERO
+		_enter(State.INVESTIGATE)
+		agent.target_position = _floor_below(exit)
+		$Steps.play()
+
+
+func _nearest_vent() -> Vector3:
+	var best := Vector3.INF
+	for room in get_tree().get_first_node_in_group(&"main").rooms:
+		for vent in room.get_vents():
+			var position: Vector3 = vent.global_position
+			# Tylko kratki na naszym piętrze (zakres wysokości pokoju).
+			if position.y < global_position.y or position.y > global_position.y + 10.0:
+				continue
+			if best == Vector3.INF or position.distance_to(global_position) < best.distance_to(global_position):
+				best = position
+	return best
+
+
+func _floor_below(point: Vector3) -> Vector3:
+	var map := agent.get_navigation_map()
+	return NavigationServer3D.map_get_closest_point(map, Vector3(point.x, global_position.y + 0.2, point.z))
+
+
 ## Kolega odbił porwanego: potwór puszcza ofiarę i ucieka.
 func drop_victim() -> void:
 	_victim = null
@@ -280,6 +366,8 @@ func drop_victim() -> void:
 
 
 func _patrol(delta: float) -> float:
+	if not _vent_plan.is_empty():
+		return _approach_vent()
 	if not agent.is_navigation_finished():
 		return patrol_speed
 	_timer -= delta

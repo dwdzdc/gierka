@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -11,6 +11,7 @@
 [ext_resource type="Material" path="res://rooms/materials/rust.tres" id="9"]
 [ext_resource type="Material" path="res://rooms/materials/door_lamp.tres" id="10"]
 [ext_resource type="Material" path="res://rooms/materials/exit.tres" id="11"]
+[ext_resource type="Material" path="res://rooms/materials/vent.tres" id="12"]
 
 [sub_resource type="BoxShape3D" id="zone_All"]
 size = Vector3(10, 4.5, 10)
@@ -177,3 +178,38 @@ distance_fade_length = 10.0
 
 [node name="Ambient0" type="Marker3D" parent="AmbientPoints"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 1, -4)
+
+[node name="VentFrame" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4.47, 2)
+size = Vector3(1.2, 0.06, 1.2)
+material = ExtResource("12")
+
+[node name="VentSlat0" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.56, 4.41, 2)
+size = Vector3(0.06, 0.06, 1.1)
+material = ExtResource("8")
+
+[node name="VentSlat1" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.78, 4.41, 2)
+size = Vector3(0.06, 0.06, 1.1)
+material = ExtResource("8")
+
+[node name="VentSlat2" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4.41, 2)
+size = Vector3(0.06, 0.06, 1.1)
+material = ExtResource("8")
+
+[node name="VentSlat3" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.22, 4.41, 2)
+size = Vector3(0.06, 0.06, 1.1)
+material = ExtResource("8")
+
+[node name="VentSlat4" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.44, 4.41, 2)
+size = Vector3(0.06, 0.06, 1.1)
+material = ExtResource("8")
+
+[node name="Vents" type="Node3D" parent="."]
+
+[node name="Vent0" type="Marker3D" parent="Vents"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 4.35, 2)

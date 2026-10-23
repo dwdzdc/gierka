@@ -30,8 +30,9 @@ EXT = [
     ("Material", "res://rooms/materials/rust.tres"),
     ("Material", "res://rooms/materials/door_lamp.tres"),
     ("Material", "res://rooms/materials/exit.tres"),
+    ("Material", "res://rooms/materials/vent.tres"),
 ]
-EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11}
+EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12}
 # Obrót markera drzwi (stopnie wokół Y), żeby jego -Z wskazywało na zewnątrz danej ściany.
 SIDE_YAW = {"N": 0, "W": 90, "S": 180, "E": -90}
 
@@ -65,7 +66,7 @@ def wall_pieces(length, h, doors):
     return pieces
 
 
-def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None):
+def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
             albo [("prism", [(x, y), ...], z0, z1, mat)] (profil w XY, wyciągnięty wzdłuż Z)
@@ -178,6 +179,13 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         markers("PlayerSpawns", spawns)
     if exit_point:
         markers("ExitPoint", [("Exit",) + tuple(exit_point)])
+    if vent:
+        # Kratka wentylacji w suficie: ciemna płyta z listwami (wygląd), znacznik tuż pod nią.
+        vx, vz = vent
+        box("VentFrame", (vx, h - 0.03, vz), (1.2, 0.06, 1.2), "vent")
+        for k in range(-2, 3):
+            box(f"VentSlat{k + 2}", (vx + k * 0.22, h - 0.09, vz), (0.06, 0.06, 1.1), "metal")
+        markers("Vents", [("Vent0", (vx, h - 0.15, vz))])
 
     # Bryła pokoju (ze ścianami) do testu kolizji przy składaniu mapy.
     bounds = f"AABB({v(-(sx / 2 + T), -0.2, -(sz / 2 + T), sx + 2 * T, h + 0.4, sz + 2 * T)})"
@@ -234,6 +242,7 @@ build(
     spawns=[("Spawn0", (-5, 0.05, 1.5), -90), ("Spawn1", (-5, 0.05, 0), -90),
             ("Spawn2", (-6.2, 0.05, 1.5), -90), ("Spawn3", (-6.2, 0.05, 0), -90)],
     exit_point=((-7.2, 0.05, 3.5), -90),
+    vent=(2, 3),
 )
 
 # Corridor: 16x4, drzwi na obu końcach. Kamery na końcach patrzą wzdłuż na przeciwległe drzwi.
@@ -255,6 +264,7 @@ build(
     ],
     lights=[((-4, 3.6, 0), COLD, 0.8, 7.0, False), ((4, 3.6, 0), COLD, 0.8, 7.0, True)],
     ambient=[("Ambient0", (5, 3.4, 0))],
+    vent=(-6, 0),
 )
 
 # Storage: 20x20, dwa regały tworzą trzy alejki po ~6 m. Drzwi na zachód i na wschód.
@@ -297,6 +307,7 @@ build(
             ((4, 5.5, 7), (1.0, 0.75, 0.5), 0.9, 10.0, True), ((4, 5.5, 0), (1.0, 0.75, 0.5), 0.8, 9.0, False)],
     loot=[("Loot0", (8.8, 2.45, -8.8)), ("Loot1", (-8.8, 1.05, -8.8))],
     ambient=[("Ambient0", (9, 1, 9)), ("Ambient1", (0, 5, -7))],
+    vent=(-6, 6),
 )
 
 # Turn: 6x6, zakręt (drzwi na zachód i na północ). Jedno ujęcie.
@@ -311,6 +322,7 @@ build(
     zones=[("All", (-3, 3, -3, 3), (2.8, 3.6, 2.8), (-1.5, 0.5, -1.5), 0.25, 0)],
     lights=[((0, 3.6, 0), COLD, 0.6, 6.0, True)],
     ambient=[("Ambient0", (2.2, 3.2, -2.2))],
+    vent=(-1.5, 1.5),
 )
 
 # Junction: 10x10, skrzyżowanie T (zachód, wschód, północ). Bez filara, jedno ujęcie.
@@ -328,6 +340,7 @@ build(
     zones=[("All", (-5, 5, -5, 5), (0, 4.2, 4.8), (0, 0.5, -2.5), 0.2, 0)],
     lights=[((0, 4.1, -1), WARM, 0.8, 10.0, False)],
     ambient=[("Ambient0", (-4, 1, -4))],
+    vent=(2, 2),
 )
 
 # Closet: 7x7, ślepy zaułek ze znaleziskami. Jedno ujęcie.
@@ -345,6 +358,7 @@ build(
     zones=[("All", (-3.5, 3.5, -3.5, 3.5), (3.2, 3.6, 3.2), (-2, 0.6, -1), 0.2, 0)],
     lights=[((0.5, 3.6, 0), WARM, 0.6, 6.0, True)],
     loot=[("Loot0", (2.5, 1.05, -2.5)), ("Loot1", (0.5, 2.05, -3.2))],
+    vent=(-1, 1),
 )
 
 # Ramp: 16x4, korytarz w górę o jedno piętro. Dolne drzwi na zachodzie, górne na wschodzie.
@@ -363,6 +377,7 @@ build(
     ],
     lights=[((-6, 3.8, 0), COLD, 0.7, 8.0, False), ((6, S + 3.6, 0), WARM, 0.6, 7.0, True)],
     ambient=[("Ambient0", (0, S, 0))],
+    vent=(-6.5, 0),
 )
 
 # Stairwell: 10x8, klatka schodowa na jedno piętro (dwa biegi z półpiętrem).
@@ -385,4 +400,5 @@ build(
     ],
     lights=[((0, S + 4.1, 0), COLD, 0.8, 10.0, True)],
     ambient=[("Ambient0", (4.2, S / 2 + 0.5, 0))],
+    vent=(-3.5, -2.5),
 )

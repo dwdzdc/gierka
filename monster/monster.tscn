@@ -1,10 +1,11 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://monster/monster.gd" id="1"]
 [ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/monster_steps.tres" id="2"]
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/monster_breath.wav" id="3"]
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/monster_growl.wav" id="4"]
 [ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/swing.tres" id="5"]
+[ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/vent_bangs.tres" id="6"]
 
 [sub_resource type="CapsuleShape3D" id="shape"]
 radius = 0.4
@@ -105,3 +106,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
 stream = ExtResource("5")
 unit_size = 3.0
 max_distance = 12.0
+
+[node name="VentSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("6")
+volume_db = -2.0
+pitch_scale = 0.7
+unit_size = 3.0
+max_distance = 14.0
