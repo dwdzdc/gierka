@@ -1,0 +1,91 @@
+assets/sfx/kenney/impactSoft_heavy_004.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+tools/gen_sfx.py
+  s_f5557ab97914ea::t_fbc5ad84bb4830 1-70
+assets/sfx/kenney/knifeSlice2.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/hit.tres
+  s_f5557ab97914ea::t_6a8a49583f5fb1 1-21
+main.tscn
+  s_f5557ab97914ea::t_575d546b984bf3 1,10,86-92
+player/player.gd
+  s_f5557ab97914ea::t_6a08a4618fb1e7 15-16,26-28,85,109-112,114-118,123-124,126-128
+  s_f5557ab97914ea::t_2c9b049880bc4e 125
+player/player.tscn
+  s_f5557ab97914ea::t_6a08a4618fb1e7 1,4,74-76,78
+  s_f5557ab97914ea::t_2c9b049880bc4e 77
+assets/sfx/kenney/impactPunch_heavy_000.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/creak1.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/creak.tres
+  s_f5557ab97914ea::t_6a8a49583f5fb1 1-15
+assets/sfx/kenney/footstep_concrete_001.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+main.gd
+  s_f5557ab97914ea::t_575d546b984bf3 19,37,55-63,127-130
+assets/sfx/kenney/impactPunch_heavy_001.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/impactSoft_heavy_002.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/monster_steps.tres
+  s_f5557ab97914ea::t_6a8a49583f5fb1 1-21
+assets/sfx/swing.tres
+  s_f5557ab97914ea::t_6a8a49583f5fb1 1-12
+assets/sfx/kenney/impactSoft_heavy_001.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/knifeSlice.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/footstep_concrete_002.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/generated/monster_breath.wav.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-24
+assets/sfx/kenney/footstep_concrete_000.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/footstep_concrete_004.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/impactPunch_heavy_002.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/creak3.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/impactSoft_heavy_000.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/impactSoft_heavy_003.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+monster/monster.tscn
+  s_f5557ab97914ea::t_575d546b984bf3 1,4-7,75-101
+tests/aisle_camera_test.gd.uid
+  s_f5557ab97914ea::t_575d546b984bf3 1
+assets/sfx/kenney/impactPunch_heavy_003.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/impactPunch_heavy_004.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/creak2.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+assets/sfx/kenney/footstep_concrete_003.ogg.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-19
+monster/monster.gd
+  s_f5557ab97914ea::t_575d546b984bf3 58-59,73-76,82-85,96-119
+progress.md
+  s_f5557ab97914ea::t_2c9b049880bc4e 60
+assets/sfx/generated/monster_growl.wav.import
+  s_f5557ab97914ea::t_575d546b984bf3 1-24
+assets/sfx/footsteps_concrete.tres
+  s_f5557ab97914ea::t_6a8a49583f5fb1 1-21
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "037296d63d11d84b458b7dd5e9713cba12da6dd5",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
