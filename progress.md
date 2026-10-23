@@ -167,6 +167,12 @@ Ustalenia (23.10):
 - [x] 35. Punktacja zero-sum (`GameState.SHARED_FRACTION`) i ekran podsumowania (wynik rundy + suma sesji)
 - [x] 36. Następna runda z nowym seedem (host: R albo przycisk); suma sesji zostaje. Reset po wybiciu wszystkich zastąpiony końcem rundy
 - [x] 36b. Narastająca trudność: co etap (3 min + 15 s na pokój) nowy potwór w pokoju najdalszym od graczy (maks. 4), wszystkie zmysły +10% na etap; ryk i napis w HUD
+- [ ] 36c. Sklep między rundami (pomysł 23.10): za zebrane monety powerupy, np. mocniejsza latarka / dłuższa bateria, więcej bandaży na start, szybsza postać. Etap ma zostać elastyczny na przyszłość
+  - Szkielet (do potwierdzenia): przedmiot sklepu = plik danych (id, nazwa, cena, efekt, wartość), efekty = modyfikatory gracza; nowy powerup to nowy plik, nie nowy kod (jak profile potworów)
+  - Uwaga: dziś monety = wynik (suma sesji). Zakupy obniżają wynik → świadoma decyzja: dylemat „wydać czy trzymać” albo osobna waluta
+  - Uwaga: kula śnieżna przy zero-sum (wygrany kupuje więcej i wygrywa dalej) → limit ulepszeń albo rosnące ceny
+  - Uwaga: szybkość jest krucha (bieg 4,6 m/s vs pościg 3,8 m/s); już +15% robi z ucieczki formalność, więc małe kroki albo wcale
+  - Ulepszenia na razie tylko w obrębie sesji (nie ma zapisu postępu między uruchomieniami)
 - [ ] 37. Checkpoint MVP: playtest we dwóch
 
 ## HUD (po playteście 23.10)
