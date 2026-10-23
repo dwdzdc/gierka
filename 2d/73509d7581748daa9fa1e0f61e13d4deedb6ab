@@ -1,0 +1,52 @@
+progress.md
+  ai_agent 146,175,177-181
+monster/monster_profile.gd.uid
+  s_f5557ab97914ea::t_afbce86657c4dd 1
+monster/profiles/watcher.tres
+  s_f5557ab97914ea::t_8e95b103b03246 1-27
+tests/round_test.gd.uid
+  s_f5557ab97914ea::t_afbce86657c4dd 1
+main.tscn
+  s_f5557ab97914ea::t_afbce86657c4dd 1,10-11,65-67,82-85
+monster/profiles/guard.tres
+  s_f5557ab97914ea::t_8e95b103b03246 1-27
+game/blood_trail.gd
+  s_f5557ab97914ea::t_afbce86657c4dd 63-78,121-133
+tests/monster_types_test.gd
+  s_f5557ab97914ea::t_68a3fc76601afa 1-91
+monster/profiles/abductor.tres
+  s_f5557ab97914ea::t_8e95b103b03246 1-27
+main.gd
+  s_f5557ab97914ea::t_afbce86657c4dd 26,48-49,59-60,197,199,214,326-332,365-368,387-388
+monster/monster_profile.gd
+  s_f5557ab97914ea::t_8e95b103b03246 1-62
+monster/profiles/hunter.tres
+  s_f5557ab97914ea::t_8e95b103b03246 1-27
+game/monster_director.gd.uid
+  s_f5557ab97914ea::t_afbce86657c4dd 1
+monster/profiles/butcher.tres
+  s_f5557ab97914ea::t_8e95b103b03246 1-27
+monster/monster.gd
+  s_f5557ab97914ea::t_e768f0722a8a1a 3-9,12-15,25,30,32-33,35,45-65,99-100,111-145,151,205,211,214,225,245,252-268,270,292-298,306-320,338,351-354,364-375,397-399,429-430,450,469-474,479-487
+  s_f5557ab97914ea::t_8a12773848b392 26-29,80-81,207-209,281-283,300,400-401,405-419
+monster/monster.tscn
+  s_f5557ab97914ea::t_afbce86657c4dd 45-47
+game/monster_director.gd
+  s_f5557ab97914ea::t_1918486ee3bc41 1-198
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "2d73509d7581748daa9fa1e0f61e13d4deedb6ab",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
