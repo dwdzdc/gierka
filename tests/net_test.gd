@@ -37,7 +37,12 @@ func _physics_process(_d: float) -> bool:
 		var sig := ""
 		for r in main.rooms:
 			sig += "%s@%s " % [r.name, r.global_position.snapped(Vector3.ONE * 0.1)]
-		print("  mapa: seed %d, %d pokoi, podpis hash=%d" % [main.map_seed, main.rooms.size(), sig.hash()])
+			for c in r.get_node("Geometry").get_children():
+				if c.name.begins_with("Clutter"):
+					sig += "%s@%s " % [c.name, c.position.snapped(Vector3.ONE * 0.01)]
+			for l in r.find_children("*", "OmniLight3D", true, false):
+				sig += "%s:%s " % [l.visible, l.get_script() != null]
+		print("  mapa: seed %d, %d pokoi, rekwizytów %d, podpis hash=%d" % [main.map_seed, main.rooms.size(), sig.count("Clutter"), sig.hash()])
 		print("  game_state: ", main.get_node("GameState").players)
 		print("  decale krwi: %d" % main.get_node("BloodTrail").get_child_count())
 		for m in main.get_node("Monsters").get_children():

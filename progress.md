@@ -40,7 +40,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 12. Generator: pokoje doklejane po `Doorways` (obrót o 90°, test kolizji AABB), deterministyczny z seeda, przy zablokowaniu próbuje kolejnych wariantów seeda. 8 typów pokoi, w tym rampa i klatka schodowa (piętra co 3 m)
 - [x] 13. Zaślepki niepołączonych drzwi, hala jako strefa startowa (PlayerSpawns), potwór startuje w najdalszym płaskim pokoju
 - [x] 14. Nawigacja wypiekana w runtime dla wygenerowanej mapy (2 klatki po złożeniu)
-- [ ] 15. Modyfikacje z seeda: loot, zablokowane przejścia, światła
+- [~] 15. Modyfikacje z seeda: loot (losowy, host), światła (10% zgaszonych, 20% migocze). Zablokowanych przejść brak: zablokowanie zwykłego połączenia mogłoby odciąć część mapy, ma sens dopiero przy pętlach (16h)
 
 ### Po playteście generatora (23.10)
 
@@ -55,7 +55,7 @@ równoległych do ściany, np. nowe drzwi na południu hali).
 - [x] 15e. Futryna w kontrastowym kolorze (lekko świeci) + lampka nad przejściem, po obu stronach każdego połączonego przejścia. Zamurowane przejścia nie mają futryny
 - [x] 15f. Zasada kamer: każde przejście widoczne z kamery strefy, w której leży, pod kątem < 70° do normalnej ściany. Pilnuje tego `tests/camera_rules_test.gd`
 - [x] 15g. Po uwagach: futryny przyciemnione (zostaje lekka poświata + mała lampka), pokoje wyposażone (szafki, regały z towarem, beczki, stoły, krzesła, stół warsztatowy, rury pod sufitem), więcej lamp w dużych pokojach z widocznymi oprawami, wszystkie światła +30% (`LIGHT_SCALE` w `tools/gen_rooms.py`)
-- [ ] 15h. Drobne rekwizyty losowane z seeda (część kroku 15): ten sam typ pokoju wygląda za każdym razem trochę inaczej
+- [x] 15h. Drobne rekwizyty z seeda: 2–5 skrzyń/beczek przy ścianach każdego płaskiego pokoju, z dala od drzwi, wyjścia, spawnów i szafek; identyczne u wszystkich (test sieci porównuje podpis mapy)
 
 ## Chowanie się i ruch (po playteście 23.10)
 
