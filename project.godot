@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.7", "Mobile")
 [autoload]
 
 Net="*res://net/network.gd"
+NoiseBus="*res://game/noise_bus.gd"
 
 [display]
 
