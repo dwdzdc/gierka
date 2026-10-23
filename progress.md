@@ -148,6 +148,13 @@ Ustalenia (23.10):
 - Runda kończy się, gdy każdy gracz zginie albo się wydostanie. Bez twardego limitu czasu.
 - Zamiast limitu: narastająca trudność. Co kilka minut (dłużej na większych mapach) nowy
   potwór z własnym gniazdem daleko od graczy, a dotychczasowe mają ostrzejsze zmysły.
+- Intencja (23.10): zero-sum ma być dylematem. Samemu można zarobić więcej, ale trudniej
+  przetrwać (nikt cię nie podniesie, nie opatrzy, nie odbije z rąk Porywacza).
+- Uwaga (dziura w obecnej formule): kto wyjdzie wcześnie, i tak dostaje udział w monetach
+  wyniesionych później przez innych, więc najbezpieczniej jest wyjść od razu i czekać na pulę.
+  To psuje dylemat. Propozycja: udział w puli tylko z monet wyniesionych do chwili twojego
+  wyjścia (kto wychodzi pierwszy, nie korzysta z ryzyka reszty).
+- [ ] 35b. Poprawić podział puli wg powyższej propozycji (do potwierdzenia)
 - Uwaga (ryzyko): przy zero-sum śmierć kolegi zwiększa twój udział, więc podnoszenie
   powalonego jest ekonomicznie wbrew twojemu interesowi. To zgodne z filarem
   „współpraca vs chciwość”, ale może premiować porzucanie drużyny. Jeśli w playteście tak
