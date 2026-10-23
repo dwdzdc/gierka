@@ -15,6 +15,7 @@ extends Camera3D
 @export var follow_smoothing := 4.0
 
 var follow_target: Node3D
+var _shake := 0.0
 
 
 func _ready() -> void:
@@ -28,8 +29,18 @@ func activate(target: Node3D) -> void:
 	_aim(_goal_point())
 
 
+## Krótki wstrząs obrazu (np. po trafieniu). Przesuwa tylko obraz, nie pozycję kamery.
+func shake(strength := 0.15) -> void:
+	_shake = maxf(_shake, strength)
+
+
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint() or follow <= 0.0 or follow_target == null or not current:
+	if Engine.is_editor_hint() or not current:
+		return
+	_shake = move_toward(_shake, 0.0, delta * 0.5)
+	h_offset = randf_range(-_shake, _shake)
+	v_offset = randf_range(-_shake, _shake)
+	if follow <= 0.0 or follow_target == null:
 		return
 	var desired := global_transform.looking_at(_goal_point(), Vector3.UP).basis.get_rotation_quaternion()
 	var now := global_transform.basis.get_rotation_quaternion()

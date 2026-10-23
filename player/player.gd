@@ -38,6 +38,28 @@ func _ready() -> void:
 		get_tree().call_group(&"camera_director", &"set_target", self)
 
 
+func is_alive() -> bool:
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	return game_state == null or game_state.is_alive(get_multiplayer_authority())
+
+
+## Martwy leży na ziemi. Liczone u każdego z GameState, nic dodatkowego nie trzeba synchronizować.
+func _process(_delta: float) -> void:
+	var dead := not is_alive()
+	$Body.rotation.x = PI / 2.0 if dead else 0.0
+	$Body.position.y = 0.35 if dead else 0.85
+	$Visor.visible = not dead
+
+
+## Host przenosi gracza (np. respawn). Pozycją steruje właściciel, więc host musi go poprosić.
+@rpc("any_peer", "call_local", "reliable")
+func respawn_at(spawn: Transform3D) -> void:
+	if multiplayer.get_remote_sender_id() != 1:
+		return
+	global_transform = spawn
+	velocity = Vector3.ZERO
+
+
 ## Każdy gracz w innym kolorze, deterministycznie z peer id (u wszystkich ten sam).
 func _tint_body() -> void:
 	var material := StandardMaterial3D.new()
@@ -47,7 +69,7 @@ func _tint_body() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_multiplayer_authority():
+	if not is_multiplayer_authority() or not is_alive():
 		return
 	if event.is_action_pressed("toggle_flashlight"):
 		flashlight.visible = not flashlight.visible
@@ -63,7 +85,7 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
-	var desired := Vector3.ZERO if _quick_turning else _tank_movement(delta)
+	var desired := Vector3.ZERO if _quick_turning or not is_alive() else _tank_movement(delta)
 	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
 	move_and_slide()

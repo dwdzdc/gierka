@@ -7,6 +7,8 @@ extends Node3D
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
 const MONSTER_SCENE := preload("res://monster/monster.tscn")
+## Tymczasowe, do czasu powalenia i podnoszenia (faza 5).
+const RESPAWN_DELAY := 8.0
 
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
@@ -25,6 +27,7 @@ var _show_debug := true
 func _ready() -> void:
 	camera_director.camera_changed.connect(_on_camera_changed)
 	game_state.changed.connect(_update_hud)
+	game_state.player_hit.connect(_on_player_hit)
 	Net.connected.connect(_on_connected)
 	Net.disconnected.connect(_on_disconnected)
 	%HostButton.pressed.connect(_on_host_pressed)
@@ -70,6 +73,7 @@ func _on_connected() -> void:
 	menu.visible = false
 	$HUD.visible = true
 	if multiplayer.is_server():
+		game_state.player_died.connect(_respawn_later)
 		multiplayer.peer_connected.connect(_spawn_player)
 		multiplayer.peer_disconnected.connect(_despawn_player)
 		_spawn_player(multiplayer.get_unique_id())
@@ -98,6 +102,27 @@ func _spawn_monster() -> void:
 	monster.state_changed.connect(func(_s: Monster.State) -> void: _update_hud())
 
 
+func _respawn_later(peer_id: int) -> void:
+	await get_tree().create_timer(RESPAWN_DELAY).timeout
+	var player: Player = players.get_node_or_null(str(peer_id))
+	if player == null:
+		return  # gracz w międzyczasie wyszedł
+	game_state.revive(peer_id)
+	var marker := spawn_points.get_child(randi() % spawn_points.get_child_count()) as Node3D
+	player.respawn_at.rpc_id(peer_id, marker.global_transform)
+
+
+func _on_player_hit(peer_id: int, _amount: int) -> void:
+	if peer_id != multiplayer.get_unique_id():
+		return
+	var cam := get_viewport().get_camera_3d() as FixedCamera
+	if cam:
+		cam.shake(0.25)
+	var flash: ColorRect = $HUD/HitFlash
+	flash.modulate.a = 0.6
+	create_tween().tween_property(flash, "modulate:a", 0.0, 0.6)
+
+
 func _despawn_player(peer_id: int) -> void:
 	var player := players.get_node_or_null(str(peer_id))
 	if player:
@@ -116,5 +141,6 @@ func _update_hud() -> void:
 	var me := multiplayer.get_unique_id()
 	if multiplayer.is_server() and monsters.get_child_count() > 0:
 		role += "  potwor: %s" % Monster.State.keys()[monsters.get_child(0).state]
-	info_label.text = "HP %d\nWASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
-		game_state.hp(me), shot, role, players.get_child_count()]
+	var status := "HP %d" % game_state.hp(me) if game_state.is_alive(me) else "NIE ZYJESZ - powrot za chwile"
+	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
+		status, shot, role, players.get_child_count()]

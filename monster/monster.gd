@@ -32,6 +32,9 @@ signal heard(position: Vector3)
 @export var lose_sight_time := 1.5  # po tylu sekundach bez kontaktu przestaje gonić
 @export var attack_range := 1.4
 @export var attack_windup := 0.6
+@export var attack_damage := 35
+## Cios trafia, jeśli po zamachu gracz wciąż jest bliżej niż to i mniej więcej przed potworem.
+@export var attack_reach := 2.0
 @export var retreat_time := 5.0
 @export var retreat_min_distance := 10.0
 
@@ -68,8 +71,18 @@ var _heard_new := false
 
 
 func _ready() -> void:
+	# Stan jest replikowany, więc setter (i sygnał) odpala się też u klientów: efekty są lokalne.
+	state_changed.connect(_on_state_visual)
 	if multiplayer.is_server():
 		NoiseBus.noise_made.connect(_on_noise)
+
+
+## Zamach widać i u hosta, i u klientów: oczy rozbłyskują i rosną.
+func _on_state_visual(new_state: State) -> void:
+	var attacking := new_state == State.ATTACK
+	var tween := create_tween().set_parallel()
+	for eye in [$EyeL, $EyeR]:
+		tween.tween_property(eye, "scale", Vector3.ONE * (3.0 if attacking else 1.0), 0.15)
 
 
 func _physics_process(delta: float) -> void:
@@ -173,9 +186,15 @@ func _attack(delta: float) -> float:
 	return 0.0
 
 
-## Moment trafienia. Obrażenia dochodzą w kroku 25.
+## Moment trafienia. Gracz, który w czasie zamachu odskoczył albo zszedł z linii, unika ciosu.
 func _on_attack_land() -> void:
-	pass
+	if not is_instance_valid(_prey):
+		return
+	var to_prey := (_prey.global_position - global_position) * Vector3(1, 0, 1)
+	var forward := -global_transform.basis.z
+	if to_prey.length() <= attack_reach and rad_to_deg(forward.angle_to(to_prey.normalized())) < 70.0:
+		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+		game_state.damage(_prey.get_multiplayer_authority(), attack_damage)
 
 
 func _start_retreat() -> void:

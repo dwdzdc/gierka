@@ -55,7 +55,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] 22. Noise bus (autoload `NoiseBus`, tylko u hosta). Kroki 4 m, bieg 10 m, liczone przez hosta z replikowanej pozycji. Drzwi dojdą, gdy będą drzwi
 - [x] 23. Percepcja: słuch (promień hałasu) + wzrok (stożek 120°, raycast). Zasięg wzroku 6 m w ciemności, 14 m na gracza z włączoną latarką
 - [x] 24. Maszyna stanów patrol → trop → polowanie → atak → wycofanie (atak na razie bez obrażeń)
-- [ ] 25. Atak i obrażenia u hosta, feedback u klienta
+- [x] 25. Atak i obrażenia u hosta (35 HP, unik możliwy w czasie zamachu), feedback u klienta (czerwony błysk, wstrząs kamery, oczy potwora rozbłyskują przy zamachu). Tymczasowo: śmierć → respawn po 8 s, do czasu fazy 5
 - [ ] 26. Sygnały obecności w 3D audio
 - [ ] 27. Wariant „niewidzialny” z mignięciem przed atakiem
 

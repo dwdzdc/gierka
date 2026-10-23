@@ -3,6 +3,8 @@ extends SceneTree
 #   -- --scenario=attack   gracz stoi przed potworem w ciemności
 #   -- --scenario=noise    hałas za plecami potwora, gracz daleko
 #   -- --scenario=escape   potwór zaczyna gonić, gracz teleportuje się za ścianę
+#   -- --scenario=dodge    gracz odskakuje w czasie zamachu
+#   -- --scenario=death    cios zabija (100 dmg), po 8 s respawn
 
 var main: Node3D
 var m
@@ -34,11 +36,20 @@ func _physics_process(_d: float) -> bool:
 				p.global_position = Vector3(-4, 0.05, -3)
 				m.rotation.y = -PI / 2  # plecami do hałasu
 				root.get_node("NoiseBus").emit_noise.call_deferred(Vector3(21, 0, 0.5), 10.0, null)
-			"escape":
+			"escape", "dodge":
 				p.global_position = Vector3(22, 0.05, 0)
+			"death":
+				p.global_position = Vector3(22, 0.05, 0)
+				m.attack_damage = 100
 	if scenario == "escape" and frames == 40:
 		p.global_position = Vector3(-4, 0.05, -3)  # zniknął z pola widzenia
+	if scenario == "dodge" and m != null and m.state == m.State.ATTACK and p.global_position.x > 15:
+		p.global_position = Vector3(14, 0.05, 0)  # odskok o kilka metrów w czasie zamachu
+	var gs = main.get_node("GameState")
+	if scenario == "death" and frames % 60 == 0 and frames <= 60 * 12:
+		log.append("t=%d hp=%d alive=%s pos=%s" % [frames / 60, gs.hp(1), gs.is_alive(1), p.global_position.snapped(Vector3.ONE)])
 	if frames == 60 * 20:
+		log.append("koniec hp=%d" % gs.hp(1))
 		print("[%s] %s" % [scenario, ", ".join(log)])
 		return true
 	return false

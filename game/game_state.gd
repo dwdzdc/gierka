@@ -8,6 +8,8 @@ extends Node
 
 signal changed
 signal player_hit(peer_id: int, amount: int)
+## Tylko u hosta.
+signal player_died(peer_id: int)
 
 const MAX_HP := 100
 
@@ -50,6 +52,8 @@ func damage(peer_id: int, amount: int) -> void:
 	entry.alive = entry.hp > 0
 	_broadcast()
 	_notify_hit.rpc(peer_id, amount)
+	if not entry.alive:
+		player_died.emit(peer_id)
 
 
 func revive(peer_id: int) -> void:
