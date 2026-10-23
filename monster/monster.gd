@@ -582,9 +582,11 @@ func can_see(player: Player) -> bool:
 	if game_state and game_state.life(player.get_multiplayer_authority()) not in [GameState.Life.OK, GameState.Life.DOWNED]:
 		return false
 	var eye := global_position + Vector3.UP * eye_height
-	var target := player.global_position + Vector3.UP * 1.2
+	var target := player.global_position + Vector3.UP * (0.6 if player.crouching else 1.2)
 	var to_target := target - eye
 	var max_range := (sight_range_flashlight if player.flashlight.visible else sight_range_dark) * sense_boost
+	if player.crouching:
+		max_range *= Player.CROUCH_SIGHT_FACTOR
 	if to_target.length() > max_range:
 		return false
 	var forward := -global_transform.basis.z

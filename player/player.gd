@@ -27,6 +27,13 @@ var _quick_turning := false
 var _last_position := Vector3.ZERO
 var _step_timer := 0.0
 var _smoothed_speed := 0.0
+var _air_time := 0.0
+
+## Synchronizowane do innych (wygląd, hałas i wzrok potwora liczone u hosta).
+var crouching := false:
+	set(value):
+		crouching = value
+		_apply_crouch_shape()
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
@@ -36,6 +43,14 @@ const RESCUE_TIME := 1.5
 ## Pełna kieszeń hałasuje: przy tylu monetach kroki są słyszalne 2x dalej.
 const COINS_FOR_DOUBLE_NOISE := 300.0
 const EXTRACT_TIME := 2.0
+const STAND_HEIGHT := 1.7
+const CROUCH_HEIGHT := 1.0
+## Kucanie: wolniej, kroki słychać z ~1/3 odległości, potwór widzi z ~60% zasięgu.
+const CROUCH_SPEED := 1.1
+const CROUCH_NOISE_FACTOR := 0.35
+const CROUCH_SIGHT_FACTOR := 0.6
+const JUMP_VELOCITY := 4.5  # ~1 m w górę
+const LANDING_NOISE_RADIUS := 7.0
 
 ## Bieżąca akcja "trzymaj klawisz" (tylko u właściciela postaci, do HUD-a).
 var help_kind := Help.NONE
@@ -52,6 +67,9 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	add_to_group(&"players")
+	# Kształt kolizji jest wspólnym zasobem sceny: każdy gracz potrzebuje własnej kopii,
+	# bo kucanie zmienia jego wysokość.
+	$Shape.shape = $Shape.shape.duplicate()
 	_tint_body()
 	if is_multiplayer_authority():
 		get_tree().call_group(&"camera_director", &"set_target", self)
@@ -116,11 +134,57 @@ func _physics_process(delta: float) -> void:
 
 	if _follow_carrier():
 		return
+	_update_crouch()
 	var helping := _update_help(delta)
+	if Input.is_action_just_pressed("jump") and is_on_floor() and is_up() and not crouching and not helping:
+		velocity.y = JUMP_VELOCITY
 	var desired := Vector3.ZERO if _quick_turning or helping or not is_up() else _tank_movement(delta)
 	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
+	var was_airborne := _air_time
 	move_and_slide()
+	_air_time = 0.0 if is_on_floor() else _air_time + delta
+	if is_on_floor() and was_airborne > 0.35:
+		_on_landed()
+
+
+## Kucanie trzyma się klawiszem. Wstać można tylko, gdy nad głową jest miejsce (np. pod stołem nie).
+func _update_crouch() -> void:
+	var wants := Input.is_action_pressed("crouch") and is_up()
+	if wants == crouching:
+		return
+	if not wants and test_move(global_transform, Vector3.UP * (STAND_HEIGHT - CROUCH_HEIGHT)):
+		return  # coś nad głową: zostajemy w kucki
+	crouching = wants
+
+
+func _apply_crouch_shape() -> void:
+	if not is_node_ready():
+		await ready
+	var height := CROUCH_HEIGHT if crouching else STAND_HEIGHT
+	var capsule := $Shape.shape as CapsuleShape3D
+	capsule.height = height
+	$Shape.position.y = height / 2.0
+	$Body.scale.y = height / STAND_HEIGHT
+	$Body.position.y = height / 2.0
+	$Visor.position.y = height - 0.25
+
+
+## Lądowanie po skoku/upadku robi hałas. Hałas liczy host, więc klient go zgłasza.
+func _on_landed() -> void:
+	_footstep_player.volume_db = 0.0
+	_footstep_player.play()
+	if multiplayer.is_server():
+		NoiseBus.emit_noise(global_position, LANDING_NOISE_RADIUS, self)
+	else:
+		_report_landing.rpc_id(1, global_position)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _report_landing(position: Vector3) -> void:
+	# Host ufa zgłoszeniu tylko, gdy zgadza się z pozycją, którą zna.
+	if position.distance_to(global_position) < 3.0:
+		NoiseBus.emit_noise(position, LANDING_NOISE_RADIUS, self)
 
 
 ## Porwany: pozycją steruje właściciel postaci, więc to on "przykleja" ją do potwora.
@@ -202,7 +266,9 @@ func _tank_movement(delta: float) -> Vector3:
 	rotate_y(Input.get_axis("move_right", "move_left") * turn_speed * delta)
 	var throttle := Input.get_axis("move_back", "move_forward")
 	var speed := walk_speed
-	if throttle < 0.0:
+	if crouching:
+		speed = CROUCH_SPEED
+	elif throttle < 0.0:
 		speed *= backward_speed_factor
 	elif Input.is_action_pressed("run"):
 		speed = run_speed
@@ -226,10 +292,12 @@ func _footsteps(delta: float) -> void:
 	if _step_timer <= 0.0:
 		var running := _smoothed_speed > walk_speed * 1.3
 		_step_timer = run_step_interval if running else walk_step_interval
-		_footstep_player.volume_db = -4.0 if running else -10.0
+		_footstep_player.volume_db = -20.0 if crouching else (-4.0 if running else -10.0)
 		_footstep_player.play()
 		if multiplayer.is_server():
 			var radius := run_noise_radius if running else walk_noise_radius
+			if crouching:
+				radius *= CROUCH_NOISE_FACTOR
 			var game_state := _game_state()
 			if game_state:
 				radius *= 1.0 + minf(game_state.coins(get_multiplayer_authority()) / COINS_FOR_DOUBLE_NOISE, 1.0)

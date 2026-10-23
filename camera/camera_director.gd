@@ -106,8 +106,9 @@ func _desired_zone() -> CameraZone:
 
 ## Widać postać, jeśli jest w kadrze i przynajmniej jeden jej punkt nie jest zasłonięty.
 func is_target_visible(camera: Camera3D) -> bool:
+	var scale := 0.55 if target is Player and target.crouching else 1.0  # kucająca postać jest niższa
 	for height in _TARGET_POINTS:
-		var point := target.global_position + Vector3.UP * height
+		var point := target.global_position + Vector3.UP * height * scale
 		if camera.is_position_in_frustum(point) and _line_clear(camera.global_position, point):
 			return true
 	return false
