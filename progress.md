@@ -7,7 +7,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] Silnik: Godot 4 (4.7, renderer Mobile)
 - [x] Sieć: host-client po ENet (później Steam lobby przez GodotSteam). Ruch gracza z autorytetem klienta; potwór, HP, krew i punkty z autorytetem hosta. Kamera, UI i audio feedback lokalnie.
 - [x] Kontrakt pokoju: `Geometry`, `Doorways`, `CameraZones` (Area3D + Camera), `LootSpawns`, `AmbientPoints` (patrz `rooms/room.gd`)
-- [x] Potwory jako typy: wspólna baza (percepcja, nawigacja, stany) + wymienne zachowania. Szczegóły w „Potwory: abstrakcja” (faza 8), decyzja szkieletowa do potwierdzenia przed refaktorem
+- [x] Potwory jako typy: wspólna baza + wymienne części. Dwie warstwy AI: **reżyser** (zgrubna nawigacja: dokąd iść, wspólny dla wszystkich typów) i **zmysły** (lokalne szukanie gracza, inne dla każdego typu). Szczegóły w „Potwory: abstrakcja” (faza 8). Interfejsy części do potwierdzenia przed refaktorem
 - [ ] Liczba graczy (2–4?)
 - [x] Sterowanie: tank (camera-relative odrzucone po playteście)
 
@@ -149,16 +149,24 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
 Różne potwory = kombinacja wymiennych części zamiast jednej klasy z flagami.
 Skeleton (interfejsy części) do potwierdzenia przed refaktorem `Monster`.
 
-- [ ] 47a. Rozbicie `Monster` na części: ruch, percepcja, zachowanie, atak
+Ustalone: dwie warstwy AI dla wszystkich typów. **Reżyser** (host) decyduje zgrubnie,
+dokąd potwór ma iść (rewir, okolica graczy, odesłanie daleko). **Zmysły** potwora szukają
+gracza lokalnie i każdy typ ma je inne. Nie każdy potwór poluje: reżyser może też tylko
+przydzielić rewir do pilnowania.
+
+- [ ] 47a. Rozbicie `Monster` na części: reżyser (wspólny), ruch, zmysły, zachowanie, atak
 - [ ] 47b. Ruch: po podłodze (NavMesh, jest) i po ścianach/suficie
 - [ ] 47c. Zachowanie: patrol (jest) i „obserwator” (stoi w miejscu i patrzy, nie patroluje)
+- [ ] 47c2. Zachowanie „strażnik”: pilnuje swojego rewiru (przydziela go reżyser) i zajmuje się swoimi sprawami, dopóki gracz nie podejdzie blisko; wtedy reaguje, a po ucieczce gracza wraca na rewir
+- [ ] 47c3. Zmysły jako wymienna część, np. „ślepy pies” jak w Lethal Company: bez wzroku, ale z bardzo czułym słuchem
+- [ ] 47c4. (może kiedyś) Potwór stacjonarny w stylu barnacle z Half-Life: nie rusza się, łapie gracza, który wejdzie w zasięg
 - [ ] 47d. Atak: wręcz (jest), zdalny (pocisk albo efekt na odległość)
-- [ ] 47e. Atak: porwanie gracza (chwyta i odciąga; powiązane z 44, wleczenie ciał)
+- [ ] 47e. Atak: porwanie gracza żywcem (jak smoker, jockey i charger w Left 4 Dead 2). Potwór chwyta gracza i zabiera go do swojego gniazda na uboczu (np. najdalszy pokój albo ślepy zaułek). Porwany powoli traci życie już w czasie porwania, a w gnieździe jest powoli zjadany. Koledzy mogą go jeszcze odbić, ale to ciężki moment. Wleczenie zostawia ślad krwi (powiązane z 44)
 - [ ] 47f. Typ „Łowca” (wzorowany na Alien: Isolation). Dwie warstwy AI:
   - **Reżyser** (host, osobny węzeł): zawsze wie, gdzie są gracze, ale nie podaje potworowi ich pozycji. Co jakiś czas tylko kieruje go w okolicę graczy (pokój obok, piętro), a resztę potwór musi znaleźć sam, zmysłami.
   - **Wskaźnik zagrożenia**: rośnie, gdy potwór jest blisko graczy, długo przy nich i może ich szybko dosięgnąć. Po przekroczeniu progu reżyser odsyła potwora daleko (oddech dla graczy), potem znów go przybliża. W co-opie liczony dla grupy, nie dla jednego gracza.
   - **Odblokowywane zachowania**: część zachowań startuje wyłączona i włącza się, gdy gracze często uciekają tą samą metodą (np. po kilku udanych ukryciach w szafkach zaczyna je sprawdzać; po ucieczkach na inne piętro zaczyna tam zaglądać). Daje wrażenie, że potwór się uczy.
-  - Decyzja szkieletowa do potwierdzenia przy 47a: reżyser jako wspólny element dla wszystkich typów, czy tylko dla Łowcy.
+  - Reżyser jest wspólny dla wszystkich typów (ustalone); Łowca używa go najaktywniej.
   - Źródła: [Game Developer: The Perfect Organism – The AI of Alien: Isolation](https://www.gamedeveloper.com/design/the-perfect-organism-the-ai-of-alien-isolation), [Game Developer: Revisiting the AI of Alien: Isolation](https://www.gamedeveloper.com/design/revisiting-the-ai-of-alien-isolation)
 - [ ] 48. Shader glitcha
 - [ ] 49. Drugi setting
