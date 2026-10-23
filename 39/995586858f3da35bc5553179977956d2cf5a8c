@@ -1,0 +1,35 @@
+docs/coverage/storage.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/corridor.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/stairwell.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/hall.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/junction.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/closet.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/ramp.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+docs/coverage/turn.png.import
+  s_f5557ab97914ea::t_05dc5ab76602b3 1-40
+tools/coverage_map.gd.uid
+  s_f5557ab97914ea::t_05dc5ab76602b3 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "39995586858f3da35bc5553179977956d2cf5a8c",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
