@@ -1,5 +1,5 @@
 extends SceneTree
-# Krwawienie: trafienie z krwawieniem, potem HP spada o 2/s, aż do śmierci.
+# Krwawienie: trafienie z krwawieniem, potem HP spada o 2/s, aż do powalenia.
 
 var main: Node3D
 var gs
@@ -18,11 +18,11 @@ func _physics_process(_d: float) -> bool:
 		gs = main.get_node("GameState")
 		seed(1)
 		while not gs.is_bleeding(1):
-			gs.revive(1)
+			gs.reset_player(1)
 			gs.damage(1, 50)
 		log.append("po trafieniu hp=%d krwawi=%s" % [gs.hp(1), gs.is_bleeding(1)])
 	if frames > 2 and frames % 300 == 0:
-		log.append("t=%ds hp=%d krwawi=%s żyje=%s" % [frames / 60, gs.hp(1), gs.is_bleeding(1), gs.is_alive(1)])
+		log.append("t=%ds hp=%d krwawi=%s stan=%s" % [frames / 60, gs.hp(1), gs.is_bleeding(1), gs.Life.keys()[gs.life(1)]])
 	if frames == 60 * 30:
 		print("\n".join(log))
 		return true

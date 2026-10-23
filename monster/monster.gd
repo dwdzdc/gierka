@@ -11,8 +11,10 @@ extends CharacterBody3D
 ##   HUNT        – widzi gracza i goni
 ##   ATTACK      – zamach (telegrafowany), potem cios
 ##   RETREAT     – po ataku odchodzi daleko; daje graczom szansę na reakcję
+##   TRACK       – idzie śladem krwi od kropli do kropli, w stronę najświeższych
 
-enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT }
+# Nowe stany dopisujemy na końcu: wartość enum leci przez sieć jako liczba.
+enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK }
 
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
@@ -37,6 +39,11 @@ signal heard(position: Vector3)
 @export var attack_reach := 2.0
 @export var retreat_time := 5.0
 @export var retreat_min_distance := 10.0
+
+@export_group("Tropienie krwi")
+## Z jakiej odległości wyczuwa krew i jak stare krople jeszcze go interesują (s).
+@export var smell_radius := 5.0
+@export var blood_memory := 90.0
 
 @export_group("Percepcja")
 ## Mnożnik promienia hałasu: 1.0 = słyszy dokładnie tak daleko, jak "niesie" hałas.
@@ -70,6 +77,8 @@ var _state_time := 0.0  # ile sekund trwa bieżący stan
 var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
 var _prey: Player  # cel polowania/ataku
 var _heard_new := false
+var _smell_timer := 0.0
+var _track_time := -INF  # czas najświeższej kropli, do której już doszedł
 # Dźwięk kroków liczony u każdego peera z (replikowanej) pozycji, jak u graczy.
 var _last_position := Vector3.ZERO
 var _smoothed_speed := 0.0
@@ -148,12 +157,20 @@ func _enter(new_state: State) -> void:
 func _think(delta: float) -> float:
 	# Przejścia wspólne: zobaczenie gracza przerywa patrol i sprawdzanie tropu,
 	# a hałas przerywa patrol albo przekierowuje sprawdzanie.
-	if seen_player and state in [State.PATROL, State.INVESTIGATE]:
+	if seen_player and state in [State.PATROL, State.INVESTIGATE, State.TRACK]:
 		_prey = seen_player
 		_enter(State.HUNT)
 	elif _heard_new and state in [State.PATROL, State.INVESTIGATE]:
 		_enter(State.INVESTIGATE)
 		agent.target_position = heard_position
+	elif state in [State.PATROL, State.INVESTIGATE]:
+		_smell_timer -= delta
+		if _smell_timer <= 0.0:
+			_smell_timer = 0.5
+			var drop := _smell_blood()
+			if not drop.is_empty():
+				_enter(State.TRACK)
+				_follow_drop(drop)
 
 	match state:
 		State.PATROL:
@@ -166,6 +183,8 @@ func _think(delta: float) -> float:
 			return _attack(delta)
 		State.RETREAT:
 			return _retreat()
+		State.TRACK:
+			return _track()
 	return 0.0
 
 
@@ -209,6 +228,31 @@ func _hunt(delta: float) -> float:
 		_enter(State.ATTACK)
 		return 0.0
 	return hunt_speed
+
+
+func _track() -> float:
+	if not agent.is_navigation_finished():
+		return investigate_speed
+	# Doszedł do kropli: szuka świeższej w pobliżu. Gdy ślad się urywa, rozgląda się.
+	var drop := _smell_blood()
+	if drop.is_empty():
+		_enter(State.INVESTIGATE)
+		return 0.0
+	_follow_drop(drop)
+	return investigate_speed
+
+
+func _smell_blood() -> Dictionary:
+	var trail: BloodTrail = get_tree().get_first_node_in_group(&"blood_trail")
+	if trail == null:
+		return {}
+	var newer_than := maxf(_track_time, trail.now() - blood_memory)
+	return trail.freshest_near(global_position, smell_radius, newer_than)
+
+
+func _follow_drop(drop: Dictionary) -> void:
+	_track_time = drop.time
+	agent.target_position = drop.position
 
 
 func _attack(delta: float) -> float:
