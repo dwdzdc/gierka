@@ -81,6 +81,7 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
 - [ ] 16a. Większe meble: wysokie szafy i regały do sufitu (zasłaniają linię wzroku), długie stoły i łóżka/prycze z prześwitem pod spodem (~0,7 m), „wyspy” mebli na środku pokoi, wokół których da się krążyć przed potworem
 - [ ] 16b. Kucanie (Ctrl): niższa postać (mieści się pod stołem), wolniej, kroki ~2,5× ciszej, potwór zauważa kucającego z mniejszej odległości; stan synchronizowany po sieci
 - [ ] 16c. Skok (Spacja): niski skok na skrzynki i przez przeszkody do ~0,7 m; lądowanie robi hałas
+  - Uwaga: swobodny skok kiepsko gra ze sterowaniem tank i stałą kamerą (trudno ocenić odległość, klasyczne RE skoku nie miały). Jeśli w playteście będzie toporny, zamienić na kontekstowe przeskakiwanie przeszkód (Spacja przy niskiej przeszkodzie)
 - [ ] 16d. Kryjówki: szafki/szafy do wejścia (E), pod stołami i pryczami (kucając). Schowany gracz jest niewidoczny dla wzroku potwora, ale wejście do szafki robi hałas
 - [ ] 16e. AI vs kryjówki: jeśli potwór widział, jak się chowasz, sprawdza kryjówkę i wyciąga gracza; jeśli nie, przy tropieniu może z pewną szansą zajrzeć do pobliskich kryjówek (bez gwarancji bezpieczeństwa, jak w Alien: Isolation)
 - [ ] 16f. Kamera przy chowaniu: osobne ujęcie z wnętrza szafki (szpara), a pod stołem zwykłe ujęcie bez „uciekania” kamery (bezpiecznik ma wiedzieć, że gracz jest schowany celowo)
@@ -122,10 +123,27 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
 
 ## Faza 6: pętla rundy
 
-- [ ] 33. Znaleziska: podnoszenie, mało slotów
-- [ ] 34. Wyjście i ekstrakcja ze strefy startowej
-- [ ] 35. Prosta punktacja i ekran podsumowania
-- [ ] 36. Restart rundy z nowym seedem
+Ustalenia (23.10):
+- Znaleziska to monety. Każdy gracz ma licznik monet niesionych w tej rundzie.
+- Śmierć = utrata niesionych monet (wypadają na ziemię, koledzy mogą je zgarnąć).
+- Punktacja zero-sum: wynik ocalałego = 50% monet, które sam wyniósł + równy udział
+  w 50% wspólnej puli wszystkich ocalałych. Jedna osoba, która się wydostanie, bierze
+  całą pulę. Proporcja to jedna stała (`SHARED_FRACTION`).
+- Runda kończy się, gdy każdy gracz zginie albo się wydostanie. Bez twardego limitu czasu.
+- Zamiast limitu: narastająca trudność. Co kilka minut (dłużej na większych mapach) nowy
+  potwór z własnym gniazdem daleko od graczy, a dotychczasowe mają ostrzejsze zmysły.
+- Uwaga (ryzyko): przy zero-sum śmierć kolegi zwiększa twój udział, więc podnoszenie
+  powalonego jest ekonomicznie wbrew twojemu interesowi. To zgodne z filarem
+  „współpraca vs chciwość”, ale może premiować porzucanie drużyny. Jeśli w playteście tak
+  wyjdzie: bonus do puli za wyjście całą drużyną.
+- Uwaga: czas między kolejnymi potworami trzeba stroić playtestem; start 3 min + 15 s
+  na pokój (8 pokoi = 5 min).
+
+- [ ] 33. Monety: kupki rozrzucone po mapie (więcej i cenniejsze dalej od hali), podnoszenie wejściem, licznik w HUD, im więcej niesiesz, tym głośniej idziesz
+- [ ] 34. Ekstrakcja: wyjście w hali (trzymaj E), wydostany gracz ogląda kamery kolegi
+- [ ] 35. Punktacja zero-sum i ekran podsumowania (wynik rundy + suma sesji)
+- [ ] 36. Restart rundy z nowym seedem (host)
+- [ ] 36b. Narastająca trudność: nowi potwory co kilka minut, ostrzejsze zmysły
 - [ ] 37. Checkpoint MVP: playtest we dwóch
 
 ## Faza 7: napięcie i niepewność
