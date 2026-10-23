@@ -10,6 +10,7 @@ const PLAYER_SCENE := preload("res://player/player.tscn")
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
 @onready var spawn_points: Node3D = $SpawnPoints
+@onready var game_state: GameState = $GameState
 @onready var camera_director: CameraDirector = $CameraDirector
 @onready var info_label: Label = $HUD/Info
 @onready var menu: CanvasLayer = $Menu
@@ -21,6 +22,7 @@ var _show_debug := true
 
 func _ready() -> void:
 	camera_director.camera_changed.connect(_on_camera_changed)
+	game_state.changed.connect(_update_hud)
 	Net.connected.connect(_on_connected)
 	Net.disconnected.connect(_on_disconnected)
 	%HostButton.pressed.connect(_on_host_pressed)
@@ -83,12 +85,14 @@ func _spawn_player(peer_id: int) -> void:
 	var marker := spawn_points.get_child(players.get_child_count() % spawn_points.get_child_count()) as Node3D
 	player.transform = marker.transform
 	players.add_child(player, true)
+	game_state.add_player(peer_id)
 
 
 func _despawn_player(peer_id: int) -> void:
 	var player := players.get_node_or_null(str(peer_id))
 	if player:
 		player.queue_free()
+	game_state.remove_player(peer_id)
 
 
 func _on_camera_changed(_zone: CameraZone) -> void:
@@ -99,5 +103,6 @@ func _update_hud() -> void:
 	var zone := camera_director.current_zone
 	var shot := "-" if zone == null else "%s/%s" % [zone.owner.name, zone.name]
 	var role := "host, adres: %s" % ", ".join(Net.local_addresses()) if multiplayer.is_server() else "klient"
-	info_label.text = "WASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
-		shot, role, players.get_child_count()]
+	var me := multiplayer.get_unique_id()
+	info_label.text = "HP %d\nWASD ruch  SHIFT bieg  Q obrot  F latarka  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
+		game_state.hp(me), shot, role, players.get_child_count()]

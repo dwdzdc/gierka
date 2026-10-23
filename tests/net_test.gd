@@ -19,9 +19,14 @@ func _physics_process(_d: float) -> bool:
 	var me := players.get_node_or_null(str(main.multiplayer.get_unique_id()))
 	if me and frames % 60 == 0 and frames <= 180:
 		me.global_position = Vector3(-2.5 + 0.5 * frames / 60.0, 0.05, -2.0 if main.multiplayer.is_server() else 2.0)
+	if frames == 200 and main.multiplayer.is_server():
+		for id in main.get_node("GameState").players:
+			if id != 1:
+				main.get_node("GameState").damage(id, 30)
 	if frames == 300:
 		var role := "HOST" if main.multiplayer.is_server() else "KLIENT"
 		print("%s (id %d) widzi %d graczy:" % [role, main.multiplayer.get_unique_id(), players.get_child_count()])
+		print("  game_state: ", main.get_node("GameState").players)
 		for p in players.get_children():
 			print("  %s pos=%s authority=%d kamera_lokalna=%s" % [p.name, p.global_position.snapped(Vector3.ONE * 0.01),
 				p.get_multiplayer_authority(), main.get_node("CameraDirector").target == p])

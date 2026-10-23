@@ -47,7 +47,7 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [~] 17. Spawn graczy i synchronizacja pozycji, obrotu i latarki. Animacji jeszcze nie ma (brak modelu)
 - [x] 18. Kamera tylko dla lokalnego gracza
 - [~] 19. Host rozsyła seed, klienci składają tę samą mapę. Na razie mapa stała, wróci razem z generatorem (12)
-- [ ] 20. GameState z autorytetem hosta, RPC jako żądania klient→host
+- [x] 20. GameState z autorytetem hosta (HP, życie graczy), host rozsyła pełną kopię przez RPC. Żądania klient→host dojdą, gdy będzie co żądać (np. bandaż)
 
 ## Faza 4: potwór (baza)
 
