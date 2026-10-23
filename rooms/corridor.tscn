@@ -1,0 +1,118 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://rooms/room.gd" id="1"]
+[ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
+[ext_resource type="Script" path="res://camera/fixed_camera.gd" id="3"]
+[ext_resource type="Script" path="res://fx/flicker_light.gd" id="4"]
+[ext_resource type="Material" path="res://rooms/materials/concrete.tres" id="5"]
+[ext_resource type="Material" path="res://rooms/materials/wall.tres" id="6"]
+[ext_resource type="Material" path="res://rooms/materials/wood.tres" id="7"]
+[ext_resource type="Material" path="res://rooms/materials/metal.tres" id="8"]
+
+[sub_resource type="BoxShape3D" id="zone_WestHalf"]
+size = Vector3(7, 3, 2.5)
+
+[sub_resource type="BoxShape3D" id="zone_EastHalf"]
+size = Vector3(7, 3, 2.5)
+
+
+[node name="Corridor" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Geometry" type="CSGCombiner3D" parent="."]
+use_collision = true
+
+[node name="Floor" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+size = Vector3(12, 0.2, 2.9)
+material = ExtResource("5")
+
+[node name="Ceiling" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.1, 0)
+size = Vector3(12, 0.2, 2.9)
+material = ExtResource("5")
+
+[node name="WallN0" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -1.35)
+size = Vector3(12.4, 3, 0.2)
+material = ExtResource("6")
+
+[node name="WallS0" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 1.35)
+size = Vector3(12.4, 3, 0.2)
+material = ExtResource("6")
+
+[node name="Prop0" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.35, 0.75)
+size = Vector3(0.7, 0.7, 0.7)
+material = ExtResource("7")
+
+[node name="Prop1" type="CSGBox3D" parent="Geometry"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0.9, -0.95)
+size = Vector3(1.2, 1.8, 0.5)
+material = ExtResource("8")
+
+[node name="Doorways" type="Node3D" parent="."]
+
+[node name="West" type="Marker3D" parent="Doorways"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0)
+
+[node name="East" type="Marker3D" parent="Doorways"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, 0)
+
+[node name="CameraZones" type="Node3D" parent="."]
+
+[node name="WestHalf" type="Area3D" parent="CameraZones"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("2")
+camera_priority = 0
+
+[node name="Shape" type="CollisionShape3D" parent="CameraZones/WestHalf"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.7, 1.5, 0)
+shape = SubResource("zone_WestHalf")
+
+[node name="Camera" type="Camera3D" parent="CameraZones/WestHalf"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 2.6, 0.9)
+fov = 62.0
+near = 0.05
+script = ExtResource("3")
+look_target = Vector3(-4, 0.8, 0)
+follow = 0.35
+
+[node name="EastHalf" type="Area3D" parent="CameraZones"]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+script = ExtResource("2")
+camera_priority = 0
+
+[node name="Shape" type="CollisionShape3D" parent="CameraZones/EastHalf"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7, 1.5, 0)
+shape = SubResource("zone_EastHalf")
+
+[node name="Camera" type="Camera3D" parent="CameraZones/EastHalf"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.6, 2.6, -0.9)
+fov = 62.0
+near = 0.05
+script = ExtResource("3")
+look_target = Vector3(4, 0.8, 0)
+follow = 0.35
+
+[node name="Lights" type="Node3D" parent="."]
+
+[node name="Light0" type="OmniLight3D" parent="Lights"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.7, 0)
+light_color = Color(0.75, 0.85, 1, 1)
+light_energy = 0.8
+shadow_enabled = true
+omni_range = 6
+script = ExtResource("4")
+
+[node name="LootSpawns" type="Node3D" parent="."]
+
+[node name="AmbientPoints" type="Node3D" parent="."]
+
+[node name="Ambient0" type="Marker3D" parent="AmbientPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5, 2.5, 0)
