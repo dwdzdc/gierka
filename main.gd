@@ -7,6 +7,7 @@ extends Node3D
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
 
+@onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
 @onready var spawn_points: Node3D = $SpawnPoints
 @onready var camera_director: CameraDirector = $CameraDirector
@@ -25,6 +26,11 @@ func _ready() -> void:
 	%HostButton.pressed.connect(_on_host_pressed)
 	%JoinButton.pressed.connect(_on_join_pressed)
 	$HUD.visible = false
+	# NavMesh liczony w runtime: generator mapy też będzie składał pokoje w locie.
+	# Deferred, bo CSG buduje swoją geometrię dopiero po wejściu do drzewa.
+	# filter_baking_aabb (w main.tscn) bierze tylko geometrię do y=0.5, więc nie powstają
+	# "wyspy" na dachach i regałach.
+	navigation.bake_navigation_mesh.call_deferred(false)
 	status_label.text = Net.last_disconnect_reason
 	players.child_entered_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
 	players.child_exiting_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())

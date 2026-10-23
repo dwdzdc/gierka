@@ -35,10 +35,10 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 
 ## Faza 2: modularne pokoje
 
-- [~] 11. Scena bazowa pokoju według kontraktu. Pokoje go spełniają, brakuje NavMesh.
+- [x] 11. Scena bazowa pokoju według kontraktu (NavMesh liczony dla całej mapy, nie per pokój)
 - [ ] 12. Generator: graf pokoi doklejanych po `Doorways`, test kolizji AABB, seed
 - [ ] 13. Zaślepki niepołączonych drzwi, strefa startowa
-- [ ] 14. Nawigacja wypiekana w runtime dla złożonej mapy
+- [~] 14. Nawigacja wypiekana w runtime. Działa na ręcznie złożonej mapie, generator jeszcze nie istnieje
 - [ ] 15. Modyfikacje z seeda: loot, zablokowane przejścia, światła
 
 ## Faza 3: sieć

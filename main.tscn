@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="PackedScene" path="res://rooms/hall.tscn" id="2"]
@@ -18,6 +18,13 @@ fog_enabled = true
 fog_light_color = Color(0.02, 0.02, 0.03, 1)
 fog_density = 0.06
 
+[sub_resource type="NavigationMesh" id="navmesh"]
+geometry_parsed_geometry_type = 1
+agent_radius = 0.5
+agent_height = 1.75
+agent_max_climb = 0.25
+filter_baking_aabb = AABB(-8, -1, -8, 40, 1.5, 16)
+
 [sub_resource type="Theme" id="menu_theme"]
 default_font_size = 32
 
@@ -30,14 +37,17 @@ script = ExtResource("1")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("env")
 
-[node name="Rooms" type="Node3D" parent="."]
+[node name="Navigation" type="NavigationRegion3D" parent="."]
+navigation_mesh = SubResource("navmesh")
 
-[node name="Hall" parent="Rooms" instance=ExtResource("2")]
+[node name="Rooms" type="Node3D" parent="Navigation"]
 
-[node name="Corridor" parent="Rooms" instance=ExtResource("3")]
+[node name="Hall" parent="Navigation/Rooms" instance=ExtResource("2")]
+
+[node name="Corridor" parent="Navigation/Rooms" instance=ExtResource("3")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 0)
 
-[node name="Storage" parent="Rooms" instance=ExtResource("4")]
+[node name="Storage" parent="Navigation/Rooms" instance=ExtResource("4")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 23, 0, 0)
 
 [node name="Players" type="Node3D" parent="."]
