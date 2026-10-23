@@ -435,10 +435,58 @@ func _stats_text() -> String:
 	t += "WASD ruch (tank)    Shift bieg    Ctrl/C kucanie    Spacja skok    Q obrót 180°    F latarka\n"
 	t += "E (trzymaj): podnieś / odbij / bandaż kolegi / szafka / winda    H bandaż    F1 debug    R następna runda (host)\n"
 	if _show_debug:
-		var zone := camera_director.current_zone
-		t += "\n[b]DEBUG[/b]\nujęcie: %s\n" % ("-" if not is_instance_valid(zone) else "%s/%s" % [zone.owner.name, zone.name])
+		t += _debug_text()
+	else:
+		t += "\n[color=#777777]F1: debug (kamera, potwory, reżyser)[/color]"
+	return t
+
+
+## Debug (F1, w panelu pod Tab). Celowo poza zwykłymi statystykami: pozycje i stany
+## potworów zdradzałyby graczom za dużo. Część danych zna tylko host (reżyser, cele).
+func _debug_text() -> String:
+	var zone := camera_director.current_zone
+	var t := "\n[b]DEBUG[/b]\nujęcie: %s\n" % ("-" if not is_instance_valid(zone) else "%s/%s" % [zone.owner.name, zone.name])
+	var focus := camera_director.target as Node3D if is_instance_valid(camera_director.target) else null
+	var host := multiplayer.is_server()
+	t += "\n[b]POTWORY[/b]\n[table=8]"
+	for header in ["Typ", "Stan", "Dystans", "Pokój", "Wzrok", "Słuch", "Zagrożenie", "Cel reżysera"]:
+		t += "[cell][color=#999999]%s[/color][/cell]" % header
+	for node in monsters.get_children():
+		var monster := node as Monster
+		if monster == null or monster.profile == null:
+			continue
+		var distance := "-" if focus == null else "%.0f m" % monster.global_position.distance_to(focus.global_position)
+		var sight := "ślepy" if monster.sight_range_dark <= 0.0 else "%.0f/%.0f m" % [monster.sight_range_dark * monster.sense_boost, monster.sight_range_flashlight * monster.sense_boost]
+		var hearing := "×%.1f" % (monster.hearing * monster.sense_boost)
+		var menace := "-"
+		var goal := "-"
+		if host:
+			if director._menace.has(monster):
+				menace = "%.0f/%.0f" % [director._menace[monster], MonsterDirector.MENACE_LIMIT]
+			if director._cooldown.get(monster, 0.0) > 0.0:
+				menace += " (oddech %.0f s)" % director._cooldown[monster]
+			if monster.director_goal != Vector3.INF:
+				goal = _room_name_at(monster.director_goal)
+			elif not monster._vent_plan.is_empty():
+				goal = "szyb → " + _room_name_at(monster._vent_plan.exit)
+		for value in [monster.profile.display_name, Monster.State.keys()[monster.state], distance, _room_name_at(monster.global_position), sight, hearing, menace, goal]:
+			t += "[cell]%s[/cell]" % value
+	t += "[/table]\n"
+	if host:
+		var left := director.stage_seconds() - director._stage_timer
+		t += "\n[b]REŻYSER[/b]\netap %d, następny za %d:%02d    potworów %d/%d    szafki sprawdzane z szansą %d%% (ucieczek przez schowanie: %d)\n" % [
+			director.stage, int(left) / 60, int(left) % 60, director.monsters().size(), director.max_monsters,
+			int(director.hiding_check_chance() * 100), director.hiding_escapes]
 		for node in monsters.get_children():
 			var monster := node as Monster
-			if monster and monster.profile:
-				t += "%s: %s\n" % [monster.profile.display_name, Monster.State.keys()[monster.state]]
+			if monster and monster.profile and monster.profile.behavior == MonsterProfile.Behavior.GUARD:
+				t += "gniazdo strażnika: %s, przenosiny za %d s\n" % [_room_name_at(monster.home), int(director._relocate.get(monster, 0.0))]
 	return t
+
+
+## Nazwa pokoju, w którego bryle leży punkt (do debugu).
+func _room_name_at(point: Vector3) -> String:
+	for room in rooms:
+		if is_instance_valid(room) and (room.transform * room.bounds).has_point(point):
+			return room.name
+	return "?"
