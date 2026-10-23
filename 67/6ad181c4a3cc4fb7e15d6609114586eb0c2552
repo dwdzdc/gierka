@@ -1,0 +1,31 @@
+tests/navmesh_test.gd.uid
+  s_f5557ab97914ea::t_3fc3f14776edd1 1
+main.gd
+  s_f5557ab97914ea::t_a90652987e90c4 13,25,88,95,106-108
+tests/net_test.gd.uid
+  s_f5557ab97914ea::t_3fc3f14776edd1 1
+game/game_state.gd
+  s_f5557ab97914ea::t_ba8d1d1c0ccc6a 1-77
+game/game_state.gd.uid
+  s_f5557ab97914ea::t_3fc3f14776edd1 1
+main.tscn
+  s_f5557ab97914ea::t_a90652987e90c4 1,9,74-75
+tests/net_test.gd
+  s_f5557ab97914ea::t_a90652987e90c4 22-25,29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "676ad181c4a3cc4fb7e15d6609114586eb0c2552",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
