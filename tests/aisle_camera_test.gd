@@ -10,7 +10,7 @@ var director
 var frames := 0
 var cases := [
 	# [start, kierunek obrotu y]: wejście ze wschodniego końca blisko regału B i blisko regału A
-	[Vector3(44.1, 0.05, 2.6), Vector3(33.8, 0.05, 2.2)],
+	[Vector3(44.1, 0.05, 1.6), Vector3(33.8, 0.05, 2.2)],  # z=2.6 to dziś stół warsztatowy
 	[Vector3(44.1, 0.05, -2.6), Vector3(33.8, 0.05, -2.2)],
 	[Vector3(44.1, 0.05, 0.3), Vector3(33.8, 0.05, 0.3)],
 ]
