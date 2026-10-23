@@ -1,0 +1,70 @@
+rooms/turn.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+player/player.gd
+  s_f5557ab97914ea::t_31dbc8c5e4950f 151
+  s_f5557ab97914ea::t_8e6a8fd670f1ac 33-37,69-70,74,78-80,139-141,152,156-162,209-213
+rooms/storage.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+assets/sfx/kenney/handleCoins.ogg.import
+  s_f5557ab97914ea::t_8e6a8fd670f1ac 1-19
+project.godot
+  s_f5557ab97914ea::t_8e6a8fd670f1ac 86-95
+rooms/ramp.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+loot/coin_pile.tscn
+  s_f5557ab97914ea::t_5fbacb060b8b2c 1-30
+rooms/closet.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+game/game_state.gd
+  s_f5557ab97914ea::t_aabce6bce1dc74 11-13,17-18,20-22,31,33-36,38-39,41-43,65,67,86-93,120,128,145-171,175,192,196,198,200-202,205-243,302-320,333-342
+loot/coin_pile.gd.uid
+  s_f5557ab97914ea::t_8e6a8fd670f1ac 1
+rooms/materials/exit.tres
+  s_f5557ab97914ea::t_fcd226c471f7c9 1-7
+progress.md
+  ai_agent 142-145
+loot/gold.tres
+  s_f5557ab97914ea::t_5fbacb060b8b2c 1-9
+rooms/hall.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13,162-186,293-297
+tests/round_test.gd
+  s_f5557ab97914ea::t_31dbc8c5e4950f 1-64
+rooms/corridor.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+rooms/stairwell.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+tests/downed_test.gd
+  ai_agent 7,47
+assets/sfx/kenney/handleCoins2.ogg.import
+  s_f5557ab97914ea::t_8e6a8fd670f1ac 1-19
+main.gd
+  s_f5557ab97914ea::t_ec461f34604ef6 2-4,9-11,15-16,19,24,44-47,51,53,55-56,61,63,87,89,100-104,123,128,132-133,138,147-149,161-164,191-223,253-337,363,368-373,377,379,381,383-385,388-389
+rooms/room.gd
+  s_f5557ab97914ea::t_fcd226c471f7c9 11,40-41
+main.tscn
+  s_f5557ab97914ea::t_8e6a8fd670f1ac 1,9,45-50,77-81,176-207
+rooms/junction.tscn
+  s_f5557ab97914ea::t_fcd226c471f7c9 1,13
+assets/sfx/coins.tres
+  s_f5557ab97914ea::t_5fbacb060b8b2c 1-12
+loot/coin_pile.gd
+  s_f5557ab97914ea::t_5fbacb060b8b2c 1-47
+tools/gen_rooms.py
+  s_f5557ab97914ea::t_fcd226c471f7c9 32,34,68,179-180,220-225,236
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "12350e0847673edfa9744051e57afb40069c6aca",
+  "prompts": {},
+  "sessions": {
+    "s_f5557ab97914ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
