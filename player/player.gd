@@ -32,6 +32,7 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	add_to_group(&"players")
 	_tint_body()
 	if is_multiplayer_authority():
 		get_tree().call_group(&"camera_director", &"set_target", self)
