@@ -30,8 +30,9 @@ var _smoothed_speed := 0.0
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
-enum Help { NONE, REVIVE, BANDAGE, EXTRACT }
-const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE"}
+enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE }
+const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE"}
+const RESCUE_TIME := 1.5
 ## Pełna kieszeń hałasuje: przy tylu monetach kroki są słyszalne 2x dalej.
 const COINS_FOR_DOUBLE_NOISE := 300.0
 const EXTRACT_TIME := 2.0
@@ -71,7 +72,7 @@ func is_up() -> bool:
 func _process(_delta: float) -> void:
 	var game_state := _game_state()
 	var life := GameState.Life.OK if game_state == null else game_state.life(get_multiplayer_authority())
-	var lying := life in [GameState.Life.DOWNED, GameState.Life.DEAD]
+	var lying := life in [GameState.Life.DOWNED, GameState.Life.DEAD, GameState.Life.CARRIED]
 	$Body.rotation.x = PI / 2.0 if lying else 0.0
 	$Body.position.y = 0.35 if lying else 0.85
 	$Visor.visible = life != GameState.Life.DEAD
@@ -113,11 +114,28 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
 
+	if _follow_carrier():
+		return
 	var helping := _update_help(delta)
 	var desired := Vector3.ZERO if _quick_turning or helping or not is_up() else _tank_movement(delta)
 	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
 	move_and_slide()
+
+
+## Porwany: pozycją steruje właściciel postaci, więc to on "przykleja" ją do potwora.
+## Zwraca true, gdy postać jest niesiona (wtedy nie ma zwykłego ruchu).
+func _follow_carrier() -> bool:
+	var game_state := _game_state()
+	if game_state == null or not game_state.is_carried(get_multiplayer_authority()):
+		return false
+	var monsters := get_tree().get_first_node_in_group(&"main").get_node_or_null(^"Monsters") if get_tree().get_first_node_in_group(&"main") else null
+	var carrier: Node3D = monsters.get_node_or_null(game_state.carrier(get_multiplayer_authority())) if monsters else null
+	if carrier:
+		global_position = carrier.global_position - carrier.global_transform.basis.z * 0.8 + Vector3.UP * 0.4
+		rotation.y = carrier.rotation.y
+	velocity = Vector3.ZERO
+	return true
 
 
 ## Akcje "trzymaj klawisz": E przy powalonym koledze = podnieś, E przy krwawiącym
@@ -131,8 +149,11 @@ func _update_help(delta: float) -> bool:
 	if game_state and is_up():
 		var me := get_multiplayer_authority()
 		if Input.is_action_pressed("interact"):
-			target = _nearest_teammate(func(id: int) -> bool: return game_state.is_downed(id))
-			kind = Help.REVIVE
+			target = _nearest_teammate(func(id: int) -> bool: return game_state.is_carried(id))
+			kind = Help.RESCUE
+			if target == null:
+				target = _nearest_teammate(func(id: int) -> bool: return game_state.is_downed(id))
+				kind = Help.REVIVE
 			if target == null and game_state.bandages(me) > 0:
 				target = _nearest_teammate(func(id: int) -> bool: return game_state.is_up(id) and game_state.is_bleeding(id))
 				kind = Help.BANDAGE
@@ -148,7 +169,7 @@ func _update_help(delta: float) -> bool:
 	help_kind = kind if target else Help.NONE
 	if help_target == null:
 		return false
-	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME}[kind]
+	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME}[kind]
 	help_progress += delta / duration
 	if help_progress >= 1.0:
 		help_progress = 0.0
@@ -160,6 +181,8 @@ func _update_help(delta: float) -> bool:
 				game_state.request_bandage.rpc_id(1, target_id)
 			Help.EXTRACT:
 				game_state.request_extract.rpc_id(1)
+			Help.RESCUE:
+				game_state.request_rescue.rpc_id(1, target_id)
 	return true
 
 

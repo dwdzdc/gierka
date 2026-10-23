@@ -125,6 +125,7 @@ func _on_connected() -> void:
 	$HUD.visible = true
 	if multiplayer.is_server():
 		game_state.coins_dropped.connect(_drop_coins)
+		game_state.rescued.connect(_on_rescued)
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_despawn_player)
 		_build_map(map_seed, room_count)
@@ -276,6 +277,12 @@ func _spawn_coin_pile(position: Vector3, value: int) -> void:
 	loot.add_child(pile, true)
 
 
+func _on_rescued(_peer_id: int, monster_name: String) -> void:
+	var monster := monsters.get_node_or_null(monster_name) as Monster
+	if monster:
+		monster.drop_victim()
+
+
 func _drop_coins(_peer_id: int, amount: int, position: Vector3) -> void:
 	_spawn_coin_pile(position + Vector3.UP * 0.05, amount)
 
@@ -377,6 +384,8 @@ func _update_hud() -> void:
 				status += "  KRWAWISZ (H - bandaż)"
 		GameState.Life.DOWNED:
 			status = "POWALONY - wykrwawisz się za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me)
+		GameState.Life.CARRIED:
+			status = "PORWANY! HP %d - koledzy mogą cię odbić (E przy tobie)" % game_state.hp(me)
 		GameState.Life.DEAD:
 			status = "NIE ŻYJESZ (monety przepadły)" + watching
 		GameState.Life.EXTRACTED:

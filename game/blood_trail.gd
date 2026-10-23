@@ -37,7 +37,7 @@ func _physics_process(_delta: float) -> void:
 	for node in get_tree().get_nodes_in_group(&"players"):
 		var player := node as Node3D
 		var peer_id := player.get_multiplayer_authority()
-		var bleeding := game_state.is_up(peer_id) and game_state.is_bleeding(peer_id)
+		var bleeding := (game_state.is_up(peer_id) and game_state.is_bleeding(peer_id)) or game_state.is_carried(peer_id)
 		var downed := game_state.is_downed(peer_id)
 		if not bleeding and not downed:
 			_last_drop.erase(peer_id)

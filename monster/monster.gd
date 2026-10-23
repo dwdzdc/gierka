@@ -15,9 +15,11 @@ extends CharacterBody3D
 ##   ATTACK      – zamach (telegrafowany), potem cios / egzekucja / porwanie
 ##   RETREAT     – po ataku odchodzi daleko; daje graczom szansę na reakcję
 ##   TRACK       – idzie śladem krwi od kropli do kropli, w stronę najświeższych
+##   CARRY       – niesie porwanego gracza do gniazda (porwany powoli traci życie)
+##   FEED        – w gnieździe zjada porwanego (szybciej traci życie); koledzy mogą go odbić
 
 # Nowe stany dopisujemy na końcu: wartość enum leci przez sieć jako liczba.
-enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK }
+enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED }
 
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
@@ -86,6 +88,7 @@ var _stuck_time := 0.0
 var _state_time := 0.0  # ile sekund trwa bieżący stan
 var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
 var _prey: Player  # cel polowania/ataku
+var _victim: Player  # porwany (CARRY/FEED)
 var _heard_new := false
 var _smell_timer := 0.0
 var _track_time := -INF  # czas najświeższej kropli, do której już doszedł
@@ -233,7 +236,47 @@ func _think(delta: float) -> float:
 			return _retreat()
 		State.TRACK:
 			return _track()
+		State.CARRY:
+			return _carry()
+		State.FEED:
+			return _feed(delta)
 	return 0.0
+
+
+## Niesie porwanego do gniazda. Ofiara, która zginęła albo została odbita, kończy porwanie.
+func _carry() -> float:
+	if not _victim_still_held():
+		_start_retreat()
+		return 0.0
+	agent.target_position = home
+	if agent.is_navigation_finished() or global_position.distance_to(home) < 1.5:
+		_enter(State.FEED)
+		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+		game_state.set_carry_damage(_victim.get_multiplayer_authority(), profile.feed_damage_per_second)
+		return 0.0
+	return retreat_speed * 0.85
+
+
+func _feed(delta: float) -> float:
+	if not _victim_still_held():
+		_enter(State.PATROL)
+		return 0.0
+	face(_victim.global_position - global_position, delta)
+	return 0.0
+
+
+func _victim_still_held() -> bool:
+	if not is_instance_valid(_victim):
+		return false
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	return game_state.carrier(_victim.get_multiplayer_authority()) == name
+
+
+## Kolega odbił porwanego: potwór puszcza ofiarę i ucieka.
+func drop_victim() -> void:
+	_victim = null
+	_start_retreat()
+	_state_time = -6.0  # spłoszony: ucieka dłużej niż po zwykłym ataku (5 + 6 s)
 
 
 func _patrol(delta: float) -> float:
@@ -348,6 +391,8 @@ func _attack(delta: float) -> float:
 		face(_prey.global_position - global_position, delta)
 	if _state_time >= attack_windup:
 		_on_attack_land()
+		if state == State.CARRY:
+			return 0.0  # porwał: niesie ofiarę zamiast odchodzić
 		if is_watcher():
 			_enter(State.PATROL)
 		else:
@@ -366,6 +411,10 @@ func _on_attack_land() -> void:
 	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 	var peer_id := _prey.get_multiplayer_authority()
 	match profile.attack_style:
+		MonsterProfile.AttackStyle.ABDUCT:
+			game_state.abduct(peer_id, name, profile.carry_damage_per_second)
+			_victim = _prey
+			_enter(State.CARRY)
 		MonsterProfile.AttackStyle.EXECUTE:
 			var trail: BloodTrail = get_tree().get_first_node_in_group(&"blood_trail")
 			if trail:
@@ -442,7 +491,7 @@ func _update_sight(delta: float) -> void:
 
 func can_see(player: Player) -> bool:
 	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
-	if game_state and not game_state.is_alive(player.get_multiplayer_authority()):
+	if game_state and game_state.life(player.get_multiplayer_authority()) not in [GameState.Life.OK, GameState.Life.DOWNED]:
 		return false
 	var eye := global_position + Vector3.UP * eye_height
 	var target := player.global_position + Vector3.UP * 1.2

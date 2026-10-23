@@ -129,7 +129,7 @@ func _update_menace(monster: Monster, delta: float) -> void:
 	var near := _distance_to_nearest_player(monster.global_position) < NEAR_DISTANCE
 	var rate := (2.0 if monster.seen_player else 1.0) if near else -0.5
 	_menace[monster] = maxf(_menace.get(monster, 0.0) + rate * delta, 0.0)
-	if _menace[monster] >= MENACE_LIMIT and monster.state != Monster.State.ATTACK:
+	if _menace[monster] >= MENACE_LIMIT and monster.state not in [Monster.State.ATTACK, Monster.State.CARRY, Monster.State.FEED]:
 		# Dość nacisku: odeślij daleko i daj graczom odetchnąć.
 		_menace[monster] = 0.0
 		_cooldown[monster] = MENACE_COOLDOWN

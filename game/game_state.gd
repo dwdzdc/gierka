@@ -17,9 +17,10 @@ signal player_died(peer_id: int)
 signal coins_dropped(peer_id: int, amount: int, position: Vector3)
 signal player_extracted(peer_id: int)
 
-## OK = sprawny; DOWNED = powalony; DEAD = koniec; EXTRACTED = wydostał się z mapy.
+## OK = sprawny; DOWNED = powalony; DEAD = koniec; EXTRACTED = wydostał się z mapy;
+## CARRIED = porwany przez potwora (żywy, ale nic nie może zrobić).
 ## Nowe stany tylko na końcu: wartość leci przez sieć jako liczba.
-enum Life { OK, DOWNED, DEAD, EXTRACTED }
+enum Life { OK, DOWNED, DEAD, EXTRACTED, CARRIED }
 
 const MAX_HP := 100
 ## Szansa, że trafienie otworzy krwawienie, i ile HP na sekundę zabiera krwawienie.
@@ -62,9 +63,18 @@ func is_downed(peer_id: int) -> bool:
 	return life(peer_id) == Life.DOWNED
 
 
-## Na mapie i żywy = sprawny albo powalony (potwór może go jeszcze dobić).
+## Na mapie i żywy = sprawny, powalony (potwór może go jeszcze dobić) albo porwany.
 func is_alive(peer_id: int) -> bool:
-	return life(peer_id) in [Life.OK, Life.DOWNED]
+	return life(peer_id) in [Life.OK, Life.DOWNED, Life.CARRIED]
+
+
+func is_carried(peer_id: int) -> bool:
+	return life(peer_id) == Life.CARRIED
+
+
+## Nazwa węzła potwora, który niesie gracza ("" = nikt).
+func carrier(peer_id: int) -> String:
+	return players.get(peer_id, {}).get("carried_by", "")
 
 
 func hp(peer_id: int) -> int:
@@ -111,6 +121,11 @@ func _physics_process(delta: float) -> void:
 			dirty = true
 			if entry.bleed_out <= 0:
 				_kill(peer_id)
+		elif entry.life == Life.CARRIED:
+			entry.hp = maxi(entry.hp - entry.carry_dps, 0)
+			dirty = true
+			if entry.hp == 0:
+				_kill(peer_id)  # porwany nie ma powalenia: zjedzony to zjedzony
 	if dirty:
 		_broadcast()
 
@@ -148,6 +163,38 @@ func execute(peer_id: int) -> void:
 	if is_alive(peer_id):
 		_notify_hit.rpc(peer_id, MAX_HP)
 		_kill(peer_id)
+
+
+## Porwanie: gracz jest niesiony przez potwora `monster_name` i traci `damage_per_second` HP.
+func abduct(peer_id: int, monster_name: String, damage_per_second: int) -> void:
+	assert(multiplayer.is_server())
+	if not is_alive(peer_id):
+		return
+	var entry: Dictionary = players[peer_id]
+	entry.life = Life.CARRIED
+	entry.carried_by = monster_name
+	entry.carry_dps = damage_per_second
+	entry.bleeding = true
+	_notify_hit.rpc(peer_id, 0)
+	_broadcast()
+
+
+func set_carry_damage(peer_id: int, damage_per_second: int) -> void:
+	if is_carried(peer_id):
+		players[peer_id].carry_dps = damage_per_second
+		_broadcast()
+
+
+## Potwór puszcza porwanego (odbity przez kolegę albo potwór zginął/odszedł).
+func release(peer_id: int) -> void:
+	assert(multiplayer.is_server())
+	if not is_carried(peer_id):
+		return
+	var entry: Dictionary = players[peer_id]
+	entry.life = Life.OK if entry.hp > 0 else Life.DEAD
+	entry.carried_by = ""
+	entry.carry_dps = 0
+	_broadcast()
 
 
 func add_coins(peer_id: int, amount: int, position: Vector3) -> void:
@@ -194,6 +241,8 @@ func _kill(peer_id: int) -> void:
 	entry.hp = 0
 	entry.bleed_out = 0
 	entry.coins = 0
+	entry.carried_by = ""
+	entry.carry_dps = 0
 	_broadcast()
 	var body := _player_node(peer_id)
 	player_died.emit(peer_id)
@@ -205,7 +254,7 @@ func _kill(peer_id: int) -> void:
 func _fresh_entry(keep: Dictionary) -> Dictionary:
 	return {"name": keep.get("name", "?"), "session": keep.get("session", 0),
 		"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0,
-		"bandages": START_BANDAGES, "coins": 0, "banked": 0}
+		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0}
 
 
 ## Runda się kończy, gdy nikt nie został na mapie (każdy zginął albo wyszedł).
@@ -297,6 +346,22 @@ func request_bandage(target_id: int) -> void:
 	players[helper_id].bandages -= 1
 	players[target_id].bleeding = false
 	_broadcast()
+
+
+## Odbicie porwanego: kolega trzyma E przy porwanym. Potwór puszcza ofiarę i ucieka.
+signal rescued(peer_id: int, monster_name: String)
+
+
+@rpc("any_peer", "call_local", "reliable")
+func request_rescue(target_id: int) -> void:
+	if not multiplayer.is_server():
+		return
+	var helper_id := _caller()
+	if not is_up(helper_id) or not is_carried(target_id) or not _close_enough(helper_id, target_id):
+		return
+	var monster_name := carrier(target_id)
+	release(target_id)
+	rescued.emit(target_id, monster_name)
 
 
 ## Wyjście z mapy przy wyjściu w hali: niesione monety stają się wyniesionymi.
