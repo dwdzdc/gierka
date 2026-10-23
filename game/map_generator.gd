@@ -130,6 +130,8 @@ func _fits(room: Room, door: Marker3D, open: Dictionary) -> bool:
 func _place(room: Room, door: Marker3D, open: Dictionary) -> void:
 	room.transform = _aligned_transform(door, open)
 	connections.append({"a": open.door, "b": door})
+	open.room.add_door_frame(open.door)
+	room.add_door_frame(door)
 	room.name = "%02d_%s" % [rooms.size(), room.name]  # te same nazwy u każdego peera
 	_parent.add_child(room)
 	rooms.append(room)

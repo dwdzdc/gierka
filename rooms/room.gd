@@ -13,6 +13,8 @@ extends Node3D
 const DOOR_SIZE := Vector2(2.0, 2.6)
 const WALL_THICKNESS := 0.2
 const CAP_MATERIAL := preload("res://rooms/materials/wall.tres")
+const FRAME_MATERIAL := preload("res://rooms/materials/door_frame.tres")
+const LAMP_MATERIAL := preload("res://rooms/materials/door_lamp.tres")
 
 ## Bryła pokoju razem ze ścianami (lokalnie). Generator nie pozwala, żeby bryły się przecinały.
 @export var bounds := AABB()
@@ -44,6 +46,33 @@ func cap_doorway(doorway: Marker3D) -> void:
 	var local := doorway.transform
 	cap.transform = Transform3D(local.basis, local.origin + local.basis.z * WALL_THICKNESS / 2.0 + Vector3.UP * DOOR_SIZE.y / 2.0)
 	$Geometry.add_child(cap)
+
+
+## Futryna w kontrastowym kolorze i lampka nad przejściem, od strony tego pokoju.
+## Same meshe (bez kolizji): to tylko znak "tu są drzwi", widoczny z każdego ujęcia.
+func add_door_frame(doorway: Marker3D) -> void:
+	var frame := Node3D.new()
+	frame.name = "Frame_" + doorway.name
+	frame.transform = doorway.transform
+	add_child(frame)
+	var depth := WALL_THICKNESS + 0.05  # tuż przed wewnętrzną powierzchnią ściany (+Z markera)
+	var post := 0.2
+	var jamb_height := DOOR_SIZE.y + post
+	for side in [-1.0, 1.0]:
+		_frame_box(frame, Vector3(side * (DOOR_SIZE.x / 2.0 + post / 2.0), jamb_height / 2.0, depth), Vector3(post, jamb_height, 0.1), FRAME_MATERIAL)
+	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post / 2.0, depth), Vector3(DOOR_SIZE.x + 2.0 * post, post, 0.1), FRAME_MATERIAL)
+	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post + 0.15, depth + 0.03), Vector3(0.5, 0.12, 0.16), LAMP_MATERIAL)
+
+
+func _frame_box(parent: Node3D, position: Vector3, size: Vector3, material: Material) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	mesh.material = material
+	var instance := MeshInstance3D.new()
+	instance.mesh = mesh
+	instance.position = position
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(instance)
 
 
 func _markers(group_node: StringName) -> Array[Marker3D]:

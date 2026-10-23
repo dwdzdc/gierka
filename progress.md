@@ -52,7 +52,7 @@ równoległych do ściany, np. nowe drzwi na południu hali).
 - [ ] 15b. Limit pokoi w menu wyżej niż 30 (np. 60) + sprawdzić generator i wydajność (światła, CSG, NavMesh) na dużych mapach
 - [x] 15c. Małe pokoje (zakręt, skrzyżowanie, schowek) mają jedno ujęcie; skrzyżowanie bez filara
 - [ ] 15d. Rzadsze cięcia kamer: mniej i większe strefy, minimalny czas trwania ujęcia (np. ~1.5 s, chyba że postaci nie widać)
-- [ ] 15e. Obramowanie drzwi: model futryny w kontrastowym kolorze (może lampka nad drzwiami), żeby przejście było widoczne z każdego ujęcia
+- [x] 15e. Futryna w kontrastowym kolorze (lekko świeci) + lampka nad przejściem, po obu stronach każdego połączonego przejścia. Zamurowane przejścia nie mają futryny
 - [x] 15f. Zasada kamer: każde przejście widoczne z kamery strefy, w której leży, pod kątem < 70° do normalnej ściany. Pilnuje tego `tests/camera_rules_test.gd`
 
 ## Faza 3: sieć
