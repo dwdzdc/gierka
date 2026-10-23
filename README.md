@@ -5,30 +5,63 @@ Plan i postęp: [progress.md](progress.md).
 
 ## Uruchomienie
 
-Potrzebny Godot **4.7** (standardowy, nie .NET/Mono).
+Potrzebny jest Godot **4.7** (wersja standardowa, nie .NET/Mono) i git. Każdy gracz musi mieć
+tę samą wersję gry, czyli ten sam commit.
 
-**Linux**
+Na każdym systemie są te same trzy kroki: **pobierz repo → zaimportuj projekt → uruchom**.
+Import trzeba powtórzyć po każdym pullu, który dodaje nowe skrypty. Bez niego gra wysypie się
+na `Could not find type ...`, bo cache klas (`.godot/`) nie jest w repo. Otwarcie projektu w
+edytorze Godota robi import automatycznie.
 
-```sh
-# Arch: sudo pacman -S godot   (albo z AUR: yay -S godot-bin)
-# Flatpak (działa na większości dystrybucji)
-flatpak install flathub org.godotengine.Godot
-flatpak run org.godotengine.Godot --path /ścieżka/do/gierka
-
-# albo binarka z https://godotengine.org/download/linux/ (rozpakuj, chmod +x)
-./Godot_v4.7.2-stable_linux.x86_64 --path /ścieżka/do/gierka
-```
-
-**macOS**: `brew install --cask godot`, potem `godot --path /ścieżka/do/gierka`.
-
-**Po sklonowaniu (i po pullu z nowymi skryptami) najpierw zaimportuj projekt**, inaczej
-gra wysypie się na `Could not find type ...`: cache klas (`.godot/`) nie jest w repo.
+### macOS
 
 ```sh
-godot --headless --path /ścieżka/do/gierka --import
+brew install --cask godot          # instaluje Godot.app i polecenie `godot`
+git clone git@github.com:dwdzdc/gierka.git
+cd gierka
+godot --headless --path . --import # raz po sklonowaniu / po pullu
+godot --path .                     # gra
 ```
 
-Otwarcie projektu w edytorze robi to samo.
+Przy pierwszym hostowaniu macOS zapyta o połączenia przychodzące dla Godota: „Zezwól”.
+
+### Linux
+
+```sh
+# Arch:     sudo pacman -S godot   (albo z AUR: yay -S godot-bin)
+# Flatpak:  flatpak install flathub org.godotengine.Godot
+#           (wtedy zamiast `godot` pisz `flatpak run org.godotengine.Godot`)
+# Inne:     binarka z https://godotengine.org/download/linux/ (rozpakuj, chmod +x)
+
+git clone git@github.com:dwdzdc/gierka.git
+cd gierka
+godot --headless --path . --import
+godot --path .
+```
+
+Host z firewallem: otwórz 7777/UDP (ufw: `sudo ufw allow 7777/udp`).
+
+### Windows
+
+1. Pobierz Godot 4.7 (standard, 64-bit) z https://godotengine.org/download/windows/ i rozpakuj
+   np. do `C:\Godot`. W archiwum są dwa pliki: `Godot_v4.7.2-stable_win64.exe` (gra/edytor) i
+   `..._console.exe` (to samo, ale z oknem konsoli i logami: użyj go do importu).
+2. Zainstaluj git (https://git-scm.com/download/win) i w PowerShellu:
+
+```powershell
+git clone git@github.com:dwdzdc/gierka.git
+cd gierka
+C:\Godot\Godot_v4.7.2-stable_win64_console.exe --headless --path . --import
+C:\Godot\Godot_v4.7.2-stable_win64.exe --path .
+```
+
+Przy pierwszym hostowaniu Windows Defender zapyta o dostęp do sieci: zaznacz sieci prywatne
+i zezwól.
+
+### Bez terminala
+
+Uruchom Godota, w Menedżerze projektów wybierz **Import**, wskaż `project.godot` z folderu gry,
+otwórz projekt (import zrobi się sam) i wciśnij **F5**.
 
 ## Gra po sieci
 
