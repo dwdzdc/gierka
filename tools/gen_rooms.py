@@ -29,8 +29,9 @@ EXT = [
     ("Material", "res://rooms/materials/metal.tres"),
     ("Material", "res://rooms/materials/rust.tres"),
     ("Material", "res://rooms/materials/door_lamp.tres"),
+    ("Material", "res://rooms/materials/exit.tres"),
 ]
-EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10}
+EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11}
 # Obrót markera drzwi (stopnie wokół Y), żeby jego -Z wskazywało na zewnątrz danej ściany.
 SIDE_YAW = {"N": 0, "W": 90, "S": 180, "E": -90}
 
@@ -64,7 +65,7 @@ def wall_pieces(length, h, doors):
     return pieces
 
 
-def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=()):
+def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
             albo [("prism", [(x, y), ...], z0, z1, mat)] (profil w XY, wyciągnięty wzdłuż Z)
@@ -175,6 +176,8 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
     markers("AmbientPoints", ambient)
     if spawns:
         markers("PlayerSpawns", spawns)
+    if exit_point:
+        markers("ExitPoint", [("Exit",) + tuple(exit_point)])
 
     # Bryła pokoju (ze ścianami) do testu kolizji przy składaniu mapy.
     bounds = f"AABB({v(-(sx / 2 + T), -0.2, -(sz / 2 + T), sx + 2 * T, h + 0.4, sz + 2 * T)})"
@@ -214,6 +217,12 @@ build(
         ("cyl", (6.0, 0.6, -5.3), 0.4, 1.2, "rust"),
         ("box", (0, 4.5, 5.6), (16, 0.25, 0.25), "metal"),       # rury pod sufitem
         ("box", (0, 4.15, 5.65), (16, 0.15, 0.15), "rust"),
+        # wyjście z mapy: drzwi windy w zachodniej ścianie, zielona futryna i znak
+        ("box", (-7.95, 1.3, 3.5), (0.1, 2.6, 2.0), "metal"),
+        ("box", (-7.92, 1.45, 2.4), (0.15, 2.9, 0.15), "exit"),
+        ("box", (-7.92, 1.45, 4.6), (0.15, 2.9, 0.15), "exit"),
+        ("box", (-7.92, 2.85, 3.5), (0.15, 0.15, 2.35), "exit"),
+        ("box", (-7.94, 3.3, 3.5), (0.1, 0.35, 1.0), "exit"),
     ],
     zones=[
         ("West", (-8, 1, -6, 6), (7.6, 4.6, -5.6), (-4, 0.6, 2), 0.0, 0),
@@ -224,6 +233,7 @@ build(
     ambient=[("Ambient0", (-7, 1, 5))],
     spawns=[("Spawn0", (-5, 0.05, 1.5), -90), ("Spawn1", (-5, 0.05, 0), -90),
             ("Spawn2", (-6.2, 0.05, 1.5), -90), ("Spawn3", (-6.2, 0.05, 0), -90)],
+    exit_point=((-7.2, 0.05, 3.5), -90),
 )
 
 # Corridor: 16x4, drzwi na obu końcach. Kamery na końcach patrzą wzdłuż na przeciwległe drzwi.

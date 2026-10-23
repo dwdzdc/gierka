@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=14 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://game/game_state.gd" id="8"]
 [ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/hit.tres" id="9"]
 [ext_resource type="Script" path="res://game/blood_trail.gd" id="10"]
+[ext_resource type="AudioStreamRandomizer" path="res://assets/sfx/coins.tres" id="11"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -41,6 +42,12 @@ navigation_mesh = SubResource("navmesh")
 
 [node name="Rooms" type="Node3D" parent="Navigation"]
 
+[node name="Loot" type="Node3D" parent="."]
+
+[node name="LootSpawner" type="MultiplayerSpawner" parent="."]
+_spawnable_scenes = PackedStringArray("res://loot/coin_pile.tscn")
+spawn_path = NodePath("../Loot")
+
 [node name="Players" type="Node3D" parent="."]
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
@@ -66,6 +73,11 @@ stream = ExtResource("9")
 volume_db = 4.0
 unit_size = 4.0
 max_distance = 20.0
+
+[node name="CoinSound" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("11")
+unit_size = 3.0
+max_distance = 15.0
 
 [node name="CameraDirector" type="Node" parent="."]
 script = ExtResource("6")
@@ -161,3 +173,35 @@ text = "Dołącz"
 unique_name_in_owner = true
 horizontal_alignment = 1
 autowrap_mode = 2
+
+[node name="Summary" type="CanvasLayer" parent="."]
+layer = 4
+
+[node name="Center" type="CenterContainer" parent="Summary"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("menu_theme")
+
+[node name="Panel" type="PanelContainer" parent="Summary/Center"]
+custom_minimum_size = Vector2(1100, 0)
+
+[node name="Margin" type="MarginContainer" parent="Summary/Center/Panel"]
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 32
+
+[node name="Items" type="VBoxContainer" parent="Summary/Center/Panel/Margin"]
+theme_override_constants/separation = 24
+
+[node name="SummaryText" type="Label" parent="Summary/Center/Panel/Margin/Items"]
+unique_name_in_owner = true
+theme_override_font_sizes/font_size = 28
+text = "KONIEC RUNDY"
+
+[node name="NextRoundButton" type="Button" parent="Summary/Center/Panel/Margin/Items"]
+unique_name_in_owner = true
+text = "Następna runda (R)"

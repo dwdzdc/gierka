@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="Material" path="res://rooms/materials/metal.tres" id="8"]
 [ext_resource type="Material" path="res://rooms/materials/rust.tres" id="9"]
 [ext_resource type="Material" path="res://rooms/materials/door_lamp.tres" id="10"]
+[ext_resource type="Material" path="res://rooms/materials/exit.tres" id="11"]
 
 [sub_resource type="BoxShape3D" id="zone_Low"]
 size = Vector3(10, 9.5, 4.6)

@@ -1,21 +1,27 @@
 extends Node3D
-## Scena gry: mapa składana z modułów + gracze po sieci.
-## Gracze są spawnowani TYLKO przez hosta. MultiplayerSpawner sam odtwarza ich u klientów.
+## Scena gry: mapa składana z modułów + gracze po sieci + pętla rundy.
+## Gracze, potwory i monety są spawnowane TYLKO przez hosta. MultiplayerSpawner
+## sam odtwarza je u klientów.
 ##
 ## Dołączanie: host składa mapę z (seed, liczba pokoi) i wysyła te dwie liczby nowemu
 ## klientowi. Klient składa identyczną mapę i dopiero wtedy prosi o swoją postać.
 ##
+## Runda: zbierasz monety i wychodzisz windą w hali. Runda kończy się, gdy nikogo nie ma
+## już na mapie (każdy zginął albo wyszedł). Potem podsumowanie i host startuje następną.
+##
 ## Start z terminala bez menu:  godot --path . -- --host [--rooms=10] [--seed=1234]
 ##                              godot --path . -- --join=192.168.1.20
 
+signal navigation_ready
+
 const PLAYER_SCENE := preload("res://player/player.tscn")
 const MONSTER_SCENE := preload("res://monster/monster.tscn")
-## Tymczasowe, do czasu pętli rundy (faza 6): gdy zginą wszyscy, wszyscy wracają na start.
-const WIPE_RESET_DELAY := 5.0
+const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
 @onready var monsters: Node3D = $Monsters
+@onready var loot: Node3D = $Loot
 @onready var room_parent: Node3D = $Navigation/Rooms
 @onready var game_state: GameState = $GameState
 @onready var blood_trail: BloodTrail = $BloodTrail
@@ -35,17 +41,26 @@ var room_count := 8
 var map_layout: Array = []
 var rooms: Array[Room] = []
 var map_connections: Array[Dictionary] = []
+## Ilu monet szukać na mapie (na pokój, poza halą), oprócz znaczników LootSpawns.
+var coins_per_room := 2
+
+var _spectate_index := 0
 
 
 func _ready() -> void:
+	add_to_group(&"main")
 	camera_director.camera_changed.connect(_on_camera_changed)
-	game_state.changed.connect(_update_hud)
+	game_state.changed.connect(_on_game_state_changed)
 	game_state.player_hit.connect(_on_player_hit)
+	game_state.coins_picked.connect(_on_coins_picked)
+	game_state.round_finished.connect(_on_round_finished)
 	Net.connected.connect(_on_connected)
 	Net.disconnected.connect(_on_disconnected)
 	%HostButton.pressed.connect(_on_host_pressed)
 	%JoinButton.pressed.connect(_on_join_pressed)
+	%NextRoundButton.pressed.connect(request_next_round)
 	$HUD.visible = false
+	$Summary.visible = false
 	listener.make_current()
 	status_label.text = Net.last_disconnect_reason
 	players.child_entered_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
@@ -69,9 +84,9 @@ func _ready() -> void:
 ## ekranu słychać z lewej. Domyślnie słuchałaby kamera, czyli z drugiego końca pokoju.
 func _process(_delta: float) -> void:
 	if $HUD.visible:
-		_update_hud()  # postęp podnoszenia zmienia się co klatkę
+		_update_hud()  # postęp akcji "trzymaj klawisz" zmienia się co klatkę
 	var cam := get_viewport().get_camera_3d()
-	if camera_director.target == null or cam == null:
+	if cam == null or not is_instance_valid(camera_director.target):
 		return
 	listener.global_transform = Transform3D(cam.global_transform.basis, camera_director.target.global_position + Vector3.UP * 1.6)
 
@@ -82,6 +97,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("toggle_debug"):
 		_show_debug = not _show_debug
 		info_label.visible = _show_debug
+	elif event.is_action_pressed("spectate_next"):
+		_spectate_index += 1
+		_update_spectating()
+	elif event.is_action_pressed("next_round"):
+		request_next_round()
 
 
 func _on_host_pressed() -> void:
@@ -100,19 +120,22 @@ func _on_connected() -> void:
 	menu.visible = false
 	$HUD.visible = true
 	if multiplayer.is_server():
-		game_state.player_died.connect(_on_player_died)
+		game_state.coins_dropped.connect(_drop_coins)
 		multiplayer.peer_connected.connect(_on_peer_connected)
 		multiplayer.peer_disconnected.connect(_despawn_player)
 		_build_map(map_seed, room_count)
 		_spawn_player(multiplayer.get_unique_id())
-		_spawn_monster()
+		_populate_round()
 	_update_hud()
 
+
+# --- Mapa ----------------------------------------------------------------------
 
 ## Składa mapę i wypieka NavMesh. Ten sam seed i liczba pokoi = ta sama mapa u każdego.
 func _build_map(seed_value: int, count: int) -> void:
 	map_seed = seed_value
 	room_count = count
+	camera_director.set_target(camera_director.target)  # zapomnij strefy starej mapy
 	for child in room_parent.get_children():
 		child.free()
 	var generator := MapGenerator.new()
@@ -121,9 +144,9 @@ func _build_map(seed_value: int, count: int) -> void:
 	else:
 		rooms = generator.build_chain(room_parent, map_layout)
 	map_connections = generator.connections
-	# NavMesh potrzebny tylko hostowi (AI potwora). Deferred, bo CSG buduje geometrię
-	# dopiero po wejściu do drzewa. Na dachach i regałach powstają "wyspy" NavMeshu;
-	# potwór losuje punkty tylko na poziomie podłogi (Monster.random_floor_point).
+	game_state.exit_position = rooms[0].get_exit().global_position
+	# NavMesh potrzebny tylko hostowi (AI potwora). Na dachach i regałach powstają
+	# "wyspy" NavMeshu; potwór losuje punkty tylko na poziomie podłogi (Monster.random_floor_point).
 	if multiplayer.is_server():
 		_bake_navigation()
 
@@ -135,6 +158,10 @@ func _bake_navigation() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	navigation.bake_navigation_mesh(false)
+	# Jeszcze chwila na synchronizację mapy nawigacji, zanim ktoś zacznie z niej korzystać.
+	for i in 5:
+		await get_tree().physics_frame
+	navigation_ready.emit()
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -159,6 +186,39 @@ func _client_ready() -> void:
 func _on_disconnected(_reason: String) -> void:
 	# Najprościej: wróć do świeżej sceny z menu. Gracze znikną razem z nią.
 	get_tree().reload_current_scene.call_deferred()
+
+
+# --- Runda (host) ----------------------------------------------------------------
+
+## Potwór i monety na świeżo złożonej mapie.
+func _populate_round() -> void:
+	_spawn_monster()
+	await navigation_ready
+	_spawn_loot()
+
+
+func request_next_round() -> void:
+	if not multiplayer.is_server() or not game_state.round_over:
+		return
+	_start_next_round.rpc(randi(), room_count)
+
+
+@rpc("authority", "call_local", "reliable")
+func _start_next_round(seed_value: int, count: int) -> void:
+	$Summary.visible = false
+	if multiplayer.is_server():
+		for node in monsters.get_children() + loot.get_children():
+			node.queue_free()
+		blood_trail.clear_all()
+	_build_map(seed_value, count)
+	if multiplayer.is_server():
+		game_state.reset_for_round()
+		var i := 0
+		for player in players.get_children():
+			player.respawn_at.rpc_id(player.get_multiplayer_authority(), _spawn_transform(i))
+			i += 1
+		_populate_round()
+	_update_spectating()
 
 
 func _spawn_player(peer_id: int) -> void:
@@ -190,18 +250,91 @@ func _spawn_monster() -> void:
 	monster.state_changed.connect(func(_s: Monster.State) -> void: _update_hud())
 
 
-func _on_player_died(_peer_id: int) -> void:
-	for peer_id in game_state.players:
-		if game_state.is_alive(peer_id):
-			return
-	await get_tree().create_timer(WIPE_RESET_DELAY).timeout
-	blood_trail.clear_all()
-	var i := 0
-	for player in players.get_children():
-		var peer_id: int = player.get_multiplayer_authority()
-		game_state.reset_player(peer_id)
-		player.respawn_at.rpc_id(peer_id, _spawn_transform(i))
-		i += 1
+## Monety: na znacznikach LootSpawns i w losowych miejscach pokoi. Dalej od hali = cenniejsze
+## (chciwość ma kosztować ryzyko). Wszystko kładziemy na podłodze, w zasięgu gracza.
+func _spawn_loot() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = map_seed
+	var map := navigation.get_navigation_map()
+	var start := rooms[0].global_position
+	for room in rooms.slice(1):
+		var spots: Array[Vector3] = []
+		for marker in room.get_loot_spawns():
+			if rng.randf() < 0.7:
+				spots.append(marker.global_position)
+		for i in coins_per_room:
+			var local := Vector3(
+				rng.randf_range(room.bounds.position.x + 1.5, room.bounds.end.x - 1.5), 0.3,
+				rng.randf_range(room.bounds.position.z + 1.5, room.bounds.end.z - 1.5))
+			spots.append(room.to_global(local))
+		for spot in spots:
+			# Na podłogę obok (znacznik może stać na skrzyni, a tam nie da się wejść).
+			var floor_spot := Vector3(spot.x, room.global_position.y + 0.2, spot.z)
+			var point := NavigationServer3D.map_get_closest_point(map, floor_spot)
+			if point.distance_to(floor_spot) > 1.5:
+				continue
+			var distance := point.distance_to(start)
+			var value := roundi(rng.randi_range(5, 20) * (1.0 + distance / 40.0))
+			_spawn_coin_pile(point, value)
+
+
+func _spawn_coin_pile(position: Vector3, value: int) -> void:
+	var pile: CoinPile = COIN_SCENE.instantiate()
+	pile.value = value
+	pile.position = position
+	loot.add_child(pile, true)
+
+
+func _drop_coins(_peer_id: int, amount: int, position: Vector3) -> void:
+	_spawn_coin_pile(position + Vector3.UP * 0.05, amount)
+
+
+func _despawn_player(peer_id: int) -> void:
+	var player := players.get_node_or_null(str(peer_id))
+	if player:
+		player.queue_free()
+	game_state.remove_player(peer_id)
+
+
+# --- Wszyscy -------------------------------------------------------------------
+
+func _on_game_state_changed() -> void:
+	_update_spectating()
+	_update_hud()
+
+
+## Martwy albo wydostany gracz ogląda kamery żyjącego kolegi (Tab = następny).
+func _update_spectating() -> void:
+	var me := multiplayer.get_unique_id()
+	var own: Player = players.get_node_or_null(str(me))
+	if own == null:
+		return
+	var wanted: Node3D = own
+	if not game_state.is_alive(me):
+		var alive := players.get_children().filter(func(p: Node) -> bool:
+			return game_state.is_alive(p.get_multiplayer_authority()))
+		if not alive.is_empty():
+			wanted = alive[_spectate_index % alive.size()]
+	if camera_director.target != wanted:
+		camera_director.set_target(wanted)
+
+
+func _on_round_finished(results: Array) -> void:
+	var lines := ["KONIEC RUNDY", ""]
+	for r in results:
+		lines.append("%s   %s   wyniesione: %d   wynik rundy: %d   suma: %d" % [
+			r.name, "wydostał się" if r.survived else "zginął", r.banked, r.score, r.session])
+	lines.append("")
+	lines.append("Zero-sum: %d%% wyniesionych monet idzie do puli dzielonej po równo między ocalałych." % int(GameState.SHARED_FRACTION * 100))
+	lines.append("R albo przycisk: następna runda" if multiplayer.is_server() else "Czekaj, aż host zacznie następną rundę.")
+	%SummaryText.text = "\n".join(lines)
+	%NextRoundButton.visible = multiplayer.is_server()
+	$Summary.visible = true
+
+
+func _on_coins_picked(_peer_id: int, position: Vector3) -> void:
+	$CoinSound.global_position = position + Vector3.UP * 0.5
+	$CoinSound.play()
 
 
 func _on_player_hit(peer_id: int, _amount: int) -> void:
@@ -221,38 +354,37 @@ func _on_player_hit(peer_id: int, _amount: int) -> void:
 	create_tween().tween_property(flash, "modulate:a", 0.0, 0.6)
 
 
-func _despawn_player(peer_id: int) -> void:
-	var player := players.get_node_or_null(str(peer_id))
-	if player:
-		player.queue_free()
-	game_state.remove_player(peer_id)
-
-
 func _on_camera_changed(_zone: CameraZone) -> void:
 	_update_hud()
 
 
 func _update_hud() -> void:
 	var zone := camera_director.current_zone
-	var shot := "-" if zone == null else "%s/%s" % [zone.owner.name, zone.name]
+	var shot := "-" if not is_instance_valid(zone) else "%s/%s" % [zone.owner.name, zone.name]
 	var role := "host, adres: %s" % ", ".join(Net.local_addresses()) if multiplayer.is_server() else "klient"
 	role += "  mapa: seed %d, pokoi %d" % [map_seed, rooms.size()]
 	var me := multiplayer.get_unique_id()
 	if multiplayer.is_server() and monsters.get_child_count() > 0:
-		role += "  potwor: %s" % Monster.State.keys()[monsters.get_child(0).state]
+		var monster := monsters.get_child(0) as Monster
+		if monster:
+			role += "  potwór: %s" % Monster.State.keys()[monster.state]
+	var watching := ""
+	if is_instance_valid(camera_director.target) and camera_director.target.name != str(me):
+		watching = "  Oglądasz: %s [Tab]" % game_state.player_name(camera_director.target.get_multiplayer_authority())
 	var status := ""
 	match game_state.life(me):
 		GameState.Life.OK:
-			status = "HP %d  bandaze: %d" % [game_state.hp(me), game_state.bandages(me)]
+			status = "HP %d  monety: %d  bandaże: %d" % [game_state.hp(me), game_state.coins(me), game_state.bandages(me)]
 			if game_state.is_bleeding(me):
-				status += "  KRWAWISZ (H - bandaz)"
+				status += "  KRWAWISZ (H - bandaż)"
 		GameState.Life.DOWNED:
-			status = "POWALONY - wykrwawisz sie za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me)
+			status = "POWALONY - wykrwawisz się za %d s. Czekaj na pomoc" % game_state.bleed_out_left(me)
 		GameState.Life.DEAD:
-			status = "NIE ZYJESZ"
+			status = "NIE ŻYJESZ (monety przepadły)" + watching
+		GameState.Life.EXTRACTED:
+			status = "WYDOSTAŁEŚ SIĘ (wyniesione: %d)%s" % [game_state.players.get(me, {}).get("banked", 0), watching]
 	var me_node: Player = players.get_node_or_null(str(me))
 	if me_node and me_node.help_target:
-		var what := "PODNOSZENIE" if me_node.help_kind == Player.Help.REVIVE else "BANDAZ"
-		status += "  %s %d%%" % [what, int(me_node.help_progress * 100)]
-	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrot  F latarka  E (trzymaj) pomoz koledze  F1 ukryj\nujecie: %s\n%s  graczy: %d" % [
+		status += "  %s %d%%" % [Player.HELP_NAMES[me_node.help_kind], int(me_node.help_progress * 100)]
+	info_label.text = "%s\nWASD ruch  SHIFT bieg  Q obrót  F latarka  E (trzymaj) pomóż / wyjdź windą  H bandaż  F1 ukryj\nujęcie: %s\n%s  graczy: %d" % [
 		status, shot, role, players.get_child_count()]

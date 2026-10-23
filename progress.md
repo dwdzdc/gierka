@@ -139,10 +139,10 @@ Ustalenia (23.10):
 - Uwaga: czas między kolejnymi potworami trzeba stroić playtestem; start 3 min + 15 s
   na pokój (8 pokoi = 5 min).
 
-- [ ] 33. Monety: kupki rozrzucone po mapie (więcej i cenniejsze dalej od hali), podnoszenie wejściem, licznik w HUD, im więcej niesiesz, tym głośniej idziesz
-- [ ] 34. Ekstrakcja: wyjście w hali (trzymaj E), wydostany gracz ogląda kamery kolegi
-- [ ] 35. Punktacja zero-sum i ekran podsumowania (wynik rundy + suma sesji)
-- [ ] 36. Restart rundy z nowym seedem (host)
+- [x] 33. Monety: kupki na znacznikach i w losowych miejscach pokoi (cenniejsze dalej od hali), podnoszenie wejściem, licznik w HUD, kroki do 2x głośniejsze przy 300 monetach. Śmierć = monety wypadają kupką na ziemię
+- [x] 34. Ekstrakcja: winda w hali (zielona futryna, trzymaj E 2 s), wydostany/martwy gracz ogląda kamery żyjącego kolegi (Tab = następny)
+- [x] 35. Punktacja zero-sum (`GameState.SHARED_FRACTION`) i ekran podsumowania (wynik rundy + suma sesji)
+- [x] 36. Następna runda z nowym seedem (host: R albo przycisk); suma sesji zostaje. Reset po wybiciu wszystkich zastąpiony końcem rundy
 - [ ] 36b. Narastająca trudność: nowi potwory co kilka minut, ostrzejsze zmysły
 - [ ] 37. Checkpoint MVP: playtest we dwóch
 

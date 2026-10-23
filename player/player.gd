@@ -30,7 +30,11 @@ var _smoothed_speed := 0.0
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
-enum Help { NONE, REVIVE, BANDAGE }
+enum Help { NONE, REVIVE, BANDAGE, EXTRACT }
+const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE"}
+## Pełna kieszeń hałasuje: przy tylu monetach kroki są słyszalne 2x dalej.
+const COINS_FOR_DOUBLE_NOISE := 300.0
+const EXTRACT_TIME := 2.0
 
 ## Bieżąca akcja "trzymaj klawisz" (tylko u właściciela postaci, do HUD-a).
 var help_kind := Help.NONE
@@ -62,14 +66,18 @@ func is_up() -> bool:
 	return game_state == null or game_state.is_up(get_multiplayer_authority())
 
 
-## Powalony albo martwy leży na ziemi. Liczone u każdego z GameState, bez dodatkowej synchronizacji.
+## Powalony albo martwy leży na ziemi, wydostany znika z mapy. Liczone u każdego z GameState,
+## bez dodatkowej synchronizacji.
 func _process(_delta: float) -> void:
 	var game_state := _game_state()
 	var life := GameState.Life.OK if game_state == null else game_state.life(get_multiplayer_authority())
-	var lying := life != GameState.Life.OK
+	var lying := life in [GameState.Life.DOWNED, GameState.Life.DEAD]
 	$Body.rotation.x = PI / 2.0 if lying else 0.0
 	$Body.position.y = 0.35 if lying else 0.85
 	$Visor.visible = life != GameState.Life.DEAD
+	var gone := life == GameState.Life.EXTRACTED
+	visible = not gone
+	collision_layer = 0 if gone else 2
 
 
 ## Host przenosi gracza (np. respawn). Pozycją steruje właściciel, więc host musi go poprosić.
@@ -128,6 +136,9 @@ func _update_help(delta: float) -> bool:
 			if target == null and game_state.bandages(me) > 0:
 				target = _nearest_teammate(func(id: int) -> bool: return game_state.is_up(id) and game_state.is_bleeding(id))
 				kind = Help.BANDAGE
+			if target == null and global_position.distance_to(game_state.exit_position) <= GameState.EXIT_DISTANCE:
+				target = self
+				kind = Help.EXTRACT
 		elif Input.is_action_pressed("bandage_self") and game_state.is_bleeding(me) and game_state.bandages(me) > 0:
 			target = self
 			kind = Help.BANDAGE
@@ -137,14 +148,18 @@ func _update_help(delta: float) -> bool:
 	help_kind = kind if target else Help.NONE
 	if help_target == null:
 		return false
-	help_progress += delta / (revive_time if kind == Help.REVIVE else bandage_time)
+	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME}[kind]
+	help_progress += delta / duration
 	if help_progress >= 1.0:
 		help_progress = 0.0
 		var target_id := help_target.get_multiplayer_authority()
-		if kind == Help.REVIVE:
-			game_state.request_revive.rpc_id(1, target_id)
-		else:
-			game_state.request_bandage.rpc_id(1, target_id)
+		match kind:
+			Help.REVIVE:
+				game_state.request_revive.rpc_id(1, target_id)
+			Help.BANDAGE:
+				game_state.request_bandage.rpc_id(1, target_id)
+			Help.EXTRACT:
+				game_state.request_extract.rpc_id(1)
 	return true
 
 
@@ -191,7 +206,11 @@ func _footsteps(delta: float) -> void:
 		_footstep_player.volume_db = -4.0 if running else -10.0
 		_footstep_player.play()
 		if multiplayer.is_server():
-			NoiseBus.emit_noise(global_position, run_noise_radius if running else walk_noise_radius, self)
+			var radius := run_noise_radius if running else walk_noise_radius
+			var game_state := _game_state()
+			if game_state:
+				radius *= 1.0 + minf(game_state.coins(get_multiplayer_authority()) / COINS_FOR_DOUBLE_NOISE, 1.0)
+			NoiseBus.emit_noise(global_position, radius, self)
 
 
 func _quick_turn() -> void:

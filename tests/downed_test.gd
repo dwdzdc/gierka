@@ -4,7 +4,7 @@ const Maps = preload("res://tests/test_maps.gd")
 # Powalenie i podnoszenie w jednym procesie: drugi gracz (peer 2) dodany ręcznie.
 # 1) gracz 2 powalony, gracz 1 trzyma E obok -> po 3 s gracz 2 wstaje z 30 HP
 # 2) gracz 2 znów powalony, nikt nie pomaga -> po 30 s umiera
-# 3) gracz 1 ginie -> wszyscy martwi -> po 5 s reset obu
+# 3) gracz 1 ginie -> wszyscy martwi -> koniec rundy (podsumowanie)
 
 var main: Node3D
 var gs
@@ -44,7 +44,7 @@ func _physics_process(_d: float) -> bool:
 		gs.damage(1, 200)
 		_say("gracz 1 powalony i dobity")
 	if frames == 2 + 60 * 43:
-		_say("7 s po wipe")
+		_say("7 s po śmierci wszystkich, koniec rundy=%s" % gs.round_over)
 		print("\n".join(log))
 		return true
 	return false
