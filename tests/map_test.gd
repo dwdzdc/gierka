@@ -92,6 +92,14 @@ func _physics_process(_d: float) -> bool:
 		if count >= 12 and main.map_loops == 0:
 			problems += 1
 			print("ZLE seed %d: brak pętli" % seeds[idx])
+		var per_type := {}
+		for r in rooms:
+			per_type[r.scene_file_path] = per_type.get(r.scene_file_path, 0) + 1
+		for path in per_type:
+			var limit: int = MapGenerator.new().type_limit(path, count)
+			if limit >= 0 and per_type[path] > limit:
+				problems += 1
+				print("ZLE seed %d: %s x%d (limit %d)" % [seeds[idx], path.get_file(), per_type[path], limit])
 		var corridors := rooms.filter(func(r): return r.name.contains("Corridor") or r.name.contains("Link") or r.name.contains("Bend")).size()
 		print("   korytarze: %d%% (%d z %d)" % [100 * corridors / rooms.size(), corridors, rooms.size()])
 		var doors: Array = main.get_tree().get_nodes_in_group(&"doors")

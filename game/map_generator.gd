@@ -31,6 +31,20 @@ const ROOM_TYPES := {
 	"res://rooms/ramp.tscn": 0.6,
 	"res://rooms/stairwell.tscn": 0.6,
 }
+## Pokoje charakterystyczne nie powtarzają się jak korytarze (15s): najwyżej jeden pokój danego
+## typu na tyle pokoi mapy (zawsze co najmniej jeden). Przy pięciu bibliotekach żadna nie jest już
+## punktem orientacyjnym. Typy spoza listy (korytarze, łączniki, piętra, małe pokoje): bez limitu,
+## więc limity nigdy nie blokują składania mapy.
+const ROOM_LIMITS := {
+	"res://rooms/storage.tscn": 10,
+	"res://rooms/closet.tscn": 10,
+	"res://rooms/cells.tscn": 10,
+	"res://rooms/atrium.tscn": 20,
+	"res://rooms/library.tscn": 20,
+}
+## Każde wystąpienie typu z limitem mnoży jego wagę przez tyle: powtórki, jeśli już są, rzadziej
+## lądują obok siebie.
+const REPEAT_WEIGHT_FACTOR := 0.5
 const MAX_ATTEMPTS := 400
 ## Bryły sąsiadów stykają się ścianami; zmniejszamy je odrobinę, żeby styk nie był kolizją.
 const OVERLAP_TOLERANCE := 0.05
@@ -46,6 +60,8 @@ var _dead: Array[Dictionary] = []  # przejścia, do których nic się nie zmieś
 ## Ile pętli (dodatkowych połączeń) powstało w ostatniej mapie.
 var loops := 0
 var _door_counts := {}  # ścieżka -> liczba przejść (cache)
+var _room_count := 0  # docelowa liczba pokoi bieżącej mapy (do limitów typów)
+var _type_counts := {}  # ścieżka sceny -> ile pokoi tego typu już stoi
 
 
 const MAX_RETRIES := 6
@@ -194,6 +210,8 @@ func _solid_footprints(room: Room) -> Array[Rect2]:
 
 func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
 	_rng.seed = map_seed * 7919 + variant  # prosta, przenośna formuła (bez zależności od hash())
+	_room_count = room_count
+	_type_counts.clear()
 	_place_start()
 	closed_loops = 0
 	_links = 0
@@ -614,6 +632,7 @@ func _place(room: Room, door: Marker3D, open: Dictionary) -> void:
 	open.room.add_door_frame(open.door)
 	room.add_door_frame(door)
 	room.name = "%02d_%s" % [rooms.size(), room.name]  # te same nazwy u każdego peera
+	_type_counts[room.scene_file_path] = _type_counts.get(room.scene_file_path, 0) + 1
 	_parent.add_child(room)
 	rooms.append(room)
 	for other_door in room.get_doorways():
@@ -660,9 +679,21 @@ func _instantiate(path: String) -> Room:
 	return (load(path) as PackedScene).instantiate() as Room
 
 
-## Typy pokoi w losowej kolejności, ważonej wagami (losowanie bez zwracania).
+## Ile pokoi danego typu może stać na mapie (-1: bez limitu).
+func type_limit(path: String, room_count: int) -> int:
+	return maxi(1, room_count / ROOM_LIMITS[path]) if ROOM_LIMITS.has(path) else -1
+
+
+## Typy pokoi w losowej kolejności, ważonej wagami (losowanie bez zwracania). Typy, które
+## wyczerpały limit, odpadają; powtórki typów z limitem mają mniejszą wagę.
 func _shuffled_types() -> Array[String]:
-	var pool := ROOM_TYPES.duplicate()
+	var pool := {}
+	for path in ROOM_TYPES:
+		var placed: int = _type_counts.get(path, 0)
+		var limit := type_limit(path, _room_count)
+		if limit >= 0 and placed >= limit:
+			continue
+		pool[path] = ROOM_TYPES[path] * (pow(REPEAT_WEIGHT_FACTOR, placed) if limit >= 0 else 1.0)
 	var result: Array[String] = []
 	while not pool.is_empty():
 		var total := 0.0
