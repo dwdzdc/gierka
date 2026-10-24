@@ -1,0 +1,76 @@
+rooms/turn.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 85-88,93-96,103-106
+rooms/hall.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 128-131,138-141,148-151,156-159
+rooms/link12.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91
+rooms/link14.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91
+progress.md
+  ai_agent 165-166
+rooms/junction.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 95-98,103-106,113-116
+rooms/canteen.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 272-275,282-285
+rooms/servers.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 174-177
+game/map_generator.gd
+  s_bdc84ae5107fd1::t_9bee8aba06614f 139,146-153,222,224-226
+tests/map_test.gd
+  s_bdc84ae5107fd1::t_ea2244dc710995 35,37,114-119
+rooms/cells.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 191-194,201-204,211-214
+rooms/link10.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91
+rooms/storage.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 147-150,155,160-163,168,173,178-181,188-191,198-201,208,213,218,223,228
+rooms/corridor.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91,101-104,111-114,119-122,127-130
+rooms/stairwell.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 110-113,118-121
+tools/gen_rooms.py
+  s_bdc84ae5107fd1::t_918f289e3ecf04 394-397,426,428-431,460-462,464,466-468,492-494,508-510,530,533-534,550-551,572-573,598,636-637,653-654,674,709-711,744,842-843,850-851,922-923,957-958,1021
+  s_bdc84ae5107fd1::t_357b708f1c5a51 85-92,155-156,176,178,183,185,190,195,200,204,227-228,230,232,234,236-245,247
+rooms/link16.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91
+rooms/atrium.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 198-201
+tests/net_test.gd
+  s_bdc84ae5107fd1::t_9bee8aba06614f 41
+rooms/archive.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 189-192,197-200
+rooms/corridor_x.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 134-137
+rooms/link8.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91
+rooms/closet.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 80-83,98-101,108-111
+rooms/boiler.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 134-137,142-145,200-203,210-213
+rooms/link6.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 88-91
+rooms/ramp.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 104-107,112-115
+rooms/corridor_t.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 111-114,119-122
+rooms/link4.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 84-87
+rooms/corridor_l.tscn
+  s_bdc84ae5107fd1::t_918f289e3ecf04 90-93,98-101
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "6f63382dba51f1e5ba0e75071046757ed5b9fb20",
+  "prompts": {},
+  "sessions": {
+    "s_bdc84ae5107fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "792c5ab2-d9e1-42a7-ac9d-334fee8f0317",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
