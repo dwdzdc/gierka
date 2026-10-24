@@ -128,6 +128,14 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
   - Uwaga: NavMesh nie zna drzwi (są poza regionem nawigacji), potwór reaguje dopiero przy drzwiach; reżyser nie wie o zakluczonych drzwiach i może wysłać patrol za nie (patrol wtedy wybiera inny cel)
   - Uwaga: otwarte skrzydło nie ma kolizji (przenika przez gracza i meble), tylko wygląd
 
+### Po playteście 24.10: drzwi i znaleziska
+
+- [ ] 15o. Bug: podgląd przez kratkę zasłania głowa własnej postaci (kamera stoi 0,6 m za skrzydłem, postać między nią a kratką). Propozycja: na czas podglądu ukryć model własnej postaci przed tą kamerą (osobna warstwa renderu / cull mask), zamiast przysuwać kamerę do kratki (wtedy znika efekt „szpary”)
+- [ ] 15p. Wyważanie drzwi słychać: seria uderzeń (np. 2–3 łomoty co ~0,4 s) i na końcu trzask wyłamania, u wszystkich graczy, każdy łomot też jako hałas dla innych potworów. Dziś jest tylko jeden dźwięk na końcu
+- [ ] 33b. Monety lepiej schowane (24.10: „zbiera się jak w pacmanie, za tanie”). Dziś monety leżą na podłodze, a znaczniki na meblach są celowo zsuwane na podłogę (`main._spawn_loot`), plus losowe kupki w każdym pokoju (`coins_per_room`)
+  - Propozycja: mniej kupek, ale cenniejszych; część w pojemnikach do przeszukania (szuflady, skrzynie, szafki na akta: E 1–2 s, hałas, czasem puste), część na meblach w zasięgu skoku (do ~1 m), mało na środku podłogi
+  - Uwaga: pojemniki muszą być innym rekwizytem niż szafki do chowania (inaczej E przy szafce znaczy dwie rzeczy, a „zajęta” szafka z łupem myli). Przeszukiwanie z hałasem robi z łupu decyzję (czas i ryzyko), a nie spacer. Wartości do strojenia razem z punktacją zero-sum (mniej monet = większe różnice w wynikach)
+
 ## Chowanie się i ruch (po playteście 23.10)
 
 Problem: meble są za małe i jest mało kryjówek. Przed potworem da się tylko uciekać,
