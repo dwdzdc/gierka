@@ -66,6 +66,39 @@ równoległych do ściany, np. nowe drzwi na południu hali).
 - [x] 15g. Po uwagach: futryny przyciemnione (zostaje lekka poświata + mała lampka), pokoje wyposażone (szafki, regały z towarem, beczki, stoły, krzesła, stół warsztatowy, rury pod sufitem), więcej lamp w dużych pokojach z widocznymi oprawami, wszystkie światła +30% (`LIGHT_SCALE` w `tools/gen_rooms.py`)
 - [x] 15h. Drobne rekwizyty z seeda: 2–5 skrzyń/beczek przy ścianach każdego płaskiego pokoju, z dala od drzwi, wyjścia, spawnów i szafek; identyczne u wszystkich (test sieci porównuje podpis mapy)
 
+### Różnorodność pokoi (playtest 24.10)
+
+Problem: pokoje są powtarzalne, łatwo się zgubić. Zakręt (6×6) i skrzyżowanie (10×10) to
+kwadratowe pokoje z 2–3 drzwiami, a nie korytarze, więc mapa wygląda jak pokój na pokoju.
+Według wag losowania korytarzopodobne typy to już ~75%, ale wyglądają jak pokoje.
+
+Research: Lethal Company ma kilka „wnętrz” o spójnym klimacie zamiast mieszanki: Facility
+(rury, pomosty, przepaście), Manor (duże otwarte pokoje, sklepienia, regały z książkami,
+wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie strefy).
+Źródła: [lethalcompany.wiki.gg: Moons](https://lethalcompany.wiki.gg/wiki/Moons),
+[itemlevel.net: Mineshaft](https://itemlevel.net/lethal-company-mineshaft-complete-guide-new-interior-v60/)
+
+- [ ] 15i. Prawdziwe korytarze: zakręt L, T i X w kształcie korytarzy 4 m szerokości (ramiona, nie kwadratowa sala z drzwiami); obecne kwadratowe zostają jako osobne pokoje
+- [ ] 15j. Proporcje: wyraźnie więcej korytarzy niż pokoi, pokoje raczej „przechodnie” jak w Alone in the Dark. Mierzyć w teście (udział korytarzy w mapie), nie tylko wagami
+- [ ] 15k. Nowe pokoje:
+  - Biblioteka: okrągła rotunda, antresola z regałami, stoliki na dole, kolumny pod antresolą, duży świetlik (w stylu zamku Dimitrescu z RE Village)
+  - Lochy: korytarz z celami po bokach (klimat Amnesii); cele jako kryjówki/ślepe zaułki, kraty przepuszczają wzrok
+  - Wielki hol (jak w Amnesii, np. z fontanną)
+  - Kandydaci z LC: serwerownia, magazyn z pomostami, maszynownia
+- Uwaga (spójność): biblioteka, lochy i hol z Amnesii to klimat zamku, a obecne pokoje (magazyn, regały z towarem, rury) to zaplecze przemysłowe. Losowa mieszanka obu w jednej mapie będzie wyglądać przypadkowo. Propozycja jak w LC: zestaw pokoi = motyw (zakład / zamek), mapa losuje motyw albo ma strefy motywów połączone przejściem. Łączy się z 49 (drugi setting). Do decyzji
+- Uwaga (kamery): kolumny pod antresolą to dokładnie problem „filar zasłania postać” z playtestu 23.10; antresola to drugi poziom w jednym pokoju (NavMesh, schody, pokrycie kamer z dwóch wysokości). Biblioteka będzie najdroższym pokojem do zrobienia, zacząć od korytarzy i lochów
+- Uwaga: różnorodność pomaga orientacji tylko, jeśli pokoje są rozpoznawalne. Tani dodatek: charakterystyczne punkty orientacyjne w pokojach (kolor światła, unikalny rekwizyt)
+
+### Drzwi (pomysł 24.10)
+
+- [ ] 15l. Drzwi w > 50% przejść (z seeda): otwieranie/zamykanie (E), stan z autorytetem hosta, otwieranie robi hałas. Zamknięte drzwi zasłaniają wzrok i tłumią hałas
+- [ ] 15m. Zakluczone drzwi: losowo od 0 do maks. 10% drzwi. Klucz to znalezisko, dowolny klucz otwiera dowolne zakluczone drzwi (jak w LC), zużywa się
+  - Uwaga (odcięcie mapy): bez pętli (16h) zakluczone drzwi odcinają całą gałąź mapy. Generator musi pilnować, żeby klucz dało się zdobyć bez przechodzenia przez zakluczone drzwi, i żeby winda nigdy nie była za nimi. Liczba kluczy ≥ liczba zakluczonych drzwi w osiągalnej części
+- [ ] 15n. Potwory niszczą drzwi, gdy mają powód sądzić, że za nimi jest gracz: pościg, trop krwi albo hałas prowadzący za drzwi (stany HUNT / INVESTIGATE / TRACK). Wyważanie trwa kilka sekund i jest głośne (okno na ucieczkę)
+  - Otwarte pytanie: co z drzwiami tylko zamkniętymi (nie zakluczonymi)? Propozycja: potwór otwiera je normalnie (inaczej patrol utknie, a zamknięcie drzwi daje darmową ochronę), a niszczy tylko zakluczone albo zablokowane przez gracza
+  - Uwaga: NavMesh musi znać drzwi (przejście z kosztem, nie ściana), a szyby wentylacyjne (47c6) omijają drzwi; to dobrze, ale łowca nie powinien przez to ignorować ich całkiem
+  - Kamery: drzwi nie mogą zasłaniać przejścia w ujęciu (15f), test zasad kamer do rozszerzenia
+
 ## Chowanie się i ruch (po playteście 23.10)
 
 Problem: meble są za małe i jest mało kryjówek. Przed potworem da się tylko uciekać,
