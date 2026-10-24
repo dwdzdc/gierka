@@ -22,6 +22,9 @@ const USE_DISTANCE := 1.8
 const GRATE_SIGHT_DISTANCE := 2.6
 const GRATE_SIGHT_ANGLE := 35.0
 const PEEK_BACK := 0.6  # jak daleko za skrzydłem stoi kamera podglądu
+## Warstwa renderu, na którą podglądający przenosi swoją postać: kamera podglądu jej nie rysuje,
+## bo stoi za plecami gracza i jego głowa zasłoniłaby kratkę. Inne postacie zostają widoczne.
+const PEEK_HIDDEN_LAYER := 4  # warstwa 3 (bit)
 
 const WOOD := preload("res://rooms/materials/wood.tres")
 const METAL := preload("res://rooms/materials/metal.tres")
@@ -143,6 +146,7 @@ func _build() -> void:
 		camera.name = peek_name
 		camera.fov = 70.0
 		camera.near = 0.05
+		camera.cull_mask &= ~PEEK_HIDDEN_LAYER
 		var back := PEEK_BACK if peek_name == "PeekA" else -PEEK_BACK
 		camera.position = Vector3(0, (GRATE_Y.x + GRATE_Y.y) / 2.0, back)
 		# Kamera patrzy wzdłuż -Z: od strony A na B; od strony B obrócona o 180°.

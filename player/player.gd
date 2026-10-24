@@ -377,6 +377,7 @@ func _update_peek(delta: float) -> void:
 	if _peek_door and (not can_peek or door != _peek_door):
 		_peek_door = null
 		_peek_timer = 0.0
+		_hide_from_peek(false)
 		if director:
 			director.release_hold()
 	if not can_peek:
@@ -388,6 +389,13 @@ func _update_peek(delta: float) -> void:
 			_peek_door = door
 			if director:
 				director.hold_camera(door.peek_camera(global_position))
+			_hide_from_peek(true)
+
+
+## Własna postać znika tylko z kamery podglądu (stoi za nią); kamery stref dalej ją rysują.
+func _hide_from_peek(hidden: bool) -> void:
+	for mesh: VisualInstance3D in [$Body, $Visor]:
+		mesh.layers = Door.PEEK_HIDDEN_LAYER if hidden else 2
 
 
 func _nearest_teammate(matches: Callable) -> Player:
