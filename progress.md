@@ -25,7 +25,7 @@ Było ustalone 24.10 (zrobione 25.10):
 5. 15p dźwięki wyważania drzwi → 6. 15t zamykanie drzwi za sobą w biegu → 7. 15s limity wystąpień typów pokoi →
 8. 15u nowe unikalne typy pokoi → 9. 15v warianty pokoi (drobiazgi opcjonalne, potem warianty układu).
 Potem: 33b łup w pojemnikach, 41c bateria, 36c sklep, 37 MVP.
-Nowe z playtestu 25.10 (do ustalenia kolejności): 15x dźwięk wyważania drzwi (bug), 47g potwory za słabe (wytrzymałość, zryw, anty-kiting). Otwierane kraty w lochach: odłożone (24.10).
+Nowe z playtestu 25.10 (do ustalenia kolejności): 15x dźwięk wyważania drzwi (bug), 47g potwory za słabe (wytrzymałość, zryw, anty-kiting), 34b winda losowo na mapie (szkielet do potwierdzenia). Otwierane kraty w lochach: odłożone (24.10).
 
 Szkielet potwierdzony 24.10:
 - Siatka 2 m w kontrakcie pokoju: wymiary i pozycje przejść w wielokrotnościach 2 m
@@ -288,6 +288,11 @@ Ustalenia (23.10):
 
 - [x] 33. Monety: kupki na znacznikach i w losowych miejscach pokoi (cenniejsze dalej od hali), podnoszenie wejściem, licznik w HUD, kroki do 2x głośniejsze przy 300 monetach. Śmierć = monety wypadają kupką na ziemię
 - [x] 34. Ekstrakcja: winda w hali (zielona futryna, trzymaj E 2 s), wydostany/martwy gracz ogląda kamery żyjącego kolegi (Tab = następny)
+- [ ] 34b. Winda nie w hali, tylko losowo na mapie zamiast drzwi (pomysł 25.10): gracze muszą ją znaleźć, żeby w ogóle się uratować. Hala zostaje strefą startową
+  - Propozycja: winda jako rodzaj przejścia (jak drzwi, 15l), wstawiana przez generator w wolne przejście, które dziś dostaje zaślepkę (ślepy zaułek). Warunki: daleko od hali (np. ≥ 60% najdłuższej drogi), osiągalna bez kluczy (już zapisane w 15m), nie w ciemnym pokoju jako jedyna droga (41b), z RNG mapy (determinizm sieci)
+  - Szkielet (do potwierdzenia przed implementacją): winda przestaje być częścią sceny hali, staje się elementem `Doorways` wybieranym przez generator; zmienia kontrakt pokoju i `MapGenerator`
+  - Uwaga (pętla rundy): dziś pętla to „wyjdź z hali, zbierz, wróć” jak w LC; po zmianie to „szukaj wyjścia, zbierając po drodze”. Lepiej pasuje do horroru, ale zmienia kilka rzeczy naraz: (a) monety są cenniejsze dalej od hali (33), więc najlepszy łup leży koło windy i problemu „ryzyko powrotu z łupem” już nie ma; trzeba wartość liczyć od windy albo od obu końców; (b) kto pierwszy trafi na windę, może od razu wyjść, a reszta nie wie, gdzie jest (bez mapy i przy stałych kamerach); potrzebna poszlaka: dźwięk windy (dzwonek co ~30 s, słyszalny z daleka), światło widoczne przez drzwi albo odliczanie, gdy ktoś do niej wejdzie; (c) bez limitu czasu i z rosnącą liczbą potworów (36b) mapa, na której nikt nie znajduje windy, kończy się wybiciem drużyny; zabezpieczenie: po kilku etapach winda zaczyna dzwonić głośniej albo pojawia się druga
+  - Uwaga: potwór startuje w najdalszym pokoju (13), czyli często obok windy; to może być fajne (ostatni odcinek najgroźniejszy), ale trzeba to świadomie zdecydować. Test menu „teleport do windy” zadziała bez zmian
 - [x] 35. Punktacja zero-sum (`GameState.SHARED_FRACTION`) i ekran podsumowania (wynik rundy + suma sesji)
 - [x] 36. Następna runda z nowym seedem (host: R albo przycisk); suma sesji zostaje. Reset po wybiciu wszystkich zastąpiony końcem rundy
 - [x] 36b. Narastająca trudność: co etap (3 min + 15 s na pokój) nowy potwór w pokoju najdalszym od graczy (maks. 4), wszystkie zmysły +10% na etap; ryk i napis w HUD
