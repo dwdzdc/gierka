@@ -1,0 +1,21 @@
+tests/map_test.gd
+  s_bdc84ae5107fd1::t_cfeba181e7a4a6 95-102
+game/map_generator.gd
+  s_bdc84ae5107fd1::t_cfeba181e7a4a6 34-47,63-64,213-214,635,682-688,690-696
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "45c6a5d6a36058af392da90ad37384f6cb0874e6",
+  "prompts": {},
+  "sessions": {
+    "s_bdc84ae5107fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "792c5ab2-d9e1-42a7-ac9d-334fee8f0317",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
