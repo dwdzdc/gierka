@@ -102,6 +102,9 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
   - Zrobione: schowek (ślepy zaułek) losowany rzadziej, skrzyżowanie częściej; generator łączy dwa wolne przejścia w tym samym miejscu w pętlę zamiast je zamurować. Mapa 20 pokoi: 3–6 ślepych zaułków
   - Problem: pętle prawie nie powstają (0 na 10 testowych map), bo wymiary pokoi nie leżą na wspólnej siatce i przejścia rzadko trafiają w ten sam punkt
 - [ ] 16h. Wymiary pokoi (ze ścianami) jako wielokrotności 2 m, żeby przejścia leżały na wspólnej siatce i pętle mogły powstawać; ewentualnie aktywne domykanie pętli (dobieranie korytarza łączącego dwa bliskie wolne przejścia)
+  - Playtest 24.10: pętli dalej w praktyce nie ma, priorytet w górę. Cel do sprawdzenia testem: każda mapa ≥ 20 pokoi ma co najmniej 1–2 pętle (liczone w grafie połączeń), a nie „jest szansa”
+  - Uwaga: sama siatka 2 m tylko zwiększy szansę na przypadkowe trafienie. Żeby pętle były gwarantowane, potrzebne jest aktywne domykanie (po złożeniu drzewa szukać par wolnych przejść blisko siebie i dobierać łączący korytarz/zakręt). Siatka ułatwia to domykanie, więc obie rzeczy razem. Zmiana wymiarów pokoi przesuwa współrzędne w testach (`Maps.CLASSIC`) i wymaga ponownego `camera_rules_test`/`coverage_map`
+  - Pętle odblokowują zablokowane przejścia z 15 (dopiero wtedy zablokowanie nie odcina części mapy)
 
 Źródła: [itemlevel.net: R.E.P.O. hiding guide](https://itemlevel.net/repo-how-to-hide-from-monsters-guide/),
 [gfinityesports.com: R.E.P.O. monsters](https://www.gfinityesports.com/article/repo-all-monsters-and-best-strategies-against-them),
