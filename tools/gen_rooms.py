@@ -8,6 +8,7 @@ Kontrakt drzwi: każde przejście ma DOOR_W x DOOR_H. Marker3D w `Doorways` stoi
 zewnętrznej powierzchni ściany, na poziomie podłogi przejścia, oś -Z na zewnątrz.
 """
 import math
+import re
 from pathlib import Path
 
 OUT = Path(__file__).resolve().parent.parent / "rooms"
@@ -80,11 +81,57 @@ def table(pos, length, depth, mat="wood"):
     return parts
 
 
-def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=()):
+GRID = 2.0  # siatka mapy: patrz snap_room()
+
+
+def snap_room(sx, sz, outer):
+    """Siatka 2 m: zewnętrzne wymiary pokoju (ze ścianami) są parzyste, a przejścia jednego pokoju
+    różnią się pozycją o wielokrotność 2 m. Wtedy przejścia wszystkich pokoi na mapie leżą na
+    wspólnej siatce, więc dwa wolne przejścia mogą trafić w siebie albo dać się połączyć
+    łącznikiem o długości z siatki (pętle, game/map_generator.gd).
+    Pokój projektujemy we "wnętrzu" sx x sz; tu wnętrze dopasowuje się do siatki, a całe
+    wyposażenie skaluje się razem z nim (meble przy ścianie zostają przy ścianie)."""
+    w = outer[0] if outer else GRID * round((sx + 2 * T) / GRID)
+    d = outer[1] if outer else GRID * round((sz + 2 * T) / GRID)
+    return w - 2 * T, d - 2 * T, (w - 2 * T) / sx, (d - 2 * T) / sz
+
+
+def check_grid(name, sx, sz, doors):
+    points = []
+    for _, side, off, _y in doors:
+        points.append({"N": (off, -(sz / 2 + T)), "S": (off, sz / 2 + T),
+                       "E": (sx / 2 + T, off), "W": (-(sx / 2 + T), off)}[side])
+    for a in points:
+        for b in points:
+            for k in (0, 1):
+                diff = (a[k] - b[k]) / GRID
+                assert abs(diff - round(diff)) < 1e-6, f"{name}: przejścia poza siatką {GRID} m: {a} vs {b}"
+
+
+def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=(), outer=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
             albo [("prism", [(x, y), ...], z0, z1, mat)] (profil w XY, wyciągnięty wzdłuż Z)
-    zones: [(nazwa, (x0, x1, z0, z1), poz. kamery, cel kamery, follow, priorytet[, (y0, y1)])]"""
+    zones: [(nazwa, (x0, x1, z0, z1), poz. kamery, cel kamery, follow, priorytet[, (y0, y1)])]
+    outer: (szer., głęb.) ze ścianami, gdy zaokrąglenie do siatki nie wystarcza (patrz snap_room)."""
+    sx, sz, kx, kz = snap_room(sx, sz, outer)
+
+    def at(p):  # pozycja z projektu -> pozycja w dopasowanym do siatki pokoju
+        return (p[0] * kx, p[1], p[2] * kz)
+
+    check_grid(name, sx, sz, doors)
+    solids = [(sd[0], at(sd[1])) + tuple(sd[2:]) if sd[0] != "prism"
+              else ("prism", [(x * kx, y) for x, y in sd[1]], sd[2] * kz, sd[3] * kz, sd[4]) for sd in solids]
+    zones = [(z[0], (z[1][0] * kx, z[1][1] * kx, z[1][2] * kz, z[1][3] * kz), at(z[2]), at(z[3])) + tuple(z[4:]) for z in zones]
+    lights = [(at(l[0]),) + tuple(l[1:]) for l in lights]
+    loot = [(m[0], at(m[1])) + tuple(m[2:]) for m in loot]
+    ambient = [(m[0], at(m[1])) + tuple(m[2:]) for m in ambient]
+    spawns = [(m[0], at(m[1])) + tuple(m[2:]) for m in spawns]
+    if exit_point:
+        exit_point = (at(exit_point[0]),) + tuple(exit_point[1:])
+    lockers = [(at(pos), yaw) for pos, yaw in lockers]
+    if vent:
+        vent = (vent[0] * kx, vent[1] * kz)
     nodes, subs = [], []
 
     def box(node_name, pos, size, mat):
@@ -213,7 +260,8 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
     body = "\n".join(subs) + "\n" if subs else ""
     root = (f'[node name="{name}" type="Node3D"]\nscript = ExtResource("{EXT_ID["room"]}")\nbounds = {bounds}\n\n'
             '[node name="Geometry" type="CSGCombiner3D" parent="."]\nuse_collision = true\n\n')
-    (OUT / f"{name.lower()}.tscn").write_text(header + body + "\n" + root + "\n".join(nodes))
+    file_name = re.sub(r"(?<=[a-z0-9])([A-Z])", r"_\1", name).lower()  # CorridorL -> corridor_l
+    (OUT / f"{file_name}.tscn").write_text(header + body + "\n" + root + "\n".join(nodes))
     print("zapisano", name)
 
 
@@ -342,6 +390,7 @@ build(
     lights=[((0, 3.6, 0), COLD, 0.6, 6.0, True)],
     ambient=[("Ambient0", (2.2, 3.2, -2.2))],
     vent=(-1.5, 1.5),
+    outer=(8, 8),  # przejścia na sąsiednich ścianach: połowa boku musi być parzysta
 )
 
 # Junction: 10x10, skrzyżowanie T (zachód, wschód, północ). Bez filara, jedno ujęcie.
@@ -362,6 +411,7 @@ build(
     ambient=[("Ambient0", (-4, 1, -4))],
     vent=(2, 2),
     lockers=[((-4.3, 0, -4.55), 0)],
+    outer=(12, 12),
 )
 
 # Closet: 7x7, ślepy zaułek ze znaleziskami. Jedno ujęcie.
@@ -423,4 +473,107 @@ build(
     lights=[((0, S + 4.1, 0), COLD, 0.8, 10.0, True)],
     ambient=[("Ambient0", (4.2, S / 2 + 0.5, 0))],
     vent=(-3.5, -2.5),
+)
+
+# --- Łączniki (siatka 2 m) --------------------------------------------------------
+# Gołe korytarze o długości z siatki i narożnik 4x4. Generator mapy domyka nimi pętle między
+# dwoma wolnymi przejściami (game/map_generator.gd, _close_loops). Szerokość 4 m ze ścianami.
+LINK_LENGTHS = range(4, 18, 2)
+
+
+def link(length):
+    li = length - 2 * T
+    half = li / 2
+    lights = [((0, 3.6, 0), COLD, 0.7, max(6.0, li * 0.6), False)] if length >= 6 else []
+    build(
+        f"Link{length}", li, 3.6, 4.0,
+        doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
+        solids=[("box", (0, 3.6, -1.55), (li + 0.4, 0.2, 0.2), "metal")],  # rura wzdłuż ściany
+        zones=[
+            ("WestHalf", (-half, 0.3, -1.8, 1.8), (half - 0.4, 3.6, 1.2), (-half + 1.0, 0.8, 0), 0.3, 0),
+            ("EastHalf", (-0.3, half, -1.8, 1.8), (-half + 0.4, 3.6, -1.2), (half - 1.0, 0.8, 0), 0.3, 0),
+        ],
+        lights=lights,
+        vent=(0, 0),
+    )
+
+
+for n in LINK_LENGTHS:
+    link(n)
+
+# Bend: narożnik korytarza 4x4 (zachód i północ).
+build(
+    "Bend", 3.6, 3.6, 4.0,
+    doors=[("West", "W", 0, 0), ("North", "N", 0, 0)],
+    zones=[("All", (-1.8, 1.8, -1.8, 1.8), (1.4, 3.5, 1.4), (-0.8, 0.5, -0.8), 0.2, 0)],
+    lights=[((0, 3.6, 0), COLD, 0.6, 5.0, False)],
+    vent=(0.6, 0.6),
+)
+
+# --- Prawdziwe korytarze (15i) -----------------------------------------------------
+# Kształty L, T i X z ramionami szerokości 4 m (ze ścianami). Bryła do kolizji to prostokąt,
+# a to, co nie jest korytarzem, wypełniają pełne bloki ściany od podłogi do sufitu.
+CH = 4.0  # wysokość korytarzy
+
+
+def fill(x0, x1, z0, z1):
+    return ("box", ((x0 + x1) / 2, CH / 2, (z0 + z1) / 2), (x1 - x0, CH, z1 - z0), "wall")
+
+
+# CorridorL: zachód -> narożnik -> północ. Ramię poziome z 0..4, pionowe x 0..4 (zewn.).
+build(
+    "CorridorL", 7.6, 7.6, CH,
+    doors=[("West", "W", 2, 0), ("North", "N", 2, 0)],
+    solids=[
+        fill(-3.8, 0.2, -3.8, 0.2),
+        ("box", (2.0, 3.6, 3.65), (7.6, 0.2, 0.2), "metal"),  # rura
+        ("box", (-2.6, 0.4, 3.2), (0.8, 0.8, 0.7), "wood"),
+    ],
+    zones=[("All", (-3.8, 3.8, -3.8, 3.8), (3.4, 3.6, 3.4), (-1.0, 0.5, -1.0), 0.3, 0)],
+    lights=[((2, 3.6, 2), COLD, 0.7, 7.0, False)],
+    ambient=[("Ambient0", (2, 3.4, -2))],
+    vent=(2, 2),
+    outer=(8, 8),
+)
+
+# CorridorT: poziomy pasek (zachód-wschód) na z 0..4, ramię na północ x -2..2 (zewn.).
+build(
+    "CorridorT", 11.6, 7.6, CH,
+    doors=[("West", "W", 2, 0), ("East", "E", 2, 0), ("North", "N", 0, 0)],
+    solids=[
+        fill(-5.8, -1.8, -3.8, 0.2),
+        fill(1.8, 5.8, -3.8, 0.2),
+        ("box", (0, 3.6, 3.65), (11.6, 0.2, 0.2), "metal"),
+        ("cyl", (4.6, 0.6, 3.3), 0.4, 1.2, "rust"),
+    ],
+    zones=[
+        ("WestHalf", (-5.8, 0.2, 0.2, 3.8), (5.4, 3.6, 3.4), (-4.6, 0.8, 2), 0.3, 0),
+        ("EastHalf", (-0.2, 5.8, 0.2, 3.8), (-5.4, 3.6, 0.6), (4.6, 0.8, 2), 0.3, 0),
+        ("NorthArm", (-1.8, 1.8, -3.8, 0.2), (1.2, 3.6, 3.4), (0, 0.8, -3), 0.2, 1),
+    ],
+    lights=[((0, 3.6, 2), COLD, 0.8, 8.0, False)],
+    ambient=[("Ambient0", (-4, 3.4, 2))],
+    vent=(0, 2),
+    outer=(12, 8),
+)
+
+# CorridorX: skrzyżowanie czterech ramion szerokości 4 m.
+build(
+    "CorridorX", 11.6, 11.6, CH,
+    doors=[("West", "W", 0, 0), ("East", "E", 0, 0), ("North", "N", 0, 0), ("South", "S", 0, 0)],
+    solids=[
+        fill(-5.8, -1.8, -5.8, -1.8), fill(1.8, 5.8, -5.8, -1.8),
+        fill(-5.8, -1.8, 1.8, 5.8), fill(1.8, 5.8, 1.8, 5.8),
+        ("box", (-4.6, 0.4, 1.3), (0.8, 0.8, 0.7), "wood"),
+    ],
+    zones=[
+        ("West", (-5.8, 0, -1.8, 1.8), (5.4, 3.6, 1.2), (-4.6, 0.8, 0), 0.3, 0),
+        ("East", (0, 5.8, -1.8, 1.8), (-5.4, 3.6, -1.2), (4.6, 0.8, 0), 0.3, 0),
+        ("North", (-1.8, 1.8, -5.8, -1.8), (1.2, 3.6, 5.4), (0, 0.8, -4.6), 0.3, 1),
+        ("South", (-1.8, 1.8, 1.8, 5.8), (-1.2, 3.6, -5.4), (0, 0.8, 4.6), 0.3, 1),
+    ],
+    lights=[((0, 3.6, 0), COLD, 0.8, 9.0, True)],
+    ambient=[("Ambient0", (0, 3.4, -4))],
+    vent=(0, 0),
+    outer=(12, 12),
 )

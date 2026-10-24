@@ -10,14 +10,23 @@ extends RefCounted
 
 const START_ROOM := "res://rooms/hall.tscn"
 ## Typy pokoi i ich wagi losowania. Więcej przejść = większa szansa na rozgałęzienia.
+## Korytarze (ok. 60%) częściej niż pokoje: pokoje mają być raczej "przechodnie" i rzadsze.
 const ROOM_TYPES := {
-	"res://rooms/corridor.tscn": 3.0,
-	"res://rooms/turn.tscn": 2.0,
-	"res://rooms/junction.tscn": 2.5,
-	"res://rooms/storage.tscn": 1.0,
-	"res://rooms/closet.tscn": 0.6,  # ślepy zaułek: rzadziej, żeby łatwiej było uciec potworowi
-	"res://rooms/ramp.tscn": 1.0,
-	"res://rooms/stairwell.tscn": 1.0,
+	# korytarze
+	"res://rooms/corridor.tscn": 1.5,
+	"res://rooms/link8.tscn": 0.8,
+	"res://rooms/link12.tscn": 0.8,
+	"res://rooms/corridor_l.tscn": 1.5,
+	"res://rooms/corridor_t.tscn": 1.6,
+	"res://rooms/corridor_x.tscn": 1.0,
+	# pokoje
+	"res://rooms/storage.tscn": 1.5,
+	"res://rooms/junction.tscn": 1.2,
+	"res://rooms/turn.tscn": 0.6,
+	"res://rooms/closet.tscn": 0.5,  # ślepy zaułek: rzadziej, żeby łatwiej było uciec potworowi
+	# piętra
+	"res://rooms/ramp.tscn": 0.6,
+	"res://rooms/stairwell.tscn": 0.6,
 }
 const MAX_ATTEMPTS := 400
 ## Bryły sąsiadów stykają się ścianami; zmniejszamy je odrobinę, żeby styk nie był kolizją.
@@ -37,21 +46,27 @@ var _door_counts := {}  # ścieżka -> liczba przejść (cache)
 
 
 const MAX_RETRIES := 6
+## Od tylu pokoi wymagamy co najmniej jednej pętli (mniejsze mapy często nie mają na nią miejsca).
+const MIN_ROOMS_FOR_LOOP := 12
 
 
 ## Składa losową mapę z `room_count` pokoi pod `parent`. Jeśli pokoje się "zablokują"
-## (zostanie mniej niż `room_count`), próbuje kolejnych wariantów seeda i wybiera najlepszy.
-## Też deterministycznie: ten sam seed zawsze prowadzi do tego samego wariantu.
+## (zostanie mniej niż `room_count`) albo nie powstała żadna pętla, próbuje kolejnych wariantów
+## seeda i wybiera najlepszy. Też deterministycznie: ten sam seed zawsze daje ten sam wariant.
 func generate(parent: Node3D, map_seed: int, room_count: int) -> Array[Room]:
 	_parent = parent
 	var best_variant := 0
-	var best_size := -1
+	var best_score := -1
+	var wanted_loops := 1 if room_count >= MIN_ROOMS_FOR_LOOP else 0
 	for variant in MAX_RETRIES:
 		_build_variant(map_seed, variant, room_count)
-		if rooms.size() > best_size:
-			best_size = rooms.size()
+		var size := rooms.size() - _links
+		var loop_count := mini(loops + closed_loops, wanted_loops)
+		var score := size * 10 + loop_count
+		if score > best_score:
+			best_score = score
 			best_variant = variant
-		if rooms.size() >= room_count:
+		if size >= room_count and loop_count >= wanted_loops:
 			_decorate()
 			return rooms
 		_clear()
@@ -169,17 +184,25 @@ func _solid_footprints(room: Room) -> Array[Rect2]:
 func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
 	_rng.seed = map_seed * 7919 + variant  # prosta, przenośna formuła (bez zależności od hash())
 	_place_start()
+	closed_loops = 0
+	_links = 0
+	loop_stats = {"tries": 0, "pairs": 0, "short_loop": 0, "no_plan": 0, "blocked": 0}
 	var attempts := 0
-	while rooms.size() < room_count and not _open.is_empty() and attempts < maxi(MAX_ATTEMPTS, room_count * 20):
+	while rooms.size() - _links < room_count and not _open.is_empty() and attempts < maxi(MAX_ATTEMPTS, room_count * 20):
 		attempts += 1
 		var index := _rng.randi_range(0, _open.size() - 1)
 		var open: Dictionary = _open[index]
 		_open.remove_at(index)
 		if not _attach_any(open):
 			_dead.append(open)  # tu nic się nie zmieściło
+		elif closed_loops < (rooms.size() - _links) / ROOMS_PER_LOOP:
+			# Pętle domykamy w trakcie budowy: teraz wolnych przejść jest dużo, na końcu
+			# zostaje ich kilka i rzadko da się je połączyć.
+			_close_loops(1)
 	_open.append_array(_dead)
 	_dead.clear()
 	_connect_loops()
+	_close_loops(maxi(1, room_count / ROOMS_PER_LOOP) - closed_loops)
 	for open in _open:
 		_cap(open)
 	_open.clear()
@@ -208,6 +231,245 @@ func _connect_loops() -> void:
 		loops += 1
 		_open.remove_at(matched)
 		_open.remove_at(i)
+
+
+# --- Domykanie pętli łącznikami (16h) ----------------------------------------------
+
+## Gołe korytarze z siatki (długość ze ścianami -> scena) i narożnik 4x4 (tools/gen_rooms.py).
+const LINKS := {
+	4: "res://rooms/link4.tscn", 6: "res://rooms/link6.tscn", 8: "res://rooms/link8.tscn",
+	10: "res://rooms/link10.tscn", 12: "res://rooms/link12.tscn", 14: "res://rooms/link14.tscn",
+	16: "res://rooms/link16.tscn",
+}
+const BEND := "res://rooms/bend.tscn"
+const BEND_HALF := 2.0
+## Ile pętli chcemy: jedna na tyle pokoi (co najmniej jedna, jeśli się da).
+const ROOMS_PER_LOOP := 10
+## Pętla ma obejmować kilka pokoi: krótsza (np. wokół jednego pokoju) nic nie daje w ucieczce.
+const MIN_LOOP_HOPS := 3
+const MAX_LOOP_REACH := 60.0
+const MAX_SEGMENT := 32  # najdłuższy prosty odcinek łącznika (dwa najdłuższe korytarze)
+
+## Pętle domknięte łącznikami w ostatniej mapie (osobno od `loops`, czyli przejść stykających się czołami).
+var closed_loops := 0
+## Diagnostyka domykania (do testów): ile par odpadło na którym etapie.
+var loop_stats := {}
+var _links := 0  # ile łączników stoi na mapie (nie liczą się do liczby pokoi)
+
+
+## Szuka par wolnych przejść, które da się połączyć łącznikiem (proste korytarze i do dwóch
+## narożników), i stawia do `count` takich łączników. Dzięki siatce 2 m odległości między
+## przejściami są parzyste, więc łączniki z siatki pasują. Najpierw najdłuższe pętle (najwięcej
+## pokoi po drodze w drzewie), a z nich te z najmniejszą liczbą kawałków.
+func _close_loops(count: int) -> void:
+	if count <= 0:
+		return
+	loop_stats.tries += 1
+	var hops := _room_hops()
+	var candidates: Array = []
+	# Także przejścia, do których nie zmieścił się żaden pokój: wąski łącznik może się zmieścić.
+	var free := _open + _dead
+	for i in free.size():
+		for j in range(i + 1, free.size()):
+			var a: Dictionary = free[i]
+			var b: Dictionary = free[j]
+			if a.room == b.room:
+				continue
+			loop_stats.pairs += 1
+			var distance: int = hops.get(a.room, {}).get(b.room, 0)
+			if distance < MIN_LOOP_HOPS:
+				loop_stats.short_loop += 1
+				continue
+			var plan := _plan_link(a, b)
+			if plan.is_empty():
+				loop_stats.no_plan += 1
+				continue
+			candidates.append({"a": a, "b": b, "hops": distance, "plan": plan, "order": candidates.size()})
+	candidates.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
+		if x.hops != y.hops:
+			return x.hops > y.hops
+		if x.plan.size() != y.plan.size():
+			return x.plan.size() < y.plan.size()
+		return x.order < y.order)
+	var built := 0
+	for candidate in candidates:
+		if built >= count:
+			break
+		if not (_is_free(candidate.a) and _is_free(candidate.b)):
+			continue  # przejście zajęte przez wcześniejszą pętlę
+		if _build_link(candidate.a, candidate.b, candidate.plan):
+			built += 1
+			closed_loops += 1
+		else:
+			loop_stats.blocked += 1
+
+
+## Liczba przejść między pokojami w drzewie (BFS z każdego pokoju).
+func _room_hops() -> Dictionary:
+	var neighbours := {}
+	for room in rooms:
+		neighbours[room] = []
+	for connection in connections:
+		var ra: Node = connection.a.get_parent().get_parent()
+		var rb: Node = connection.b.get_parent().get_parent()
+		neighbours[ra].append(rb)
+		neighbours[rb].append(ra)
+	var result := {}
+	for start in rooms:
+		var distance := {start: 0}
+		var queue: Array = [start]
+		while not queue.is_empty():
+			var current = queue.pop_front()
+			for next in neighbours[current]:
+				if not distance.has(next):
+					distance[next] = distance[current] + 1
+					queue.append(next)
+		result[start] = distance
+	return result
+
+
+## Plan łącznika z `a` do `b`: lista [ścieżka sceny, przejście wejściowe, kierunek wyjścia].
+## Szuka kształtu: prosto, prosto-narożnik-prosto albo z dwoma narożnikami (Z / U), z odcinkami
+## z siatki. Pusta, jeśli się nie da. Sama geometria; kolizje sprawdza _build_link.
+func _plan_link(a: Dictionary, b: Dictionary) -> Array:
+	var ta: Transform3D = a.room.transform * a.door.transform
+	var tb: Transform3D = b.room.transform * b.door.transform
+	if absf(tb.origin.y - ta.origin.y) > 0.05:
+		loop_stats.other_floor = loop_stats.get("other_floor", 0) + 1
+		return []
+	if ta.origin.distance_to(tb.origin) > MAX_LOOP_REACH:
+		loop_stats.far = loop_stats.get("far", 0) + 1
+		return []
+	var start := Vector2(ta.origin.x, ta.origin.z)
+	var goal := Vector2(tb.origin.x, tb.origin.z)
+	var dir := Vector2(-ta.basis.z.x, -ta.basis.z.z).round()  # na zewnątrz A = w głąb łącznika
+	var arrive := Vector2(tb.basis.z.x, tb.basis.z.z).round()  # tak wchodzimy do B
+	# Prosto.
+	var direct := _segment_to(start, dir, goal, arrive)
+	if direct >= 0:
+		return _straight(direct)
+	# Jeden albo dwa narożniki; pierwszy odcinek przed narożnikiem z siatki.
+	for first: int in SEGMENTS:
+		for turn1: int in [-1, 1]:
+			var p1: Vector2 = start + dir * (first + BEND_HALF)
+			var d1: Vector2 = Vector2(-dir.y, dir.x) * turn1
+			p1 += d1 * BEND_HALF
+			var rest := _segment_to(p1, d1, goal, arrive)
+			if rest >= 0:
+				return _straight(first) + [[BEND, "", d1]] + _straight(rest)
+			for middle: int in SEGMENTS:
+				for turn2: int in [-1, 1]:
+					var d2: Vector2 = Vector2(-d1.y, d1.x) * turn2
+					var p2: Vector2 = p1 + d1 * (middle + BEND_HALF) + d2 * BEND_HALF
+					var last := _segment_to(p2, d2, goal, arrive)
+					if last >= 0:
+						return _straight(first) + [[BEND, "", d1]] + _straight(middle) + [[BEND, "", d2]] + _straight(last)
+	return []
+
+
+## Odcinki z siatki: 0 (bez korytarza) i długości, które da się złożyć z łączników.
+const SEGMENTS := [0, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+
+
+## Długość prostego odcinka z `from` w kierunku `dir`, który kończy się dokładnie w `goal`
+## i wchodzi tam w kierunku `arrive`. -1, jeśli się nie da.
+func _segment_to(from: Vector2, dir: Vector2, goal: Vector2, arrive: Vector2) -> int:
+	if dir.dot(arrive) < 0.99:
+		return -1
+	var delta := goal - from
+	var along := delta.dot(dir)
+	if (delta - dir * along).length() > 0.05:
+		return -1
+	var n := roundi(along)
+	if absf(along - n) > 0.05 or n < 0 or (n > 0 and _straight(n).is_empty()):
+		return -1
+	return n
+
+
+## Prosty odcinek długości `length` z jednego albo dwóch korytarzy z siatki ([] dla 0).
+func _straight(length: int) -> Array:
+	if length == 0:
+		return []
+	if length < 4 or length > MAX_SEGMENT:
+		return []
+	if LINKS.has(length):
+		return [[LINKS[length], "West", null]]
+	var first := mini(16, length - 4)
+	if LINKS.has(first) and LINKS.has(length - first):
+		return [[LINKS[first], "West", null], [LINKS[length - first], "West", null]]
+	return []
+
+
+## Stawia łącznik według planu. Najpierw sprawdza wszystkie kawałki (kolizje, trafienie w B),
+## dopiero potem cokolwiek dodaje do mapy.
+func _build_link(a: Dictionary, b: Dictionary, plan: Array) -> bool:
+	var pieces: Array = []  # [{"room": Room, "door": Marker3D (dołączające), "exit": Marker3D}]
+	var current := a
+	var planned_bounds: Array[AABB] = []
+	var target_b: Transform3D = b.room.transform * b.door.transform
+	var ok := true
+	for step in plan:
+		var piece := _instantiate(step[0])
+		var choice := _orient_piece(piece, step, current)
+		if choice.is_empty():
+			piece.free()
+			ok = false
+			break
+		piece.transform = _aligned_transform(choice.door, current)
+		var bounds := (piece.transform * piece.bounds).grow(-OVERLAP_TOLERANCE)
+		if rooms.any(func(r: Room) -> bool: return bounds.intersects(r.transform * r.bounds)) \
+				or planned_bounds.any(func(other: AABB) -> bool: return bounds.intersects(other)):
+			piece.free()
+			ok = false
+			break
+		planned_bounds.append(piece.transform * piece.bounds)
+		pieces.append({"room": piece, "door": choice.door, "exit": choice.exit})
+		current = {"room": piece, "door": choice.exit}
+	if ok:
+		var end: Transform3D = current.room.transform * current.door.transform
+		ok = end.origin.distance_to(target_b.origin) < 0.05 and end.basis.z.dot(target_b.basis.z) < -0.99
+	if not ok:
+		for piece in pieces:
+			piece.room.free()
+		return false
+	var previous := a
+	for piece in pieces:
+		_place(piece.room, piece.door, previous)
+		_links += 1
+		_take(previous)
+		previous = {"room": piece.room, "door": piece.exit}
+	_take(previous)
+	_take(b)
+	connections.append({"a": previous.door, "b": b.door})
+	previous.room.add_door_frame(previous.door)
+	b.room.add_door_frame(b.door)
+	return true
+
+
+func _is_free(open: Dictionary) -> bool:
+	return _open.has(open) or _dead.has(open)
+
+
+func _take(open: Dictionary) -> void:
+	_open.erase(open)
+	_dead.erase(open)
+
+
+## Którym przejściem kawałek dołącza i którym wychodzi. Korytarz: West/East. Narożnik: ta
+## z dwóch orientacji, której wyjście skręca w zaplanowanym kierunku.
+func _orient_piece(piece: Room, step: Array, current: Dictionary) -> Dictionary:
+	var doors := piece.get_doorways()
+	for door in doors:
+		if step[1] != "" and door.name != step[1]:
+			continue
+		var exit: Marker3D = doors[1] if door == doors[0] else doors[0]
+		if step[2] != null:
+			var placed := _aligned_transform(door, current) * exit.transform
+			var out := Vector2(-placed.basis.z.x, -placed.basis.z.z)
+			if out.dot(step[2]) < 0.99:
+				continue
+		return {"door": door, "exit": exit}
+	return {}
 
 
 func _clear() -> void:

@@ -89,8 +89,11 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
 Źródła: [lethalcompany.wiki.gg: Moons](https://lethalcompany.wiki.gg/wiki/Moons),
 [itemlevel.net: Mineshaft](https://itemlevel.net/lethal-company-mineshaft-complete-guide-new-interior-v60/)
 
-- [ ] 15i. Prawdziwe korytarze: zakręt L, T i X w kształcie korytarzy 4 m szerokości (ramiona, nie kwadratowa sala z drzwiami); obecne kwadratowe zostają jako osobne pokoje
-- [ ] 15j. Proporcje: wyraźnie więcej korytarzy niż pokoi, pokoje raczej „przechodnie” jak w Alone in the Dark. Mierzyć w teście (udział korytarzy w mapie), nie tylko wagami
+- [x] 15i. Prawdziwe korytarze: zakręt L, T i X w kształcie korytarzy 4 m szerokości (ramiona, nie kwadratowa sala z drzwiami); obecne kwadratowe zostają jako osobne pokoje
+  - Zrobione: `CorridorL` (8×8), `CorridorT` (12×8), `CorridorX` (12×12), ramiona 4 m (wnętrze 3,6 m); to, co nie jest korytarzem, wypełniają pełne bloki ściany. W losowaniu są też gołe korytarze `Link8`/`Link12`
+- [x] 15j. Proporcje: wyraźnie więcej korytarzy niż pokoi, pokoje raczej „przechodnie” jak w Alone in the Dark. Mierzyć w teście (udział korytarzy w mapie), nie tylko wagami
+  - Zrobione: wagi korytarzy ~60%, pokoi ~30%, piętra ~10%; `map_test` wypisuje udział korytarzy: przy 20 pokojach 41–83% elementów mapy (z łącznikami pętli), zwykle ~70%
+  - Uwaga: za dużo gołych korytarzy też nuży; do oceny w playteście, wagi w `MapGenerator.ROOM_TYPES`
 - [ ] 15k. Nowe pokoje:
   - Biblioteka: okrągła rotunda, antresola z regałami, stoliki na dole, kolumny pod antresolą, duży świetlik (w stylu zamku Dimitrescu z RE Village)
   - Lochy: korytarz z celami po bokach (klimat Amnesii); cele jako kryjówki/ślepe zaułki, kraty przepuszczają wzrok
@@ -151,10 +154,13 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
 - [~] 16g. Projekt poziomów pod ucieczkę: mniej ślepych zaułków, częściej pokoje z 2+ wyjściami, pętle przez sąsiednie pokoje; sprawdzić, czy zmiana piętra gubi pościg
   - Zrobione: schowek (ślepy zaułek) losowany rzadziej, skrzyżowanie częściej; generator łączy dwa wolne przejścia w tym samym miejscu w pętlę zamiast je zamurować. Mapa 20 pokoi: 3–6 ślepych zaułków
   - Problem: pętle prawie nie powstają (0 na 10 testowych map), bo wymiary pokoi nie leżą na wspólnej siatce i przejścia rzadko trafiają w ten sam punkt
-- [ ] 16h. Wymiary pokoi (ze ścianami) jako wielokrotności 2 m, żeby przejścia leżały na wspólnej siatce i pętle mogły powstawać; ewentualnie aktywne domykanie pętli (dobieranie korytarza łączącego dwa bliskie wolne przejścia)
+- [x] 16h. Wymiary pokoi (ze ścianami) jako wielokrotności 2 m, żeby przejścia leżały na wspólnej siatce i pętle mogły powstawać; ewentualnie aktywne domykanie pętli (dobieranie korytarza łączącego dwa bliskie wolne przejścia)
   - Playtest 24.10: pętli dalej w praktyce nie ma, priorytet w górę. Cel do sprawdzenia testem: każda mapa ≥ 20 pokoi ma co najmniej 1–2 pętle (liczone w grafie połączeń), a nie „jest szansa”
   - Uwaga: sama siatka 2 m tylko zwiększy szansę na przypadkowe trafienie. Żeby pętle były gwarantowane, potrzebne jest aktywne domykanie (po złożeniu drzewa szukać par wolnych przejść blisko siebie i dobierać łączący korytarz/zakręt). Siatka ułatwia to domykanie, więc obie rzeczy razem. Zmiana wymiarów pokoi przesuwa współrzędne w testach (`Maps.CLASSIC`) i wymaga ponownego `camera_rules_test`/`coverage_map`
   - Pętle odblokowują zablokowane przejścia z 15 (dopiero wtedy zablokowanie nie odcina części mapy)
+  - Zrobione: siatka 2 m w `tools/gen_rooms.py` (`snap_room`, `check_grid`): zewnętrzne wymiary parzyste, przejścia jednego pokoju różnią się o wielokrotność 2 m, wyposażenie skaluje się z pokojem (wnętrza zmalały o 0,4 m, zakręt urósł do 8×8, skrzyżowanie do 12×12). Domykanie pętli w `MapGenerator._close_loops`: łącznik z prostych korytarzy (`Link4`–`Link16`) i do dwóch narożników (`Bend` 4×4), planowany na siatce, wstawiany w trakcie budowy drzewa (wtedy wolnych przejść jest dużo), pętla musi obejmować ≥ 3 przejścia w drzewie. Wariant mapy bez pętli jest odrzucany (od 12 pokoi)
+  - Wynik: 10/10 map po 20 pokoi ma 1–2 pętle (wcześniej 0/10), 40 pokoi: 1–4, 60 pokoi: 3–5. Łączniki nie liczą się do liczby pokoi (mapa „20 pokoi” ma ~23–32 elementy). Determinizm sprawdzony testem sieci
+  - Ograniczenia: pętle tylko na jednym piętrze; najkrótszy łącznik 4 m (szczelina 2 m zostaje zamurowana)
 
 Źródła: [itemlevel.net: R.E.P.O. hiding guide](https://itemlevel.net/repo-how-to-hide-from-monsters-guide/),
 [gfinityesports.com: R.E.P.O. monsters](https://www.gfinityesports.com/article/repo-all-monsters-and-best-strategies-against-them),

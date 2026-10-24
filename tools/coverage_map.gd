@@ -7,7 +7,8 @@ extends SceneTree
 ##   szary   – zajęte (meble, ściany)
 ## Uruchom: godot --headless --path . -s tools/coverage_map.gd
 
-const ROOMS := ["hall", "corridor", "storage", "turn", "junction", "closet", "ramp", "stairwell"]
+## Wszystkie typy pokoi z rooms/ (nowy pokój nie wymaga dopisywania go tutaj).
+var ROOMS: Array[String] = _room_names()
 const STEP := 0.5  # m
 const PIXELS_PER_STEP := 10
 const HEIGHTS := [1.5, 0.7]  # głowa, biodra (jak CameraDirector)
@@ -93,3 +94,12 @@ func _zone_contains(zone: Node3D, point: Vector3) -> bool:
 	var shape_node: CollisionShape3D = zone.get_node("Shape")
 	var box := shape_node.shape as BoxShape3D
 	return AABB(-box.size / 2.0, box.size).has_point(shape_node.global_transform.affine_inverse() * point)
+
+
+static func _room_names() -> Array[String]:
+	var names: Array[String] = []
+	for file in DirAccess.get_files_at("res://rooms"):
+		if file.ends_with(".tscn"):
+			names.append(file.get_basename())
+	names.sort()
+	return names

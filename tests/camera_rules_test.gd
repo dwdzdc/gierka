@@ -3,7 +3,8 @@ extends SceneTree
 #  - każde przejście widać z kamery strefy, w której to przejście leży (w kadrze, bez zasłony),
 #  - i ta kamera nie patrzy na nie prawie równolegle do ściany (kąt do normalnej < 70°).
 
-const ROOMS := ["hall", "corridor", "storage", "turn", "junction", "closet", "ramp", "stairwell"]
+## Wszystkie typy pokoi z rooms/ (nowy pokój nie wymaga dopisywania go tutaj).
+var ROOMS: Array[String] = _room_names()
 const MAX_ANGLE := 70.0
 
 var holder := Node3D.new()
@@ -64,3 +65,12 @@ func _zone_contains(zone: Node3D, point: Vector3) -> bool:
 
 func _unused() -> bool:
 	return true
+
+
+static func _room_names() -> Array[String]:
+	var names: Array[String] = []
+	for file in DirAccess.get_files_at("res://rooms"):
+		if file.ends_with(".tscn"):
+			names.append(file.get_basename())
+	names.sort()
+	return names

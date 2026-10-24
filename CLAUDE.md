@@ -17,8 +17,9 @@ Co-op survival horror ze stałymi kamerami, Godot 4.7 (GDScript), host-klient po
 - **Testy `-s`:** skrypty testowe kompilują się przed autoloadami (`Net`, `NoiseBus`), więc w testach nie używaj typów statycznych klas, które od nich zależą (`Player`, `Monster`, `CameraDirector`…): `var m` zamiast `var m: Monster`. Enum przez instancję: `m.State.keys()`.
 - **`Transform3D` w `.tscn`** to WIERSZE bazy, potem pozycja. Obrót o yaw: `tf()` w `tools/gen_rooms.py`.
 - **NavMesh:** wypiekać 2 klatki fizyki po złożeniu mapy (CSG buduje się później; wcześniejsze wypiekanie daje siatkę, której mapa nawigacji nie widzi). Duże mapy potrzebują jeszcze kilkudziesięciu klatek na synchronizację.
+- **Siatka 2 m:** zewnętrzne wymiary pokoi parzyste, przejścia jednego pokoju różnią się o wielokrotność 2 m (`check_grid` w `gen_rooms.py` pilnuje). Bez tego pętle (`MapGenerator._close_loops`) przestają się domykać.
 - **Pokoje** generuje `python3 tools/gen_rooms.py` i NADPISUJE `rooms/*.tscn`. Zmiany w pokojach rób w skrypcie; potem `camera_rules_test`, `visibility_test`, `tools/coverage_map.gd`.
-- **Testy na stałej mapie:** `main.map_layout = Maps.CLASSIC` (`tests/test_maps.gd`): hala x=0, korytarz x=16,4, magazyn x=34,8. Zmiana wymiarów pokoi przesuwa współrzędne w testach.
+- **Testy na stałej mapie:** `main.map_layout = Maps.CLASSIC` (`tests/test_maps.gd`): hala x=0, korytarz x=16, magazyn x=34 (siatka 2 m). Zmiana wymiarów pokoi przesuwa współrzędne w testach.
 - **Determinizm mapy:** wszystko, co wpływa na mapę (pokoje, rekwizyty, światła), losuje się z RNG `MapGenerator` – nigdy `randf()`, bo klienci złożą inną mapę. Test sieci porównuje podpis mapy hosta i klienta.
 - **Autorytet:** stan gry (HP, monety, kryjówki, potwory) zmienia tylko host w `GameState`/`MonsterDirector`; klient prosi przez `request_*` RPC. Ruch postaci należy do jej właściciela, więc host przenosi gracza przez RPC (`respawn_at`) albo właściciel sam reaguje na stan (porwanie, szafka).
 - **Nowe stany enumów** (`Monster.State`, `GameState.Life`, `MonsterProfile.*`) tylko na końcu: lecą przez sieć jako liczby.

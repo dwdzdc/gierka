@@ -74,6 +74,11 @@ func _physics_process(_d: float) -> bool:
 		var names: String = ", ".join(rooms.map(func(r): return r.name))
 		if overlaps > 0 or not unreachable.is_empty():
 			problems += 1
+		if count >= 12 and main.map_loops == 0:
+			problems += 1
+			print("ZLE seed %d: brak pętli" % seeds[idx])
+		var corridors := rooms.filter(func(r): return r.name.contains("Corridor") or r.name.contains("Link") or r.name.contains("Bend")).size()
+		print("   korytarze: %d%% (%d z %d)" % [100 * corridors / rooms.size(), corridors, rooms.size()])
 		var dead_ends := rooms.filter(func(r): return r.get_doorways().size() - r.find_children("Cap_*", "", true, false).size() <= 1).size()
 		print("seed %d: pokoi %d/%d, kolizje %d, niedostępne %s, pętle %d, ślepe zaułki %d, poziomy y %s\n   %s" % [seeds[idx], rooms.size(), count, overlaps, unreachable, main.map_loops, dead_ends, ys.keys(), names])
 	return false

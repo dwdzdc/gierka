@@ -15,7 +15,7 @@
 [ext_resource type="PackedScene" path="res://props/locker.tscn" id="13"]
 
 [sub_resource type="BoxShape3D" id="zone_All"]
-size = Vector3(6, 4, 6)
+size = Vector3(7.6, 4, 7.6)
 
 [sub_resource type="BoxMesh" id="lamp_mesh"]
 size = Vector3(0.7, 0.08, 0.35)
@@ -24,85 +24,85 @@ material = ExtResource("10")
 
 [node name="Turn" type="Node3D"]
 script = ExtResource("1")
-bounds = AABB(-3.2, -0.2, -3.2, 6.4, 4.4, 6.4)
+bounds = AABB(-4, -0.2, -4, 8, 4.4, 8)
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true
 
 [node name="Floor" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
-size = Vector3(6.4, 0.2, 6.4)
+size = Vector3(8, 0.2, 8)
 material = ExtResource("5")
 
 [node name="Ceiling" type="CSGBox3D" parent="Geometry"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.1, 0)
-size = Vector3(6.4, 0.2, 6.4)
+size = Vector3(8, 0.2, 8)
 material = ExtResource("5")
 
 [node name="WallN0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.1, 2, -3.1)
-size = Vector3(2.2, 4, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 2, -3.9)
+size = Vector3(3, 4, 0.2)
 material = ExtResource("6")
 
 [node name="WallN1" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3, -3.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.3, -3.9)
 size = Vector3(2, 1.4, 0.2)
 material = ExtResource("6")
 
 [node name="WallN2" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.1, 2, -3.1)
-size = Vector3(2.2, 4, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 2, -3.9)
+size = Vector3(3, 4, 0.2)
 material = ExtResource("6")
 
 [node name="WallS0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 3.1)
-size = Vector3(6.4, 4, 0.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 3.9)
+size = Vector3(8, 4, 0.2)
 material = ExtResource("6")
 
 [node name="WallE0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.1, 2, 0)
-size = Vector3(0.2, 4, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.9, 2, 0)
+size = Vector3(0.2, 4, 7.6)
 material = ExtResource("6")
 
 [node name="WallW0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 2, -2)
-size = Vector3(0.2, 4, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9, 2, -2.4)
+size = Vector3(0.2, 4, 2.8)
 material = ExtResource("6")
 
 [node name="WallW1" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 3.3, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9, 3.3, 0)
 size = Vector3(0.2, 1.4, 2)
 material = ExtResource("6")
 
 [node name="WallW2" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.1, 2, 2)
-size = Vector3(0.2, 4, 2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.9, 2, 2.4)
+size = Vector3(0.2, 4, 2.8)
 material = ExtResource("6")
 
 [node name="Solid0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 0.5, -2.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7867, 0.5, -2.7867)
 size = Vector3(0.9, 1, 0.9)
 material = ExtResource("7")
 
 [node name="Solid1" type="CSGCylinder3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.3, 0.6, 2.3)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.9133, 0.6, 2.9133)
 radius = 0.4
 height = 1.2
 sides = 10
 material = ExtResource("9")
 
 [node name="Solid2" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 3.5, 2.75)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0133, 3.5, 3.4833)
 size = Vector3(4, 0.2, 0.2)
 material = ExtResource("8")
 
 [node name="Doorways" type="Node3D" parent="."]
 
 [node name="West" type="Marker3D" parent="Doorways"]
-transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -3.2, 0, 0)
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, -4, 0, 0)
 
 [node name="North" type="Marker3D" parent="Doorways"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -3.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
 
 [node name="CameraZones" type="Node3D" parent="."]
 
@@ -118,11 +118,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("zone_All")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/All"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.8, 3.6, 2.8)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3.5467, 3.6, 3.5467)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(-1.5, 0.5, -1.5)
+look_target = Vector3(-1.9, 0.5, -1.9)
 follow = 0.25
 
 [node name="Lights" type="Node3D" parent="."]
@@ -149,39 +149,39 @@ script = ExtResource("4")
 [node name="AmbientPoints" type="Node3D" parent="."]
 
 [node name="Ambient0" type="Marker3D" parent="AmbientPoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.2, 3.2, -2.2)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.7867, 3.2, -2.7867)
 
 [node name="VentFrame" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 3.97, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 3.97, 1.9)
 size = Vector3(1.2, 0.06, 1.2)
 material = ExtResource("12")
 
 [node name="VentSlat0" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.94, 3.91, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.34, 3.91, 1.9)
 size = Vector3(0.06, 0.06, 1.1)
 material = ExtResource("8")
 
 [node name="VentSlat1" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.72, 3.91, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.12, 3.91, 1.9)
 size = Vector3(0.06, 0.06, 1.1)
 material = ExtResource("8")
 
 [node name="VentSlat2" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 3.91, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 3.91, 1.9)
 size = Vector3(0.06, 0.06, 1.1)
 material = ExtResource("8")
 
 [node name="VentSlat3" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.28, 3.91, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.68, 3.91, 1.9)
 size = Vector3(0.06, 0.06, 1.1)
 material = ExtResource("8")
 
 [node name="VentSlat4" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.06, 3.91, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.46, 3.91, 1.9)
 size = Vector3(0.06, 0.06, 1.1)
 material = ExtResource("8")
 
 [node name="Vents" type="Node3D" parent="."]
 
 [node name="Vent0" type="Marker3D" parent="Vents"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 3.85, 1.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 3.85, 1.9)

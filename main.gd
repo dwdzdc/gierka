@@ -163,7 +163,7 @@ func _build_map(seed_value: int, count: int) -> void:
 	else:
 		rooms = generator.build_chain(room_parent, map_layout)
 	map_connections = generator.connections
-	map_loops = generator.loops
+	map_loops = generator.loops + generator.closed_loops
 	game_state.exit_position = rooms[0].get_exit().global_position
 	# NavMesh potrzebny tylko hostowi (AI potwora). Na dachach i regałach powstają
 	# "wyspy" NavMeshu; potwór losuje punkty tylko na poziomie podłogi (Monster.random_floor_point).
