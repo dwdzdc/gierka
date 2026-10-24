@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -14,6 +14,8 @@
 [ext_resource type="Material" path="res://rooms/materials/vent.tres" id="12"]
 [ext_resource type="PackedScene" path="res://props/locker.tscn" id="13"]
 [ext_resource type="Material" path="res://rooms/materials/skylight.tres" id="14"]
+[ext_resource type="Material" path="res://rooms/materials/tile.tres" id="15"]
+[ext_resource type="Material" path="res://rooms/materials/cloth.tres" id="16"]
 
 [sub_resource type="BoxShape3D" id="zone_WestHalf"]
 size = Vector3(7.1, 4, 3.6)

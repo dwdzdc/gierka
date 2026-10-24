@@ -27,6 +27,13 @@ const ROOM_TYPES := {
 	"res://rooms/cells.tscn": 0.9,  # lochy
 	"res://rooms/atrium.tscn": 0.7,  # wielki hol z fontanną
 	"res://rooms/library.tscn": 0.6,  # rotunda z antresolą
+	# unikalne (15u): każdy najwyżej raz na 20 pokoi
+	"res://rooms/boiler.tscn": 0.5,  # kotłownia
+	"res://rooms/chapel.tscn": 0.5,  # kaplica
+	"res://rooms/canteen.tscn": 0.5,  # stołówka
+	"res://rooms/archive.tscn": 0.5,  # archiwum z szafami na akta
+	"res://rooms/showers.tscn": 0.5,  # prysznice z przebieralnią
+	"res://rooms/servers.tscn": 0.5,  # serwerownia
 	# piętra
 	"res://rooms/ramp.tscn": 0.6,
 	"res://rooms/stairwell.tscn": 0.6,
@@ -41,6 +48,12 @@ const ROOM_LIMITS := {
 	"res://rooms/cells.tscn": 10,
 	"res://rooms/atrium.tscn": 20,
 	"res://rooms/library.tscn": 20,
+	"res://rooms/boiler.tscn": 20,
+	"res://rooms/chapel.tscn": 20,
+	"res://rooms/canteen.tscn": 20,
+	"res://rooms/archive.tscn": 20,
+	"res://rooms/showers.tscn": 20,
+	"res://rooms/servers.tscn": 20,
 }
 ## Każde wystąpienie typu z limitem mnoży jego wagę przez tyle: powtórki, jeśli już są, rzadziej
 ## lądują obok siebie.

@@ -34,8 +34,11 @@ EXT = [
     ("Material", "res://rooms/materials/vent.tres"),
     ("PackedScene", "res://props/locker.tscn"),
     ("Material", "res://rooms/materials/skylight.tres"),
+    ("Material", "res://rooms/materials/tile.tres"),
+    ("Material", "res://rooms/materials/cloth.tres"),
 ]
-EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12, "locker": 13, "skylight": 14}
+EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12, "locker": 13, "skylight": 14,
+          "tile": 15, "cloth": 16}
 # Obrót markera drzwi (stopnie wokół Y), żeby jego -Z wskazywało na zewnątrz danej ściany.
 SIDE_YAW = {"N": 0, "W": 90, "S": 180, "E": -90}
 
@@ -795,4 +798,216 @@ build(
     ambient=[("Ambient0", (0, MEZZ + 1, 8.5)), ("Ambient1", (-8.5, 1, -2))],
     vent=(5, 5),
     lockers=[((-9.35, 0, -2.8), 90)],
+)
+
+# --- Unikalne pokoje (15u) -------------------------------------------------------------
+# Każdy z charakterystycznym rekwizytem i kolorem światła (punkty orientacyjne: „za kotłownią
+# w lewo”). Na mapie najwyżej raz na 20 pokoi (MapGenerator.ROOM_LIMITS).
+FIRE = (1.0, 0.5, 0.2)
+FLUO = (0.8, 1.0, 0.8)
+SERVER = (0.45, 0.65, 1.0)
+
+# Boiler: kotłownia. Wielki kocioł z paleniskiem (pomarańczowy blask), drugi mniejszy, rury,
+# hałda węgla. Za kotłem wąska nisza przy ścianie (osobne ujęcie).
+build(
+    "Boiler", 15.6, 11.6, 5.0,
+    doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
+    solids=[
+        group(("cyl", (-1.5, 2.0, -2.6), 1.6, 4.0, "rust"),     # kocioł
+              ("cyl", (-1.5, 4.2, -2.6), 1.0, 0.4, "metal"),
+              ("cyl", (-1.5, 4.7, -2.6), 0.35, 0.6, "metal"),    # komin do sufitu
+              ("box", (-1.5, 0.8, -0.95), (1.0, 0.9, 0.12), "metal")),  # drzwiczki paleniska
+        group(("cyl", (3.5, 1.5, -3.6), 1.1, 3.0, "rust"),
+              ("cyl", (3.5, 3.9, -3.6), 0.25, 1.8, "metal")),
+        ("box", (0, 4.4, -5.5), (15.6, 0.3, 0.3), "metal"),       # rury pod sufitem
+        ("box", (0, 4.0, -5.55), (15.6, 0.2, 0.2), "rust"),
+        ("box", (6.8, 2.5, -5.5), (0.25, 5.0, 0.25), "metal"),    # piony
+        ("box", (-6.5, 2.5, -5.5), (0.25, 5.0, 0.25), "metal"),
+        ("box", (7.65, 1.6, -2.0), (0.2, 1.2, 1.6), "metal"),     # tablica z zaworami
+        group(("box", (-6.2, 0.4, 4.3), (2.6, 0.8, 2.4), "concrete"),  # hałda węgla
+              ("box", (-6.4, 1.0, 4.6), (1.6, 0.5, 1.6), "concrete")),
+        table((3.0, 4.6), 2.6, 1.0, "rust"),
+        ("cyl", (0.6, 0.6, 4.9), 0.4, 1.2, "rust"),  # beczki (nie pod kamerą w narożniku)
+        ("cyl", (-0.3, 0.6, 5.1), 0.4, 1.2, "rust"),
+    ],
+    zones=[
+        ("West", (-7.8, 0.5, -5.8, 5.8), (6.5, 4.4, 5.2), (-4, 0.5, -2.5), 0.25, 0),
+        ("East", (-0.5, 7.8, -5.8, 5.8), (-6.5, 4.4, 5.2), (4, 0.5, -2.5), 0.25, 0),
+        ("BehindBoiler", (-4.0, 1.0, -5.8, -4.2), (2.0, 3.6, -5.2), (-3.5, 0.5, -5.0), 0.2, 1),
+        ("BehindSmall", (2.0, 7.8, -5.8, -4.5), (0.5, 3.6, -5.3), (6, 0.5, -5.2), 0.2, 1),
+    ],
+    lights=[((-1.5, 1.2, -0.6), FIRE, 0.9, 7.0, True), ((3, 4.6, 1.5), WARM, 0.7, 10.0, False)],
+    loot=[("Loot0", (3.0, 1.25, 4.6)), ("Loot1", (-6.4, 1.3, 4.6))],
+    ambient=[("Ambient0", (-1.5, 4.5, -4.5)), ("Ambient1", (6, 1, -4))],
+    vent=(2, 2),
+    lockers=[((-2.5, 0, 5.55), 180)],
+)
+
+
+def pew(x, z, length=3.0):
+    """Ławka kościelna: siedzisko i oparcie od południa (wierni patrzą na północ, na ołtarz)."""
+    return group(("box", (x, 0.225, z), (length, 0.45, 0.5), "wood"),
+                 ("box", (x, 0.7, z + 0.22), (length, 0.5, 0.08), "wood"))
+
+
+# Chapel: kaplica. Rzędy ławek po obu stronach nawy, ołtarz z czerwonym suknem na podwyższeniu,
+# wysokie okno (świeci jak świetlik) z krzyżem w północnej ścianie.
+build(
+    "Chapel", 11.6, 19.6, 7.0,
+    doors=[("South", "S", 0, 0), ("East", "E", 2, 0)],
+    solids=[
+        *[pew(side * 2.9, z) for side in (-1, 1) for z in (-4.0, -2.0, 0.0, 2.0, 4.0, 6.0)],
+        ("box", (0, 0.1, -7.6), (6.0, 0.2, 2.6), "concrete"),     # podwyższenie
+        group(("box", (0, 0.7, -8.0), (2.4, 1.0, 0.9), "concrete"),  # ołtarz
+              ("box", (0, 1.225, -8.0), (2.5, 0.05, 1.0), "cloth"),
+              ("box", (0, 0.85, -7.53), (1.0, 0.7, 0.03), "cloth")),
+        ("box", (0, 4.2, -9.77), (1.6, 3.0, 0.06), "skylight"),   # okno
+        ("box", (0, 4.2, -9.7), (0.15, 2.0, 0.06), "metal"),       # krzyż na oknie
+        ("box", (0, 4.7, -9.7), (1.0, 0.15, 0.06), "metal"),
+        ("cyl", (-2.0, 0.85, -8.6), 0.08, 1.5, "metal"),           # świeczniki
+        ("cyl", (2.0, 0.85, -8.6), 0.08, 1.5, "metal"),
+        ("box", (0, 0.01, 2.0), (1.4, 0.02, 15.0), "cloth"),       # chodnik w nawie
+        ("box", (-5.3, 0.6, 8.6), (0.8, 1.2, 1.6), "wood"),        # skrzynia na śpiewniki
+    ],
+    zones=[
+        ("Altar", (-5.8, 5.8, -9.8, -3.0), (3.5, 6.0, 9.2), (0, 0.5, -7), 0.2, 0),
+        ("Nave", (-5.8, 5.8, -3.5, 9.8), (-5.0, 6.0, -8.8), (1.5, 0.5, 4), 0.25, 0),
+    ],
+    lights=[((0, 6.6, -2), WARM, 1.0, 12.0, False), ((0, 6.6, 5), WARM, 0.8, 10.0, True), ((0, 6.6, -8.5), COLD, 0.7, 8.0, False)],
+    loot=[("Loot0", (0, 1.3, -8.0)), ("Loot1", (-2.9, 0.5, 4.0))],
+    ambient=[("Ambient0", (0, 5.5, -9)), ("Ambient1", (-4.5, 1, 8))],
+    vent=(3, -4),
+    lockers=[((-5.55, 0, -5.0), 90)],  # konfesjonał
+)
+
+# Canteen: stołówka. Dwa rzędy długich stołów z prześwitem (kryjówki), kuchnia pod północną
+# ścianą (blat, kuchenki, okap, lodówka), zielonkawe świetlówki.
+build(
+    "Canteen", 15.6, 15.6, 4.5,
+    doors=[("West", "W", 0, 0), ("East", "E", 0, 0), ("South", "S", 0, 0)],
+    solids=[
+        table((-3.0, -2.2), 5.0, 1.2),
+        table((-3.0, 2.2), 5.0, 1.2),
+        table((3.5, -2.2), 4.0, 1.2),
+        table((3.5, 2.2), 4.0, 1.2),
+        *[("box", (x, 0.225, z), (0.4, 0.45, 0.4), "metal") for x, z in [(-4.5, -1.2), (-2.0, -3.2), (-3.5, 3.2), (2.5, -1.2), (4.5, 3.2), (3.0, 1.2)]],
+        group(("box", (0, 0.5, -7.2), (10.0, 1.0, 0.8), "metal"),   # blat kuchenny
+              ("box", (-3.5, 1.05, -7.2), (1.2, 0.1, 0.7), "rust"),  # kuchenki
+              ("box", (-1.9, 1.05, -7.2), (1.2, 0.1, 0.7), "rust"),
+              ("cyl", (-3.8, 1.25, -7.2), 0.25, 0.3, "metal"),       # garnki
+              ("cyl", (-1.7, 1.2, -7.1), 0.2, 0.2, "metal"),
+              ("box", (3.0, 1.1, -7.3), (1.0, 0.2, 0.4), "wood")),   # tace
+        ("box", (-2.7, 3.6, -7.3), (3.2, 0.6, 1.2), "metal"),       # okap
+        ("box", (6.9, 1.1, -6.9), (1.2, 2.2, 1.0), "metal"),        # lodówka
+        ("cyl", (6.9, 0.45, 6.6), 0.35, 0.9, "rust"),               # kosze
+        ("cyl", (6.1, 0.45, 6.9), 0.35, 0.9, "rust"),
+    ],
+    zones=[
+        ("West", (-7.8, 0.5, -7.8, 7.8), (7.4, 4.1, -7.4), (-3, 0.5, 2), 0.25, 0),
+        ("East", (-0.5, 7.8, -7.8, 7.8), (-7.4, 4.1, -7.4), (3, 0.5, 2), 0.25, 0),
+    ],
+    lights=[((-3, 4.2, 0), FLUO, 0.8, 9.0, False), ((4, 4.2, 0), FLUO, 0.8, 9.0, True), ((0, 4.2, -6), FLUO, 0.6, 7.0, False)],
+    loot=[("Loot0", (-3.0, 1.25, 2.2)), ("Loot1", (0.5, 1.05, -7.2))],
+    ambient=[("Ambient0", (-2.7, 3.2, -7)), ("Ambient1", (6, 1, 6))],
+    vent=(0, 4),
+    lockers=[((-7.35, 0, -5.0), 90)],
+)
+
+
+def filing_row(x):
+    """Rząd szaf na akta (2 m) wzdłuż Z, z kartonami na wierzchu."""
+    return group(("box", (x, 1.0, 0), (0.7, 2.0, 7.0), "metal"),
+                 ("box", (x, 2.15, -2.2), (0.5, 0.3, 0.6), "wood"),
+                 ("box", (x, 2.12, 0.4), (0.5, 0.24, 0.5), "wood"),
+                 ("box", (x, 2.15, 2.6), (0.55, 0.3, 0.7), "wood"))
+
+
+# Archive: archiwum. Rzędy szaf na akta wzdłuż Z (alejki prosto od kamer na końcach),
+# biurko i katalog kartkowy przy wejściu.
+build(
+    "Archive", 15.6, 11.6, 4.0,
+    doors=[("West", "W", 0, 0), ("North", "N", 4, 0)],
+    solids=[
+        filing_row(-3.4),
+        filing_row(0.2),
+        filing_row(5.8),
+        table((-6.0, -4.2), 2.0, 1.0),
+        ("box", (-6.8, 0.6, 4.4), (1.2, 1.2, 0.6), "wood"),   # katalog kartkowy
+        ("box", (7.4, 1.0, 4.4), (0.6, 2.0, 2.4), "metal"),    # szafa pod wschodnią ścianą
+        ("box", (2.0, 0.3, 4.8), (0.8, 0.6, 0.6), "wood"),     # kartony na podłodze
+        ("box", (2.6, 0.25, 5.2), (0.6, 0.5, 0.5), "wood"),
+    ],
+    zones=[
+        ("North", (-7.8, 7.8, -5.8, 0.3), (-2.0, 3.7, 5.4), (2, 0, -4), 0.2, 0),
+        ("South", (-7.8, 7.8, -0.3, 5.8), (2.0, 3.7, -5.4), (-2, 0, 4), 0.2, 0),
+        # Pas przy zachodnich drzwiach, za pierwszym rzędem szaf: z alejek szafy zasłaniają drzwi.
+        ("Entry", (-7.8, -3.75, -5.8, 5.8), (-4.0, 3.7, 5.4), (-6, 0.5, -3), 0.25, 1),
+        ("EastAisle", (6.15, 7.8, -5.8, 5.8), (7.0, 3.7, 5.4), (7.0, 0.5, -4), 0.2, 1),
+    ],
+    lights=[((-1.5, 3.7, -2), COLD, 0.6, 7.0, True), ((2.5, 3.7, 2.5), COLD, 0.6, 7.0, False)],
+    loot=[("Loot0", (-6.0, 1.25, -4.2)), ("Loot1", (0.2, 2.35, 0.4))],
+    ambient=[("Ambient0", (3, 3.5, 0)), ("Ambient1", (-6, 1, 3))],
+    vent=(-5.5, 0),
+)
+
+# Showers: prysznice z przebieralnią. Kafle na ścianach, kabiny pod wschodnią ścianą (otwarte
+# na zachód), szafki (kryjówki) pod południową, ławka na środku.
+build(
+    "Showers", 11.6, 11.6, 3.6,
+    doors=[("West", "W", 0, 0), ("North", "N", 0, 0)],
+    solids=[
+        ("box", (0, 1.1, 5.77), (11.6, 2.2, 0.05), "tile"),
+        ("box", (5.77, 1.1, 0), (0.05, 2.2, 11.6), "tile"),
+        ("box", (-3.4, 1.1, -5.77), (4.8, 2.2, 0.05), "tile"),
+        ("box", (3.4, 1.1, -5.77), (4.8, 2.2, 0.05), "tile"),
+        ("box", (-5.77, 1.1, -3.4), (0.05, 2.2, 4.8), "tile"),
+        ("box", (-5.77, 1.1, 3.4), (0.05, 2.2, 4.8), "tile"),
+        *[("box", (4.9, 1.0, z), (1.8, 2.0, 0.08), "tile") for z in (-3.6, -1.2, 1.2, 3.6)],  # ścianki kabin
+        *[("box", (5.6, 2.2, z), (0.3, 0.06, 0.15), "metal") for z in (-4.7, -2.4, 0.0, 2.4, 4.7)],  # słuchawki
+        ("box", (-1.0, 0.25, 1.0), (3.0, 0.5, 0.5), "wood"),   # ławka
+        ("box", (-5.45, 0.85, -3.5), (0.6, 0.15, 1.6), "tile"),  # umywalki
+        ("box", (-5.45, 0.85, 3.5), (0.6, 0.15, 1.6), "tile"),
+    ],
+    zones=[
+        ("Room", (-5.8, 3.0, -5.8, 5.8), (5.2, 3.3, 5.2), (-2, 0.5, -2), 0.25, 0),
+        ("Stalls", (2.8, 5.8, -5.8, 5.8), (-5.2, 3.3, -5.2), (4.5, 0.5, 1.5), 0.2, 1),
+    ],
+    lights=[((0, 3.3, -1), (0.8, 0.95, 1.0), 0.7, 8.0, True), ((4.5, 3.3, 2), (0.8, 0.95, 1.0), 0.4, 5.0, False)],
+    loot=[("Loot0", (-1.0, 0.55, 1.0))],
+    ambient=[("Ambient0", (5, 2.5, -4.7)), ("Ambient1", (-4, 1, -4))],
+    vent=(-2, -3),
+    lockers=[((-3.5, 0, 5.55), 180), ((-2.4, 0, 5.55), 180), ((-1.3, 0, 5.55), 180)],
+)
+
+
+def rack_row(x):
+    """Rząd szaf serwerowych wzdłuż Z: pięć szaf z przerwami, korytka kablowe nad nimi."""
+    return group(*[("box", (x, 1.05, z), (1.0, 2.1, 1.9), "metal") for z in (-4.0, -2.0, 0.0, 2.0, 4.0)],
+                 ("box", (x, 2.9, 0), (0.4, 0.08, 10.0), "metal"))
+
+
+# Servers: serwerownia. Dwa rzędy szaf, szeroka alejka na środku (drzwi na obu końcach),
+# boczne alejki pod ścianami z klimatyzatorami, niebieskie światło.
+build(
+    "Servers", 11.6, 15.6, 3.6,
+    doors=[("North", "N", 0, 0), ("South", "S", 0, 0)],
+    solids=[
+        rack_row(-2.7),
+        rack_row(2.7),
+        ("box", (-5.3, 1.0, -6.6), (0.8, 2.0, 1.6), "metal"),   # klimatyzatory
+        ("box", (5.3, 1.0, 6.4), (0.8, 2.0, 1.6), "metal"),
+        group(("box", (-4.2, 0.4, 6.6), (2.0, 0.8, 0.9), "wood"),  # pulpit operatora z monitorem
+              ("box", (-4.2, 1.05, 6.8), (0.6, 0.45, 0.08), "metal")),
+        ("box", (0, 3.35, -7.0), (11.6, 0.15, 0.4), "metal"),   # korytko pod sufitem
+    ],
+    zones=[
+        ("North", (-2.2, 2.2, -7.8, 0.3), (-1.5, 3.3, 7.4), (0, 0.5, -5), 0.2, 0),
+        ("South", (-2.2, 2.2, -0.3, 7.8), (1.5, 3.3, -7.4), (0, 0.5, 5), 0.2, 0),
+        ("WestAisle", (-5.8, -2.2, -7.8, 7.8), (-4.3, 3.3, -7.4), (-4.3, 0.5, 4), 0.2, 1),
+        ("EastAisle", (2.2, 5.8, -7.8, 7.8), (4.3, 3.3, 7.4), (4.3, 0.5, -4), 0.2, 1),
+    ],
+    lights=[((0, 3.3, -3), SERVER, 0.6, 8.0, False), ((0, 3.3, 4), SERVER, 0.6, 8.0, True)],
+    loot=[("Loot0", (-4.2, 0.85, 6.4))],
+    ambient=[("Ambient0", (-5, 1, -6)), ("Ambient1", (4.5, 3, 0))],
+    vent=(0, 0),
 )
