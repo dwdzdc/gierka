@@ -1,0 +1,76 @@
+docs/coverage/link4.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+props/door.gd.uid
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1
+docs/coverage/corridor_l.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+docs/coverage/corridor_x.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+docs/coverage/corridor_t.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+loot/key_pickup.gd.uid
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1
+camera/camera_zone.gd
+  s_d291cd2fe64f4d::t_b5ec11f6b1f4d4 14
+docs/coverage/bend.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+docs/coverage/link10.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+docs/coverage/link6.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+tests/door_test.gd
+  s_d291cd2fe64f4d::t_e3766568ba5f30 1-83,85-91,93-143
+  s_d291cd2fe64f4d::t_883147c1d176c5 84,92
+props/door.gd
+  s_d291cd2fe64f4d::t_0e8cea7c656f84 1-170
+docs/coverage/link12.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+tests/map_test.gd
+  s_d291cd2fe64f4d::t_5e102d3e85836e 82-87
+game/map_generator.gd
+  s_d291cd2fe64f4d::t_19c0fe7f7cc903 71,76,238-240,242-303
+  s_d291cd2fe64f4d::t_5198acabf0e023 241
+main.tscn
+  s_d291cd2fe64f4d::t_eb41c36cb9822f 56
+loot/key_pickup.gd
+  s_d291cd2fe64f4d::t_48a657de0a5fbc 1-53
+player/player.gd
+  s_d291cd2fe64f4d::t_75e74512f86ba0 269
+  s_d291cd2fe64f4d::t_0b9e9660b2d61e 42-43,45-50,68-73,156,292-296,300-302,309-310,326-328,332-390
+docs/coverage/link16.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+loot/key_pickup.tscn
+  s_d291cd2fe64f4d::t_48a657de0a5fbc 1-27
+game/game_state.gd
+  s_d291cd2fe64f4d::t_ab95ca0cf96c37 175
+  s_d291cd2fe64f4d::t_e101c6dbe58fd2 20-23,50-51,130-137,323,392-424,549-582,592-602
+main.gd
+  s_d291cd2fe64f4d::t_ab95ca0cf96c37 173,180-209,324-344
+  s_d291cd2fe64f4d::t_eb41c36cb9822f 19,48-50,68,495-498,516-517
+docs/coverage/link8.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+camera/camera_director.gd
+  s_d291cd2fe64f4d::t_b5ec11f6b1f4d4 49-54
+docs/coverage/link14.png.import
+  s_d291cd2fe64f4d::t_cec63fe62fc289 1-40
+monster/monster.gd
+  s_d291cd2fe64f4d::t_b3f020e2253458 850
+  s_d291cd2fe64f4d::t_4e4ff2d235e83f 43
+  s_d291cd2fe64f4d::t_cec63fe62fc289 40-42,44-47,109-112,250,670-744,751,851-852,854-857,861-866
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "0bf9006f82ae3a69d6ca901ac6d8b8583fdfa196",
+  "prompts": {},
+  "sessions": {
+    "s_d291cd2fe64f4d": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "5bef06f6-7f8c-4dc4-93c6-883eeb6d683c",
+        "model": "unknown"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
