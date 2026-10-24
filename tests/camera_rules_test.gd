@@ -13,10 +13,16 @@ var problems := 0
 
 func _initialize() -> void:
 	root.add_child.call_deferred(holder)
+	# Każdy pokój także w lustrzanym odbiciu, jak go stawia generator mapy (15v).
+	var generator = load("res://game/map_generator.gd").new()
 	for i in ROOMS.size():
-		var room: Node3D = load("res://rooms/%s.tscn" % ROOMS[i]).instantiate()
-		room.position = Vector3(i * 100, 0, 0)
-		holder.add_child(room)
+		for mirrored in [false, true]:
+			var room: Node3D = load("res://rooms/%s.tscn" % ROOMS[i]).instantiate()
+			room.position = Vector3(i * 100, 0, 300 if mirrored else 0)
+			if mirrored:
+				generator.mirror(room)
+				room.name += "_M"
+			holder.add_child(room)
 
 func _physics_process(_d: float) -> bool:
 	frames += 1

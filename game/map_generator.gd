@@ -58,6 +58,10 @@ const ROOM_LIMITS := {
 ## Każde wystąpienie typu z limitem mnoży jego wagę przez tyle: powtórki, jeśli już są, rzadziej
 ## lądują obok siebie.
 const REPEAT_WEIGHT_FACTOR := 0.5
+## Wariant układu (15v): co drugi pokój (poza halą) stoi w lustrzanym odbiciu (rampa raz na
+## wschodzie, raz na zachodzie). Ten sam typ, te same limity.
+const MIRROR_CHANCE := 0.5
+const MIRROR := Transform3D(Basis.FLIP_X, Vector3.ZERO)
 const MAX_ATTEMPTS := 400
 ## Bryły sąsiadów stykają się ścianami; zmniejszamy je odrobinę, żeby styk nie był kolizją.
 const OVERLAP_TOLERANCE := 0.05
@@ -634,6 +638,8 @@ func _attach_any(open: Dictionary) -> bool:
 		if not allow_dead_end and _door_count(path) < 2:
 			continue
 		var room := _instantiate(path)
+		if _rng.randf() < MIRROR_CHANCE:
+			mirror(room)
 		var doors := room.get_doorways()
 		_shuffle(doors)
 		for door in doors:
@@ -699,6 +705,33 @@ func _door_count(path: String) -> int:
 		_door_counts[path] = probe.get_doorways().size()
 		probe.free()
 	return _door_counts[path]
+
+
+## Odbija pokój (jeszcze poza drzewem) w osi X. Nie przez skalę -1: fizyka i kamery jej nie
+## znoszą. Zamiast tego każdy węzeł dostaje transformację M·T·M (M = odbicie X): pozycje się
+## odbijają, a bazy zostają zwykłymi obrotami. Kształty CSG są symetryczne, poza wielokątami
+## (rampy, schody, ścięte narożniki), którym odbijamy profil. Wstawione sceny (szafki) obracają
+## się jako całość, bez odbijania środka.
+func mirror(room: Room) -> void:
+	room.bounds = AABB(Vector3(-room.bounds.end.x, room.bounds.position.y, room.bounds.position.z), room.bounds.size)
+	_mirror_children(room)
+
+
+func _mirror_children(node: Node) -> void:
+	for child in node.get_children():
+		if child is Node3D:
+			child.transform = MIRROR * child.transform * MIRROR
+		if child is CSGPolygon3D:
+			# Profil leży w lokalnym XY, a lokalne X to X pokoju (rampa: bez obrotu, pion: obrót wokół X).
+			# Odbicie odwraca kolejność wierzchołków, więc czytamy je od końca.
+			var points := PackedVector2Array()
+			for i in range(child.polygon.size() - 1, -1, -1):
+				points.append(Vector2(-child.polygon[i].x, child.polygon[i].y))
+			child.polygon = points
+		if child is FixedCamera:
+			child.look_target *= Vector3(-1, 1, 1)
+		if child.scene_file_path.is_empty():
+			_mirror_children(child)
 
 
 func _instantiate(path: String) -> Room:

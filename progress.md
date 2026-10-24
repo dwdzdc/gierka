@@ -15,7 +15,9 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 
 Zrobione 24.10: 47c9 wzrok, 47c10 strażnik, 16h siatka i pętle, 15i/15j korytarze, 15l–15n drzwi, 15k nowe pokoje.
 
-Następna sesja (ustalone 24.10, w tej kolejności):
+Zrobione 25.10: 15w, 15o, 15r, 15q, 15p, 15t, 15s, 15u, 15v (cała lista z 24.10).
+
+Było ustalone 24.10 (zrobione 25.10):
 1. 15w meble rozjechane przez skalowanie siatki (bug) → 2. 15o głowa w podglądzie przez kratkę (bug) →
 3. 15r antresola biblioteki dookoła bez skakania → 4. 15q zgaszone lampy nie świecą →
 5. 15p dźwięki wyważania drzwi → 6. 15t zamykanie drzwi za sobą w biegu → 7. 15s limity wystąpień typów pokoi →
@@ -158,12 +160,14 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
   - Zrobione: 6 nowych pokoi, każdy najwyżej raz na 20 pokoi mapy (waga 0,5): `Boiler` kotłownia 16×12 (kocioł z pomarańczowym blaskiem paleniska, drugi mniejszy, hałda węgla, nisze za kotłami z osobnymi ujęciami), `Chapel` kaplica 12×20 (ławki, ołtarz z czerwonym suknem, świecące okno z krzyżem, konfesjonał = szafka), `Canteen` stołówka 16×16 (4 długie stoły z prześwitem, kuchnia, zielonkawe świetlówki), `Archive` archiwum 16×12 (3 rzędy szaf na akta, kamery wzdłuż alejek), `Showers` prysznice 12×12 (kafle, kabiny, 3 szafki w przebieralni), `Servers` serwerownia 12×16 (2 rzędy szaf, niebieskie światło, 4 ujęcia). Nowe materiały `tile`, `cloth`. Zasady kamer OK, pokrycie 89–100%
   - Przy 20 pokojach na mapie zwykle 2–4 z nowych, udział korytarzy 38–79% (wcześniej 41–83%)
   - Nie zrobione z listy: maszynownia z pomostami (drugi poziom jak antresola, droższa), gabinet, pralnia
-- [ ] 15v. Warianty istniejących pokoi (24.10: raz rampa tu, raz tam; beczka stoi albo nie; rura po ścianie albo nie; naturalność). Dziś zmienność z seeda to tylko ciemne pokoje, migotanie i 2–5 skrzyń/beczek przy ścianach (15h). Propozycja w dwóch warstwach:
+- [x] 15v. Warianty istniejących pokoi (24.10: raz rampa tu, raz tam; beczka stoi albo nie; rura po ścianie albo nie; naturalność). Dziś zmienność z seeda to tylko ciemne pokoje, migotanie i 2–5 skrzyń/beczek przy ścianach (15h). Propozycja w dwóch warstwach:
   - drobne: w `gen_rooms.py` elementy oznaczone jako opcjonalne (rury, beczki, skrzynie, regały pod ścianą, kable), generator mapy włącza każdy z RNG mapy z jego szansą
   - układ: kilka wariantów sceny tego samego typu (np. biblioteka z rampą na wschodzie albo na zachodzie, magazyn z regałami wzdłuż albo w poprzek, lustrzane odbicie), generator losuje wariant; wariant liczy się do limitu swojego typu (15s)
   - Uwaga: każdy wariant układu musi przejść zasady kamer, mapę pokrycia i test dostępności (kamery stoją pod konkretny układ, przesunięta rampa może zasłonić drzwi). Opcjonalne drobiazgi nie mogą zatkać przejścia (jak skrzynie w korytarzach przy 3,6 m) ani stanąć w polu widzenia kamery na drzwi. Wszystko z RNG mapy (determinizm sieci)
   - Szkielet potwierdzony 25.10: drobiazgi jako `optional(szansa, ...)` w `gen_rooms.py` → węzeł `Geometry/Opt_N` (pod-kombinator CSG z `metadata/chance`), generator mapy usuwa go z RNG mapy; warianty układu przez lustrzane odbicie pokoju w generatorze (bez nowych scen, ten sam typ do limitów)
   - Zrobione (drobiazgi): rury, beczki, skrzynie, palety, kosze, kartony, korytka w 24 scenach, szansa 0,5–0,7 (na przykładowej mapie zostaje 34 z 54). W scenie stoją wszystkie, więc zasady kamer i pokrycie sprawdzają najgorszy przypadek. Nie oznaczone: meble z łupem i kryjówki. `map_test` (determinizm) i podpis mapy w `net_test` uwzględniają, które zostały
+  - Zrobione (układ): `MapGenerator.mirror()` – połowa pokoi (poza halą) w lustrzanym odbiciu w osi X. Bez skali -1 (fizyka i kamery jej nie znoszą): każdy węzeł dostaje M·T·M, wielokątom CSG odbijamy profil, `look_target` kamer też; szafki obracają się jako całość. `camera_rules_test` sprawdza każdy pokój w obu wersjach, `map_test` dostępność na mapach z odbiciami, host i klient mają ten sam podpis mapy
+  - Nie zrobione: ręczne warianty (np. regały magazynu w poprzek) – dopiero gdy odbicie okaże się za mało
 - [x] 15w. Bug (potwierdzony 24.10): w skrzyżowaniu nogi stołu stoją obok blatu. Przyczyna: siatka 2 m (16h) skaluje pozycje wyposażenia, ale nie rozmiary, a każda część mebla jest skalowana osobno. W skrzyżowaniu (10 → 11,6 m, ×1,16) blat ma 3 m długości (±1,5), a nogi przesunęły się na ±1,65. To samo w zakręcie (×1,27); w pozostałych pokojach skala ~0,98, więc przesunięcia są niewidoczne. Dotyczy wszystkich mebli z kilku części (stoły, skrzynka na stole warsztatowym, towar na regałach). Naprawa: skalować tylko punkt zaczepienia mebla, a jego części przesuwać razem z nim; test: części mebla stykają się z blatem
   - Zrobione: `group(...)` w `tools/gen_rooms.py` – mebel z kilku części przesuwa się jako całość (skaluje się tylko pierwsza część, reszta zachowuje odstępy). Zgrupowane: stoły z prześwitem, stoły warsztatowe ze skrzynką, regały z towarem, palety i stos skrzyń. W skrzyżowaniu nogi stoją teraz na ±1,42 pod blatem ±1,5. Zasady kamer i widoczność bez zmian
 - [ ] 33b. Monety lepiej schowane (24.10: „zbiera się jak w pacmanie, za tanie”). Dziś monety leżą na podłodze, a znaczniki na meblach są celowo zsuwane na podłogę (`main._spawn_loot`), plus losowe kupki w każdym pokoju (`coins_per_room`)

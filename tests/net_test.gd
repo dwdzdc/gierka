@@ -36,7 +36,7 @@ func _physics_process(_d: float) -> bool:
 		print("%s (id %d) widzi %d graczy:" % [role, main.multiplayer.get_unique_id(), players.get_child_count()])
 		var sig := ""
 		for r in main.rooms:
-			sig += "%s@%s " % [r.name, r.global_position.snapped(Vector3.ONE * 0.1)]
+			sig += "%s@%s/%s " % [r.name, r.global_position.snapped(Vector3.ONE * 0.1), r.get_doorways()[0].global_position.snapped(Vector3.ONE * 0.1)]
 			for c in r.get_node("Geometry").get_children():
 				if c.name.begins_with("Clutter") or c.name.begins_with("Opt_"):
 					sig += "%s@%s " % [c.name, c.position.snapped(Vector3.ONE * 0.01)]
