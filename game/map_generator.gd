@@ -20,10 +20,13 @@ const ROOM_TYPES := {
 	"res://rooms/corridor_t.tscn": 1.6,
 	"res://rooms/corridor_x.tscn": 1.0,
 	# pokoje
-	"res://rooms/storage.tscn": 1.5,
-	"res://rooms/junction.tscn": 1.2,
+	"res://rooms/storage.tscn": 1.2,
+	"res://rooms/junction.tscn": 0.9,
 	"res://rooms/turn.tscn": 0.6,
 	"res://rooms/closet.tscn": 0.5,  # ślepy zaułek: rzadziej, żeby łatwiej było uciec potworowi
+	"res://rooms/cells.tscn": 0.9,  # lochy
+	"res://rooms/atrium.tscn": 0.7,  # wielki hol z fontanną
+	"res://rooms/library.tscn": 0.6,  # rotunda z antresolą
 	# piętra
 	"res://rooms/ramp.tscn": 0.6,
 	"res://rooms/stairwell.tscn": 0.6,
@@ -104,8 +107,14 @@ func _decorate() -> void:
 		if dark:
 			for fixture in room.find_children("Fixture*", "MeshInstance3D", true, false):
 				fixture.visible = false  # zgaszona oprawa nie świeci
-		if room.bounds.size.y < 8.0:  # bez ramp i schodów (pochyłe podłogi)
+		# Bez ramp i schodów (pochyłe podłogi) i bez wąskich korytarzy (3,6 m): skrzynia pod jedną
+		# ścianą i mebel pod drugą potrafiły zatkać przejście.
+		if room.bounds.size.y < 8.0 and minf(room.bounds.size.x, room.bounds.size.z) > 4.5 and not _is_corridor(room):
 			_add_clutter(room)
+
+
+func _is_corridor(room: Room) -> bool:
+	return room.name.contains("Corridor") or room.name.contains("Link") or room.name.contains("Bend")
 
 
 func _add_clutter(room: Room) -> void:

@@ -33,8 +33,9 @@ EXT = [
     ("Material", "res://rooms/materials/exit.tres"),
     ("Material", "res://rooms/materials/vent.tres"),
     ("PackedScene", "res://props/locker.tscn"),
+    ("Material", "res://rooms/materials/skylight.tres"),
 ]
-EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12, "locker": 13}
+EXT_ID = {"room": 1, "zone": 2, "cam": 3, "flicker": 4, "concrete": 5, "wall": 6, "wood": 7, "metal": 8, "rust": 9, "lamp": 10, "exit": 11, "vent": 12, "locker": 13, "skylight": 14}
 # Obrót markera drzwi (stopnie wokół Y), żeby jego -Z wskazywało na zewnątrz danej ściany.
 SIDE_YAW = {"N": 0, "W": 90, "S": 180, "E": -90}
 
@@ -120,8 +121,18 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         return (p[0] * kx, p[1], p[2] * kz)
 
     check_grid(name, sx, sz, doors)
-    solids = [(sd[0], at(sd[1])) + tuple(sd[2:]) if sd[0] != "prism"
-              else ("prism", [(x * kx, y) for x, y in sd[1]], sd[2] * kz, sd[3] * kz, sd[4]) for sd in solids]
+    def scale_solid(sd):
+        if sd[0] == "prism":
+            return ("prism", [(x * kx, y) for x, y in sd[1]], sd[2] * kz, sd[3] * kz, sd[4])
+        if sd[0] == "vprism":
+            return ("vprism", [(x * kx, z * kz) for x, z in sd[1]], sd[2], sd[3], sd[4])
+        if sd[0] == "bars":
+            p0, p1 = at(sd[1]), at(sd[2])
+            along_x = abs(p1[0] - p0[0]) > abs(p1[2] - p0[2])
+            k = kx if along_x else kz
+            return ("bars", p0, p1, [(g0 * k, g1 * k) for g0, g1 in sd[3]])
+        return (sd[0], at(sd[1])) + tuple(sd[2:])
+    solids = [scale_solid(sd) for sd in solids]
     zones = [(z[0], (z[1][0] * kx, z[1][1] * kx, z[1][2] * kz, z[1][3] * kz), at(z[2]), at(z[3])) + tuple(z[4:]) for z in zones]
     lights = [(at(l[0]),) + tuple(l[1:]) for l in lights]
     loot = [(m[0], at(m[1])) + tuple(m[2:]) for m in loot]
@@ -134,10 +145,10 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         vent = (vent[0] * kx, vent[1] * kz)
     nodes, subs = [], []
 
-    def box(node_name, pos, size, mat):
+    def box(node_name, pos, size, mat, yaw=0.0):
         nodes.append(
             f'[node name="{node_name}" type="CSGBox3D" parent="Geometry"]\n'
-            f"transform = {tf(*pos)}\nsize = Vector3({v(*size)})\n"
+            f"transform = {tf(*pos, yaw)}\nsize = Vector3({v(*size)})\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
 
@@ -145,6 +156,16 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         nodes.append(
             f'[node name="{node_name}" type="CSGCylinder3D" parent="Geometry"]\n'
             f"transform = {tf(*pos)}\nradius = {radius:g}\nheight = {height:g}\nsides = 10\n"
+            f'material = ExtResource("{EXT_ID[mat]}")\n'
+        )
+
+    def vprism(node_name, points, y0, y1, mat):
+        # Profil w XZ wyciągnięty pionowo: CSGPolygon3D obrócony o +90° wokół X
+        # (lokalne Y -> świat Z, wyciąganie wzdłuż lokalnego -Z -> świat +Y).
+        flat = ", ".join(v(x, z) for x, z in points)
+        nodes.append(
+            f'[node name="{node_name}" type="CSGPolygon3D" parent="Geometry"]\n'
+            f"transform = Transform3D({v(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, y0, 0)})\npolygon = PackedVector2Array({flat})\ndepth = {y1 - y0:g}\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
 
@@ -174,9 +195,14 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
             size = (seg_len, seg_h, T) if along_x else (T, seg_h, seg_len)
             box(f"Wall{side}{i}", pos, size, "wall")
 
+    bars_bodies = []
     for i, solid in enumerate(solids):
         if solid[0] == "box":
-            box(f"Solid{i}", solid[1], solid[2], solid[3])
+            box(f"Solid{i}", solid[1], solid[2], solid[3], solid[4] if len(solid) > 4 else 0.0)
+        elif solid[0] == "bars":
+            bars_bodies.append((f"Bars{i}",) + tuple(solid[1:]))
+        elif solid[0] == "vprism":
+            vprism(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
         elif solid[0] == "cyl":
             cyl(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
         else:
@@ -252,6 +278,49 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         for k in range(-2, 3):
             box(f"VentSlat{k + 2}", (vx + k * 0.22, h - 0.09, vz), (0.06, 0.06, 1.1), "metal")
         markers("Vents", [("Vent0", (vx, h - 0.15, vz))])
+
+    # Kraty: pręty to same meshe, a kolizja to płaska płyta na warstwie "bars" (4): zatrzymuje
+    # graczy i potwory, ale nie zasłania wzroku ani kamer (te pytają tylko warstwę 1).
+    if bars_bodies:
+        subs.append('[sub_resource type="BoxMesh" id="bar_mesh"]\nsize = Vector3(0.05, 1, 0.05)\n'
+                    f'material = ExtResource("{EXT_ID["metal"]}")\n')
+    for bname, (x0, y0, z0), (x1, y1, z1), gaps in bars_bodies:
+        # Krata od (x0, y0, z0) do (x1, y1, z1): pionowa ściana prętów wzdłuż X albo Z.
+        along_x = abs(x1 - x0) > abs(z1 - z0)
+        a0, a1 = (x0, x1) if along_x else (z0, z1)
+        height = y1 - y0
+        nodes.append(f'[node name="{bname}" type="StaticBody3D" parent="."]\ncollision_layer = 8\ncollision_mask = 0\n')
+        # Płyty kolizji między przerwami (przerwa = otwarte drzwiczki celi).
+        cuts = sorted(gaps)
+        segments, cursor = [], a0
+        for g0, g1 in cuts:
+            if g0 > cursor:
+                segments.append((cursor, g0))
+            cursor = max(cursor, g1)
+        if cursor < a1:
+            segments.append((cursor, a1))
+        for k, (s0, s1) in enumerate(segments):
+            sid = f"{bname}_shape{k}"
+            mid = (s0 + s1) / 2
+            size = (s1 - s0, height, 0.1) if along_x else (0.1, height, s1 - s0)
+            subs.append(f'[sub_resource type="BoxShape3D" id="{sid}"]\nsize = Vector3({v(*size)})\n')
+            pos = (mid, y0 + height / 2, z0) if along_x else (x0, y0 + height / 2, mid)
+            nodes.append(f'[node name="Shape{k}" type="CollisionShape3D" parent="{bname}"]\n'
+                         f'transform = {tf(*pos)}\nshape = SubResource("{sid}")\n')
+            n = max(1, int((s1 - s0) / 0.22))
+            for b in range(n + 1):
+                t = s0 + (s1 - s0) * b / n
+                bpos = (t, y0 + height / 2, z0) if along_x else (x0, y0 + height / 2, t)
+                nodes.append(f'[node name="Bar{k}_{b}" type="MeshInstance3D" parent="{bname}"]\n'
+                             f'transform = Transform3D({v(1, 0, 0, 0, height, 0, 0, 0, 1, *bpos)})\nmesh = SubResource("bar_mesh")\n')
+        # poprzeczki u góry i na dole
+        for k, yy in enumerate((y0 + 0.1, y1 - 0.1)):
+            length = a1 - a0
+            mid = (a0 + a1) / 2
+            pos = (mid, yy, z0) if along_x else (x0, yy, mid)
+            scale = (length / 0.05, 0.05, 1) if along_x else (1, 0.05, length / 0.05)
+            nodes.append(f'[node name="Rail{k}" type="MeshInstance3D" parent="{bname}"]\n'
+                         f'transform = Transform3D({v(scale[0], 0, 0, 0, scale[1], 0, 0, 0, scale[2], *pos)})\nmesh = SubResource("bar_mesh")\n')
 
     # Bryła pokoju (ze ścianami) do testu kolizji przy składaniu mapy.
     bounds = f"AABB({v(-(sx / 2 + T), -0.2, -(sz / 2 + T), sx + 2 * T, h + 0.4, sz + 2 * T)})"
@@ -526,7 +595,7 @@ build(
     doors=[("West", "W", 2, 0), ("North", "N", 2, 0)],
     solids=[
         fill(-3.8, 0.2, -3.8, 0.2),
-        ("box", (2.0, 3.6, 3.65), (7.6, 0.2, 0.2), "metal"),  # rura
+        ("box", (0, 3.6, 3.65), (7.6, 0.2, 0.2), "metal"),  # rura
         ("box", (-2.6, 0.4, 3.2), (0.8, 0.8, 0.7), "wood"),
     ],
     zones=[("All", (-3.8, 3.8, -3.8, 3.8), (3.4, 3.6, 3.4), (-1.0, 0.5, -1.0), 0.3, 0)],
@@ -576,4 +645,138 @@ build(
     ambient=[("Ambient0", (0, 3.4, -4))],
     vent=(0, 0),
     outer=(12, 12),
+)
+
+# --- Nowe pokoje (15k) ---------------------------------------------------------------
+
+# Cells: lochy. Korytarz wzdłuż X (z -1.8..1.8), po trzy cele z każdej strony za kratą.
+# Krata nie zasłania wzroku (warstwa "bars"), drzwiczki każdej celi są otwarte (przerwa w kracie).
+# Cela to ślepy zaułek: kryjówka tylko, jeśli potwór nie zajrzy przez kratę.
+CELL_X = (-7.8, -2.6, 2.6, 7.8)
+build(
+    "Cells", 15.6, 11.6, 4.0,
+    doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
+    solids=[
+        # ścianki między celami
+        *[("box", (x, 2.0, zc), (0.3, 4.0, 4.0), "wall") for x in (-2.6, 2.6) for zc in (-3.8, 3.8)],
+        # kraty z otwartymi drzwiczkami (przerwa ~1 m przy jednej ze ścianek)
+        *[("bars", (CELL_X[k], 0, side * 1.8), (CELL_X[k + 1], 2.6, side * 1.8),
+           [(CELL_X[k] + 0.3, CELL_X[k] + 1.3)]) for k in range(3) for side in (-1, 1)],
+        ("box", (0, 3.3, -1.8), (15.6, 1.4, 0.3), "wall"),  # nadproże nad kratami (północ)
+        ("box", (0, 3.3, 1.8), (15.6, 1.4, 0.3), "wall"),   # nadproże (południe)
+        # prycze i wiadra w celach
+        ("box", (-5.2, 0.25, -5.1), (2.0, 0.5, 0.9), "wood"),
+        ("box", (5.2, 0.25, 5.1), (2.0, 0.5, 0.9), "wood"),
+        ("box", (0.4, 0.25, -5.1), (2.0, 0.5, 0.9), "wood"),
+        ("cyl", (-1.5, 0.25, 4.8), 0.25, 0.5, "rust"),
+        ("cyl", (6.5, 0.25, -4.6), 0.25, 0.5, "rust"),
+        ("box", (-6.6, 0.15, 3.6), (0.9, 0.3, 1.6), "wood"),  # zbutwiała słoma/sienik
+    ],
+    zones=[
+        ("WestHalf", (-7.8, 0.4, -1.8, 1.8), (7.4, 3.5, 1.2), (-5, 0.7, 0), 0.3, 0),
+        ("EastHalf", (-0.4, 7.8, -1.8, 1.8), (-7.4, 3.5, -1.2), (5, 0.7, 0), 0.3, 0),
+        # Każda cela: kamera po drugiej stronie korytarza, patrzy przez kratę do środka.
+        *[(f"Cell{k}{'N' if side < 0 else 'S'}", (CELL_X[k], CELL_X[k + 1], -5.8, -1.8) if side < 0 else (CELL_X[k], CELL_X[k + 1], 1.8, 5.8),
+           ((CELL_X[k] + CELL_X[k + 1]) / 2, 3.3, -side * 1.5), ((CELL_X[k] + CELL_X[k + 1]) / 2, 0.4, side * 4.2), 0.2, 1)
+          for k in range(3) for side in (-1, 1)],
+    ],
+    lights=[((-4, 3.6, 0), WARM, 0.6, 7.0, True), ((4, 3.6, 0), WARM, 0.5, 7.0, False)],
+    loot=[("Loot0", (-5.2, 0.55, -5.1)), ("Loot1", (5.2, 0.55, 5.1)), ("Loot2", (0.4, 0.55, -5.1))],
+    ambient=[("Ambient0", (0, 3.4, -4)), ("Ambient1", (-5, 3.4, 4))],
+    vent=(0, 0),
+    outer=(16, 12),
+)
+
+# Atrium: wielki hol z fontanną (jak w Amnesii). Wysoko, kolumny po bokach, ławki.
+build(
+    "Atrium", 19.6, 23.6, 8.0,
+    doors=[("West", "W", 0, 0), ("East", "E", 0, 0), ("North", "N", 0, 0)],
+    solids=[
+        ("cyl", (0, 0.35, 2), 2.4, 0.7, "concrete"),   # niecka fontanny
+        ("cyl", (0, 1.4, 2), 0.4, 2.2, "concrete"),    # trzon
+        ("cyl", (0, 2.6, 2), 1.1, 0.25, "concrete"),   # górna misa
+        ("cyl", (0, 3.0, 2), 0.25, 0.6, "metal"),      # zwieńczenie
+        *[("cyl", (x, 4.0, z), 0.45, 8.0, "concrete") for x in (-6.5, 6.5) for z in (-7, 0, 7)],  # kolumny
+        ("box", (-8.6, 0.25, -4), (0.8, 0.5, 2.6), "wood"),  # ławki pod ścianami
+        ("box", (8.6, 0.25, 5), (0.8, 0.5, 2.6), "wood"),
+        ("box", (-4, 0.25, 9.5), (2.6, 0.5, 0.8), "wood"),
+        ("box", (0, 7.6, 0), (19.6, 0.3, 0.4), "wood"),      # belki stropu
+        ("box", (0, 7.6, -8), (19.6, 0.3, 0.4), "wood"),
+        ("box", (0, 7.6, 8), (19.6, 0.3, 0.4), "wood"),
+        ("cyl", (7.8, 0.6, -10.2), 0.4, 1.2, "rust"),
+    ],
+    # Połowa holu na ujęcie, kamera wysoko nad przeciwległą ścianą (fontanna w środku zasłania
+    # tylko wąski pas, a ten widać z drugiej kamery).
+    zones=[
+        ("North", (-9.8, 9.8, -11.8, 1.0), (0, 6.5, 11.2), (0, 0.5, -6), 0.25, 0),
+        ("South", (-9.8, 9.8, 0.0, 11.8), (0, 6.5, -11.2), (0, 0.5, 6), 0.25, 0),
+    ],
+    lights=[((0, 7.0, 2), WARM, 1.2, 16.0, False), ((-6, 6.5, -8), WARM, 0.7, 10.0, True), ((6, 6.5, 8), WARM, 0.7, 10.0, False)],
+    loot=[("Loot0", (0, 0.75, 4.2)), ("Loot1", (8.6, 0.55, 5))],
+    ambient=[("Ambient0", (0, 7, -10)), ("Ambient1", (-9, 1, 10))],
+    vent=(-6, -4),
+    lockers=[((-9.35, 0, 6.0), 90), ((9.35, 0, -6.0), -90)],
+)
+
+# Library: rotunda (jak w zamku Dimitrescu). Ośmiokąt (ścięte narożniki), antresola dookoła
+# na 3,6 m z regałami i balustradą, wejście rampą, kolumny pod antresolą, stoliki na dole,
+# świetlik w suficie. Drzwi tylko na dole (pod antresolą).
+MEZZ = 3.6  # wierzch antresoli
+RING = 6.8  # wewnętrzna krawędź antresoli od środka
+LH = 8.0
+build(
+    "Library", 19.6, 19.6, LH,
+    doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
+    solids=[
+        # ścięte narożniki (ośmiokąt)
+        *[("vprism", [(sx * 9.8, sz * 9.8), (sx * 4.8, sz * 9.8), (sx * 9.8, sz * 4.8)], 0, LH, "wall") for sx in (-1, 1) for sz in (-1, 1)],
+        # antresola: cztery pasy pod ścianami
+        ("box", (0, MEZZ - 0.15, -8.3), (19.6, 0.3, 3.0), "wood"),
+        ("box", (0, MEZZ - 0.15, 8.3), (19.6, 0.3, 3.0), "wood"),
+        ("box", (-8.3, MEZZ - 0.15, 0), (3.0, 0.3, 13.6), "wood"),
+        ("box", (8.3, MEZZ - 0.15, 0), (3.0, 0.3, 13.6), "wood"),
+        # balustrada na wewnętrznej krawędzi (przerwa przy rampie: wschód, z -4.5..-2.5)
+        ("box", (0, MEZZ + 0.5, -RING), (2 * RING, 1.0, 0.1), "wood"),
+        ("box", (0, MEZZ + 0.5, RING), (2 * RING, 1.0, 0.1), "wood"),
+        ("box", (-RING, MEZZ + 0.5, 0), (0.1, 1.0, 2 * RING), "wood"),
+        ("box", (RING, MEZZ + 0.5, 2.15), (0.1, 1.0, 9.3), "wood"),
+        ("box", (RING, MEZZ + 0.5, -5.65), (0.1, 1.0, 2.3), "wood"),
+        # rampa na antresolę (wznosi się wzdłuż +X)
+        ("prism", [(0, 0), (RING, 0), (RING, MEZZ)], -4.5, -2.5, "wood"),
+        # kolumny pod antresolą (nie w przejściu od drzwi)
+        *[("cyl", (x, (MEZZ - 0.3) / 2, z), 0.3, MEZZ - 0.3, "concrete")
+          for x, z in [(-RING, -RING), (RING, -RING), (-RING, RING), (RING, RING), (0, -RING), (0, RING), (-RING, -3.4), (-RING, 3.4), (RING, 3.4)]],
+        # regały na antresoli, pod ścianami
+        ("box", (0, MEZZ + 1.1, -9.45), (8.0, 2.2, 0.6), "wood"),
+        ("box", (0, MEZZ + 1.1, 9.45), (8.0, 2.2, 0.6), "wood"),
+        ("box", (-9.45, MEZZ + 1.1, -4.0), (0.6, 2.2, 3.0), "wood"),
+        ("box", (-9.45, MEZZ + 1.1, 4.0), (0.6, 2.2, 3.0), "wood"),
+        ("box", (9.45, MEZZ + 1.1, 4.0), (0.6, 2.2, 3.0), "wood"),
+        # niskie regały na dole, pod antresolą, między drzwiami a narożnikami
+        ("box", (-9.45, 1.0, 4.2), (0.6, 2.0, 2.4), "wood"),
+        ("box", (9.45, 1.0, -4.2), (0.6, 2.0, 2.4), "wood"),
+        ("box", (-3.0, 1.0, -9.45), (3.0, 2.0, 0.6), "wood"),
+        ("box", (3.0, 1.0, 9.45), (3.0, 2.0, 0.6), "wood"),
+        # stoliki i krzesła na środku
+        *table((-3.0, 2.5), 2.4, 1.2),
+        *table((3.0, 3.5), 2.4, 1.2),
+        ("box", (-3.0, 0.25, 3.6), (0.45, 0.5, 0.45), "wood"),
+        ("box", (3.6, 0.25, 4.6), (0.45, 0.5, 0.45), "wood"),
+        ("box", (-2.0, 0.25, 1.4), (0.45, 0.5, 0.45), "wood"),
+        ("box", (-3.4, 0.5, -1.0), (1.2, 1.0, 0.8), "wood"),  # pulpit
+        # świetlik: jasna tafla w suficie
+        ("box", (0, LH - 0.02, 0), (4.0, 0.06, 4.0), "skylight"),
+    ],
+    zones=[
+        ("GroundWest", (-9.8, 0.5, -9.8, 9.8), (6.0, 3.0, 6.0), (-5, 0.5, -2), 0.25, 0, (0, 3.4)),
+        ("GroundEast", (-0.5, 9.8, -9.8, 9.8), (-6.0, 3.0, -6.0), (5, 0.5, 2), 0.25, 0, (0, 3.4)),
+        ("UpperNorth", (-9.8, 9.8, -9.8, 0.5), (0, 7.4, 6.0), (0, MEZZ, -8), 0.25, 1, (3.4, LH)),
+        ("UpperSouth", (-9.8, 9.8, -0.5, 9.8), (0, 7.4, -6.0), (0, MEZZ, 8), 0.25, 1, (3.4, LH)),
+    ],
+    lights=[((0, LH - 1.0, 0), COLD, 1.6, 15.0, False), ((-8, MEZZ + 2.6, 0), WARM, 0.6, 8.0, True),
+            ((8, MEZZ + 2.6, 0), WARM, 0.6, 8.0, False), ((0, 3.0, -8.5), WARM, 0.5, 7.0, False)],
+    loot=[("Loot0", (-3.0, 1.25, 2.5)), ("Loot1", (0, MEZZ + 0.05, -8.3)), ("Loot2", (-8.3, MEZZ + 0.05, 6))],
+    ambient=[("Ambient0", (0, MEZZ + 1, 8.5)), ("Ambient1", (-8.5, 1, -2))],
+    vent=(5, 5),
+    lockers=[((-9.35, 0, -2.8), 90)],
 )

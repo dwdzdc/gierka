@@ -94,7 +94,7 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
 - [x] 15j. Proporcje: wyraźnie więcej korytarzy niż pokoi, pokoje raczej „przechodnie” jak w Alone in the Dark. Mierzyć w teście (udział korytarzy w mapie), nie tylko wagami
   - Zrobione: wagi korytarzy ~60%, pokoi ~30%, piętra ~10%; `map_test` wypisuje udział korytarzy: przy 20 pokojach 41–83% elementów mapy (z łącznikami pętli), zwykle ~70%
   - Uwaga: za dużo gołych korytarzy też nuży; do oceny w playteście, wagi w `MapGenerator.ROOM_TYPES`
-- [ ] 15k. Nowe pokoje:
+- [x] 15k. Nowe pokoje:
   - Biblioteka: okrągła rotunda, antresola z regałami, stoliki na dole, kolumny pod antresolą, duży świetlik (w stylu zamku Dimitrescu z RE Village)
   - Lochy: korytarz z celami po bokach (klimat Amnesii); cele jako kryjówki/ślepe zaułki, kraty przepuszczają wzrok
   - Wielki hol (jak w Amnesii, np. z fontanną)
@@ -103,6 +103,11 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
   - Ustalone 24.10: na razie wszystkie pokoje w jednej puli. Później zestawy pokoi wg motywu, motyw wybiera host w menu (łączy się z 49)
 - Uwaga (kamery): kolumny pod antresolą to dokładnie problem „filar zasłania postać” z playtestu 23.10; antresola to drugi poziom w jednym pokoju (NavMesh, schody, pokrycie kamer z dwóch wysokości). Biblioteka będzie najdroższym pokojem do zrobienia, zacząć od korytarzy i lochów
 - Uwaga: różnorodność pomaga orientacji tylko, jeśli pokoje są rozpoznawalne. Tani dodatek: charakterystyczne punkty orientacyjne w pokojach (kolor światła, unikalny rekwizyt)
+  - Zrobione (24.10): `Cells` (lochy 16×12: korytarz i po 3 cele z każdej strony za kratą z otwartymi drzwiczkami; kamera do każdej celi zza korytarza), `Atrium` (hol 20×24×8 m z fontanną, 6 kolumn, ławki, 2 szafki), `Library` (rotunda 20×20×8 m: ośmiokąt, antresola na 3,6 m z regałami i balustradą, rampa na górę, 9 kolumn, stoliki, chłodny świetlik). W jednej puli z resztą (wagi w `ROOM_TYPES`)
+  - Nowa warstwa fizyki 4 „bars”: kraty zatrzymują graczy i potwory, ale nie zasłaniają wzroku ani kamer (potwór widzi gracza w celi)
+  - Pokrycie kamer: lochy 96%, hol 88% (fontanna zasłania wąski pas), biblioteka 98% (mapa pokrycia liczy tylko parter)
+  - Przy okazji: skrzynie z seeda nie trafiają już do korytarzy (w 3,6 m potrafiły je zatkać); `camera_rules_test` sprawdza, że geometria pokoju nie wystaje poza jego bryłę (tak ścięte narożniki biblioteki zatykały sąsiednie korytarze)
+  - Nie zrobione: kamera z antresoli „pod kątem” (górne ujęcia patrzą z wysoka), wiele punktów orientacyjnych (unikalne rekwizyty / kolory świateł)
 
 ### Drzwi (pomysł 24.10)
 

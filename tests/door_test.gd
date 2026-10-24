@@ -42,6 +42,7 @@ func _physics_process(_d: float) -> bool:
 		holder.add_child(door)
 		door.global_transform = main.map_connections[1].a.global_transform
 		gs.init_doors({"Door00": door.State.CLOSED})
+		main.director.stop()  # reżyser mógłby w trakcie testu przerzucić potwora szybem
 		m = main.get_node("Monsters").get_child(0)
 		m.set_physics_process(false)
 		m.global_position = Vector3(40, 0.05, 6)
@@ -97,6 +98,9 @@ func _physics_process(_d: float) -> bool:
 		3:  # pościg: wyważa szybko
 			if t == 1:
 				m.global_position = Vector3(27.5, 0.05, 0)
+				m.velocity = Vector3.ZERO
+				m._door = null
+				m._vent_plan = {}
 				p.global_position = Vector3(20, 0.05, 0)
 				m._prey = p
 				m.last_seen_position = p.global_position

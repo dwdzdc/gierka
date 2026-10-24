@@ -72,6 +72,21 @@ func _physics_process(_d: float) -> bool:
 			if not reachable:
 				unreachable.append(r.name)
 		var names: String = ", ".join(rooms.map(func(r): return r.name))
+		if not unreachable.is_empty():
+			# Gdzie się urywa: przejścia, po których jednej stronie da się dojść, a po drugiej nie.
+			for connection in main.map_connections:
+				var sides := []
+				for door in [connection.a, connection.b]:
+					var inside: Vector3 = door.global_position + door.global_transform.basis.z * 1.2 + Vector3.UP * 0.3
+					var target: Vector3 = NavigationServer3D.map_get_closest_point(map, inside)
+					var path: PackedVector3Array = NavigationServer3D.map_get_path(map, start, target, true)
+					sides.append(not path.is_empty() and path[-1].distance_to(target) < 0.5 and target.distance_to(inside) < 1.0)
+				var ra: String = connection.a.get_parent().get_parent().name
+				var rb: String = connection.b.get_parent().get_parent().name
+				if (unreachable.has(ra) or unreachable.has(rb)) and not (unreachable.has(ra) and unreachable.has(rb)):
+					print("   sąsiad niedostępnego: %s.%s (%s) <-> %s.%s (%s)" % [ra, connection.a.name, sides[0], rb, connection.b.name, sides[1]])
+				if sides[0] != sides[1]:
+					print("   urwane przejście: %s.%s (%s) -> %s.%s (%s) w %s" % [connection.a.get_parent().get_parent().name, connection.a.name, sides[0], connection.b.get_parent().get_parent().name, connection.b.name, sides[1], connection.a.global_position.snapped(Vector3.ONE * 0.1)])
 		if overlaps > 0 or not unreachable.is_empty():
 			problems += 1
 		if count >= 12 and main.map_loops == 0:

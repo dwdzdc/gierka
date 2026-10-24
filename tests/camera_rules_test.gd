@@ -24,6 +24,13 @@ func _physics_process(_d: float) -> bool:
 		return false
 	var space := holder.get_world_3d().direct_space_state
 	for room in holder.get_children():
+		# Geometria nie może wystawać poza bryłę pokoju (generator sprawdza kolizje tylko brył).
+		var meshes: Array = room.get_node("Geometry").get_meshes()
+		if meshes.size() > 1:
+			var geometry: AABB = meshes[1].get_aabb()
+			if not room.bounds.grow(0.05).encloses(geometry):
+				problems += 1
+				print("ZLE %s: geometria %s wystaje poza bryłę %s" % [room.name, geometry, room.bounds])
 		var cameras: Array = room.find_children("Camera", "Camera3D", true, false)
 		for door in room.get_doorways():
 			var inward: Vector3 = door.global_transform.basis.z

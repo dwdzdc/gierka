@@ -205,7 +205,7 @@ func _on_state_visual(new_state: State) -> void:
 	for part in [$Body, $EyeL, $EyeR]:
 		part.visible = not in_vent
 	collision_layer = 0 if passing else 4
-	collision_mask = 0 if passing else 1
+	collision_mask = 0 if passing else 9  # świat + kraty (kraty nie zasłaniają wzroku)
 	# Podczas pościgu oddech jest głośniejszy i szybszy.
 	var hunting := new_state in [State.HUNT, State.ATTACK]
 	_breath_player.volume_db = 4.0 if hunting else -2.0
