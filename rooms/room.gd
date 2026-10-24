@@ -20,6 +20,8 @@ const LAMP_MATERIAL := preload("res://rooms/materials/door_lamp.tres")
 
 ## Bryła pokoju razem ze ścianami (lokalnie). Generator nie pozwala, żeby bryły się przecinały.
 @export var bounds := AABB()
+## Zgaszony pokój (losuje generator). Potwory widzą w nim gracza bez latarki tylko z bliska.
+var dark := false
 
 
 func get_doorways() -> Array[Marker3D]:

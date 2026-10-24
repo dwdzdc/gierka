@@ -9,9 +9,12 @@ var p
 var frames := 0
 var heard_count := 0
 var cases := [
-	# [opis, pozycja gracza, latarka, oczekiwane widzi]
+	# [opis, pozycja gracza, latarka, oczekiwane widzi, (opcjonalnie) magazyn oświetlony, (opcjonalnie) ile odczytów wzroku]
 	["przed potworem 4 m, ciemno", Vector3(33.8, 0.05, 0), false, true],
+	["przed potworem 4 m, ciemno, jeden odczyt (bliska strefa: od razu)", Vector3(33.8, 0.05, 0), false, true, false, 1],
 	["przed potworem 10 m, ciemno", Vector3(27.8, 0.05, 0), false, false],
+	["przed potworem 10 m, oświetlony pokój bez latarki", Vector3(27.8, 0.05, 0), false, true, true],
+	["przed potworem 10 m, oświetlony pokój, jeden odczyt (jeszcze nie zauważył)", Vector3(27.8, 0.05, 0), false, false, true, 1],
 	["przed potworem 10 m, latarka", Vector3(27.8, 0.05, 0), true, true],
 	["za plecami 2.5 m", Vector3(40.3, 0.05, 0), false, false],
 	["w stożku, 5.9 m, za regałem (latarka)", Vector3(34.3, 0.05, -4.8), true, false],
@@ -38,9 +41,11 @@ func _physics_process(_d: float) -> bool:
 		return false
 	if frames % 20 == 3:
 		if idx >= 0:
-			m._sight_timer = 0.0
-			m._update_sight(0.0)
 			var c = cases[idx]
+			m._notice = {}
+			for i in (c[5] if c.size() > 5 else 10):
+				m._sight_timer = 0.0
+				m._update_sight(0.0)
 			var ok: bool = (m.seen_player != null) == c[3]
 			print("%s %s: widzi=%s" % ["OK " if ok else "ZLE", c[0], m.seen_player != null])
 		idx += 1
@@ -52,6 +57,7 @@ func _physics_process(_d: float) -> bool:
 			print("%s słuch: usłyszał %d z 2 (oczekiwane 1)" % ["OK " if heard_count == 1 else "ZLE", heard_count])
 			return true
 		var c = cases[idx]
+		main.rooms[2].dark = not (c.size() > 4 and c[4])
 		p.global_position = c[1]
 		p.flashlight.visible = c[2]
 	return false

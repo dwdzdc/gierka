@@ -30,7 +30,9 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 @export var retreat_speed := 3.4
 
 @export_group("Zmysły")
-## 0 = ślepy. Gracz z latarką jest widoczny z dalszej odległości.
+## 0 = ślepy. `sight_range_dark`: gracz w zgaszonym pokoju bez latarki (i bliska strefa, w której
+## potwór zauważa od razu). `sight_range_flashlight`: gracz z latarką albo w oświetlonym pokoju;
+## dalej niż bliska strefa potwór potrzebuje chwili, żeby go zauważyć.
 @export var sight_range_dark := 6.0
 @export var sight_range_flashlight := 14.0
 @export_range(0.0, 360.0) var sight_angle_deg := 120.0

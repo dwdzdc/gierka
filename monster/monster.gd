@@ -36,6 +36,12 @@ const VENT_CLIMB_TIME := 1.2  # ile trwa widoczne wspinanie się do kratki
 const HEAR_HUNT_DISTANCE := 7.0
 const HEAR_MEMORY := 1.2
 const SCREAM_INTERVAL := 3.0
+const SIGHT_INTERVAL := 0.1
+## Tyle sekund potwór musi widzieć gracza na granicy zasięgu, żeby go zauważyć (bliżej krócej).
+const NOTICE_TIME_MAX := 0.8
+## Wysokości punktów ciała, w które celuje wzrok (stojąc i kucając).
+const SIGHT_POINTS := [1.55, 1.15, 0.5]
+const CROUCH_SIGHT_POINTS := [0.85, 0.5]
 
 ## Typ potwora (ustawiany przed dodaniem do drzewa; replikowany przy spawnie).
 @export var profile_id := "hunter"
@@ -90,6 +96,7 @@ var _heard_player_time := -INF
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _sight_timer := 0.0
+var _notice := {}  # Player -> ile sekund z rzędu go widzi (stopniowe zauważanie)
 var _stuck_time := 0.0
 var _state_time := 0.0  # ile sekund trwa bieżący stan
 var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
@@ -663,24 +670,62 @@ func sensed_prey() -> Player:
 
 
 ## Wzrok liczony 10 razy na sekundę, a nie co klatkę: raycasty są tanie, ale bez sensu co klatkę.
+## Gracza w bliskiej strefie potwór zauważa od razu; dalszego musi chwilę widzieć (im dalej, tym
+## dłużej), chyba że już na niego poluje. Bez tego daleki zasięg działałby jak radar.
 func _update_sight(delta: float) -> void:
 	_sight_timer -= delta
 	if _sight_timer > 0.0:
 		return
-	_sight_timer = 0.1
+	_sight_timer = SIGHT_INTERVAL
 	seen_player = null
 	if sight_range_dark <= 0.0 and sight_range_flashlight <= 0.0:
 		return  # ślepy
 	var best_distance := INF
+	var noticing := {}
 	for node in get_tree().get_nodes_in_group(&"players"):
 		var player := node as Player
-		if can_see(player):
-			var distance := global_position.distance_to(player.global_position)
-			if distance < best_distance:
-				best_distance = distance
-				seen_player = player
+		if not can_see(player):
+			continue
+		var distance := global_position.distance_to(player.global_position)
+		var needed := notice_time(player, distance)
+		var watched: float = _notice.get(player, 0.0) + SIGHT_INTERVAL
+		noticing[player] = watched
+		if watched < needed and not (state in [State.HUNT, State.ATTACK] and player == _prey):
+			continue
+		if distance < best_distance:
+			best_distance = distance
+			seen_player = player
+	_notice = noticing  # kogo przestał widzieć, tego zapomina od zera
 	if seen_player:
 		last_seen_position = seen_player.global_position
+
+
+## Ile sekund potwór musi widzieć gracza z tej odległości, żeby go zauważyć.
+func notice_time(player: Player, distance: float) -> float:
+	var close := sight_range_dark * sense_boost * (Player.CROUCH_SIGHT_FACTOR if player.crouching else 1.0)
+	var far := sight_range(player)
+	if distance <= close or far <= close:
+		return 0.0
+	return lerpf(SIGHT_INTERVAL, NOTICE_TIME_MAX, clampf((distance - close) / (far - close), 0.0, 1.0))
+
+
+## Zasięg wzroku na tego gracza: daleko, gdy świeci latarką albo stoi w oświetlonym pokoju.
+func sight_range(player: Player) -> float:
+	var visible_far: bool = player.flashlight.visible or not _in_dark_room(player.global_position)
+	var result := (sight_range_flashlight if visible_far else sight_range_dark) * sense_boost
+	if player.crouching:
+		result *= Player.CROUCH_SIGHT_FACTOR
+	return result
+
+
+func _in_dark_room(point: Vector3) -> bool:
+	var main := get_tree().get_first_node_in_group(&"main")
+	if main == null:
+		return false
+	for room in main.rooms:
+		if is_instance_valid(room) and (room.transform * room.bounds).has_point(point + Vector3.UP * 0.5):
+			return room.dark
+	return false
 
 
 func can_see(player: Player) -> bool:
@@ -690,19 +735,20 @@ func can_see(player: Player) -> bool:
 	if game_state and game_state.is_hidden(player.get_multiplayer_authority()):
 		return false
 	var eye := global_position + Vector3.UP * eye_height
-	var target := player.global_position + Vector3.UP * (0.6 if player.crouching else 1.2)
-	var to_target := target - eye
-	var max_range := (sight_range_flashlight if player.flashlight.visible else sight_range_dark) * sense_boost
-	if player.crouching:
-		max_range *= Player.CROUCH_SIGHT_FACTOR
-	if to_target.length() > max_range:
+	var to_target := player.global_position + Vector3.UP * 1.0 - eye
+	if to_target.length() > sight_range(player):
 		return false
 	var forward := -global_transform.basis.z
 	var flat := (to_target * Vector3(1, 0, 1)).normalized()
 	if rad_to_deg(forward.angle_to(flat)) > sight_angle_deg / 2.0:
 		return false
-	var query := PhysicsRayQueryParameters3D.create(eye, target, sight_blockers)
-	return get_world_3d().direct_space_state.intersect_ray(query).is_empty()
+	# Kilka punktów ciała: wystarczy, że widać którykolwiek (głowa nad skrzynią, nogi pod stołem).
+	var space := get_world_3d().direct_space_state
+	for height in (CROUCH_SIGHT_POINTS if player.crouching else SIGHT_POINTS):
+		var query := PhysicsRayQueryParameters3D.create(eye, player.global_position + Vector3.UP * height, sight_blockers)
+		if space.intersect_ray(query).is_empty():
+			return true
+	return false
 
 
 # --- Ruch ----------------------------------------------------------------------

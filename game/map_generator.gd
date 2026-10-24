@@ -78,6 +78,7 @@ const CLUTTER_KEEP_CLEAR := 2.8  # tyle metrów przed drzwiami, wyjściem i kryj
 func _decorate() -> void:
 	for room in rooms:
 		var dark := room != rooms[0] and _rng.randf() < DARK_ROOM_CHANCE
+		room.dark = dark
 		for light in room.find_children("*", "OmniLight3D", true, false):
 			if dark:
 				light.visible = false
