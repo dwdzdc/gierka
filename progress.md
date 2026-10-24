@@ -85,17 +85,21 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
   - Lochy: korytarz z celami po bokach (klimat Amnesii); cele jako kryjówki/ślepe zaułki, kraty przepuszczają wzrok
   - Wielki hol (jak w Amnesii, np. z fontanną)
   - Kandydaci z LC: serwerownia, magazyn z pomostami, maszynownia
-- Uwaga (spójność): biblioteka, lochy i hol z Amnesii to klimat zamku, a obecne pokoje (magazyn, regały z towarem, rury) to zaplecze przemysłowe. Losowa mieszanka obu w jednej mapie będzie wyglądać przypadkowo. Propozycja jak w LC: zestaw pokoi = motyw (zakład / zamek), mapa losuje motyw albo ma strefy motywów połączone przejściem. Łączy się z 49 (drugi setting). Do decyzji
+- Uwaga (spójność): biblioteka, lochy i hol z Amnesii to klimat zamku, a obecne pokoje (magazyn, regały z towarem, rury) to zaplecze przemysłowe; w jednej mapie może to wyglądać przypadkowo
+  - Ustalone 24.10: na razie wszystkie pokoje w jednej puli. Później zestawy pokoi wg motywu, motyw wybiera host w menu (łączy się z 49)
 - Uwaga (kamery): kolumny pod antresolą to dokładnie problem „filar zasłania postać” z playtestu 23.10; antresola to drugi poziom w jednym pokoju (NavMesh, schody, pokrycie kamer z dwóch wysokości). Biblioteka będzie najdroższym pokojem do zrobienia, zacząć od korytarzy i lochów
 - Uwaga: różnorodność pomaga orientacji tylko, jeśli pokoje są rozpoznawalne. Tani dodatek: charakterystyczne punkty orientacyjne w pokojach (kolor światła, unikalny rekwizyt)
 
 ### Drzwi (pomysł 24.10)
 
-- [ ] 15l. Drzwi w > 50% przejść (z seeda): otwieranie/zamykanie (E), stan z autorytetem hosta, otwieranie robi hałas. Zamknięte drzwi zasłaniają wzrok i tłumią hałas
+- [ ] 15l. Drzwi w > 50% przejść (z seeda): otwieranie/zamykanie (E), stan z autorytetem hosta, otwieranie robi hałas. Zamknięte drzwi tłumią hałas
+  - Kratka (okienko) w drzwiach: wzrok przez nią działa, ale potwór zauważy gracza za zamkniętymi drzwiami tylko z bliska (np. ≤ 2–3 m od drzwi) i patrząc prosto na kratkę (wąski kąt)
+  - Uwaga: gracze nie patrzą oczami postaci, tylko ze stałej kamery, więc „patrzenie przez kratkę” niczego im nie daje, jeśli kamera po drugiej stronie i tak pokazuje pokój dopiero po wejściu. Żeby kratka miała sens dla graczy: osobne ujęcie przez kratkę (jak szpara w szafce, 16f) po podejściu do drzwi i E/przytrzymaniu, albo kamera korytarza, która przez kratkę widzi kawałek pokoju. Do decyzji
 - [ ] 15m. Zakluczone drzwi: losowo od 0 do maks. 10% drzwi. Klucz to znalezisko, dowolny klucz otwiera dowolne zakluczone drzwi (jak w LC), zużywa się
   - Uwaga (odcięcie mapy): bez pętli (16h) zakluczone drzwi odcinają całą gałąź mapy. Generator musi pilnować, żeby klucz dało się zdobyć bez przechodzenia przez zakluczone drzwi, i żeby winda nigdy nie była za nimi. Liczba kluczy ≥ liczba zakluczonych drzwi w osiągalnej części
 - [ ] 15n. Potwory niszczą drzwi, gdy mają powód sądzić, że za nimi jest gracz: pościg, trop krwi albo hałas prowadzący za drzwi (stany HUNT / INVESTIGATE / TRACK). Wyważanie trwa kilka sekund i jest głośne (okno na ucieczkę)
-  - Otwarte pytanie: co z drzwiami tylko zamkniętymi (nie zakluczonymi)? Propozycja: potwór otwiera je normalnie (inaczej patrol utknie, a zamknięcie drzwi daje darmową ochronę), a niszczy tylko zakluczone albo zablokowane przez gracza
+  - Ustalone 24.10: potwór otwiera zwykłe drzwi, ale długo (np. 3–4 s, słychać szarpanie klamki); wyważenie jest szybsze (np. 1–1,5 s, głośne) i zostawia drzwi wyłamane na stałe. Otwiera, gdy tylko przechodzi (patrol), wyważa, gdy ma powód (pościg/trop/hałas) albo drzwi są zakluczone
+  - Uwaga: przez to w pościgu zamknięcie drzwi za sobą daje tylko ~1 s i kosztuje drzwi (potem już nie zasłaniają). Zamykanie drzwi głównie chroni przed patrolem; czasy do strojenia w playteście
   - Uwaga: NavMesh musi znać drzwi (przejście z kosztem, nie ściana), a szyby wentylacyjne (47c6) omijają drzwi; to dobrze, ale łowca nie powinien przez to ignorować ich całkiem
   - Kamery: drzwi nie mogą zasłaniać przejścia w ujęciu (15f), test zasad kamer do rozszerzenia
 
