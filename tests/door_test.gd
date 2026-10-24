@@ -54,19 +54,19 @@ func _physics_process(_d: float) -> bool:
 			if t == 10:
 				p.global_position = Vector3(22.8, 0.05, 0)
 			if t == 20:
-				gs.request_door("Door00")
+				gs.request_door("Door00", false)
 			if t == 30:
 				_check(door.state == door.State.OPEN, "gracz otwiera drzwi")
-				gs.request_door("Door00")
+				gs.request_door("Door00", false)
 			if t == 40:
 				_check(door.state == door.State.CLOSED and not door.get_child(0).disabled, "gracz zamyka drzwi (kolizja wraca)")
 				gs.doors["Door00"] = door.State.LOCKED
 				gs._broadcast_doors()
-				gs.request_door("Door00")
+				gs.request_door("Door00", false)
 			if t == 50:
 				_check(door.state == door.State.LOCKED, "bez klucza zakluczone zostają zakluczone")
 				gs.add_key(1)
-				gs.request_door("Door00")
+				gs.request_door("Door00", false)
 			if t == 60:
 				_check(door.state == door.State.OPEN and gs.keys(1) == 0, "klucz otwiera i się zużywa")
 				gs.doors["Door00"] = door.State.CLOSED
@@ -147,6 +147,29 @@ func _physics_process(_d: float) -> bool:
 				m._heard_new = false
 				m._on_noise(Vector3(20, 0.05, 0), 12.0, null)
 				_check(m._heard_new, "ten sam hałas przy otwartych drzwiach: słyszy")
+				_next()
+		6:  # zatrzaśnięcie za sobą (15t): przebiegł przez otwarte drzwi, drzwi za plecami
+			if t == 2:
+				m.global_position = Vector3(40, 0.05, 6)
+				p.rotation.y = -PI / 2  # przodem na +X, w stronę magazynu
+				p.global_position = Vector3(23.0, 0.05, 0)
+			if t == 4:
+				p.global_position = Vector3(25.5, 0.05, 0)
+			if t == 6:
+				Input.action_press("interact")
+			if t == 8:
+				Input.action_release("interact")
+				_check(door.state == door.State.CLOSED, "E tuż po przebiegnięciu zatrzaskuje drzwi za plecami")
+				gs.doors["Door00"] = door.State.OPEN
+				gs._broadcast_doors()
+				p.global_position = Vector3(23.0, 0.05, 0)
+			if t == 10:
+				p.global_position = Vector3(25.5, 0.05, 0)
+			if t == 10 + 60 * 2:
+				Input.action_press("interact")
+			if t == 12 + 60 * 2:
+				Input.action_release("interact")
+				_check(door.state == door.State.OPEN, "po 2 s już nie (trzeba odwrócić się do drzwi)")
 				print("\n".join(results))
 				return true
 	return false

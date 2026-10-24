@@ -21,6 +21,9 @@ signal player_hid(peer_id: int, spot_path: String)
 signal doors_changed
 ## Promień hałasu otwierania/zamykania drzwi przez gracza.
 const DOOR_NOISE_RADIUS := 5.0
+## Zatrzaśnięcie w biegu: głośniej, a gracz zdążył już odbiec od drzwi.
+const DOOR_SLAM_NOISE_RADIUS := 9.0
+const DOOR_SLAM_DISTANCE := 3.5
 ## Promień hałasu przy wchodzeniu do szafki (skrzypnięcie drzwi).
 const HIDE_NOISE_RADIUS := 5.0
 
@@ -548,14 +551,17 @@ func request_extract() -> void:
 
 ## Gracz otwiera/zamyka drzwi (E). Zakluczone otwiera kluczem (zużywa go).
 @rpc("any_peer", "call_local", "reliable")
-func request_door(door_name: String) -> void:
+func request_door(door_name: String, slam: bool) -> void:
 	if not multiplayer.is_server():
 		return
 	var peer_id := _caller()
 	var body := _player_node(peer_id)
 	var door := _door_node(door_name)
-	if body == null or door == null or not is_up(peer_id) or door.flat_distance(body.global_position) > Door.USE_DISTANCE + 0.5:
+	var reach := DOOR_SLAM_DISTANCE if slam else Door.USE_DISTANCE + 0.5
+	if body == null or door == null or not is_up(peer_id) or door.flat_distance(body.global_position) > reach:
 		return
+	if slam and door_state(door_name) != Door.State.OPEN:
+		return  # zatrzaśnięcie tylko zamyka
 	match door_state(door_name):
 		Door.State.OPEN:
 			doors[door_name] = Door.State.CLOSED
@@ -570,7 +576,7 @@ func request_door(door_name: String) -> void:
 		_:
 			return
 	_broadcast_doors()
-	NoiseBus.emit_noise(door.global_position, DOOR_NOISE_RADIUS, body)
+	NoiseBus.emit_noise(door.global_position, DOOR_SLAM_NOISE_RADIUS if slam else DOOR_NOISE_RADIUS, body)
 
 
 func _door_node(door_name: String) -> Door:

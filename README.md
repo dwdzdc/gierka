@@ -82,7 +82,7 @@ godot --path . -- --join=192.168.1.23
 
 ## Sterowanie
 
-WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
+WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · E tuż po przebiegnięciu przez drzwi: zatrzaśnij je za sobą · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
 
 ## Pokoje
 

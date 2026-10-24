@@ -48,6 +48,9 @@ const UNLOCK_TIME := 1.0
 const PEEK_DISTANCE := 1.4
 const PEEK_DELAY := 0.6
 const FACING_ANGLE := 40.0
+## Zatrzaśnięcie drzwi za sobą (w biegu, bez celowania): E krótko po przejściu przez otwarte drzwi.
+const SLAM_WINDOW := 1.5
+const SLAM_DISTANCE := 2.5
 const RESCUE_TIME := 1.5
 ## Pełna kieszeń hałasuje: przy tylu monetach kroki są słyszalne 2x dalej.
 const COINS_FOR_DOUBLE_NOISE := 300.0
@@ -71,6 +74,9 @@ var door_target: Door
 var _interact_consumed := false  # E trzeba puścić po otwarciu drzwi, inaczej zaraz by je zamknął
 var _peek_door: Door
 var _peek_timer := 0.0
+var _door_sides := {}  # Door -> po której stronie drzwi byliśmy w poprzedniej klatce
+var _passed_door: Door  # ostatnie otwarte drzwi, przez które przeszliśmy
+var _passed_timer := 0.0
 
 
 func _enter_tree() -> void:
@@ -161,6 +167,7 @@ func _physics_process(delta: float) -> void:
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
 	var was_airborne := _air_time
 	move_and_slide()
+	_track_passed_doors(delta)
 	_air_time = 0.0 if is_on_floor() else _air_time + delta
 	if is_on_floor() and was_airborne > 0.35:
 		_on_landed()
@@ -289,6 +296,12 @@ func _update_help(delta: float) -> bool:
 				if hide_target:
 					target = self
 					kind = Help.HIDE
+			# Uciekając, ma się drzwi za plecami: stuknięcie E zatrzaskuje te, przez które właśnie
+			# przeszliśmy. Tylko gdy E nie ma innego celu (kolega, szafka, wyjście są ważniejsze).
+			if target == null and Input.is_action_just_pressed("interact") and _slam_target():
+				game_state.request_door.rpc_id(1, _slam_target().name, true)
+				_passed_door = null
+				_interact_consumed = true
 			if target == null and not _interact_consumed:
 				door_target = _usable_door()
 				if door_target and (door_target.state != Door.State.LOCKED or game_state.keys(me) > 0):
@@ -324,7 +337,7 @@ func _update_help(delta: float) -> bool:
 			Help.HIDE:
 				game_state.request_hide.rpc_id(1, str(hide_target.get_path()))
 			Help.DOOR:
-				game_state.request_door.rpc_id(1, door_target.name)
+				game_state.request_door.rpc_id(1, door_target.name, false)
 				_interact_consumed = true
 	return true
 
@@ -343,6 +356,30 @@ func _usable_door() -> Door:
 	return best
 
 
+## Zapamiętuje otwarte drzwi, przez które postać właśnie przeszła (zmiana strony w świetle przejścia).
+func _track_passed_doors(delta: float) -> void:
+	_passed_timer += delta
+	for node in get_tree().get_nodes_in_group(&"doors"):
+		var door := node as Door
+		if door.flat_distance(global_position) > 3.0:
+			_door_sides.erase(door)
+			continue
+		var here := signf(door.side(global_position))
+		if _door_sides.get(door, here) != here and door.state == Door.State.OPEN and door.lateral(global_position) <= Door.SIZE.x / 2.0:
+			_passed_door = door
+			_passed_timer = 0.0
+		_door_sides[door] = here
+
+
+## Drzwi do zatrzaśnięcia za sobą: przeszliśmy przez nie przed chwilą i są tuż za nami.
+func _slam_target() -> Door:
+	if _passed_door == null or not is_instance_valid(_passed_door) or _passed_door.state != Door.State.OPEN:
+		return null
+	if _passed_timer > SLAM_WINDOW or _passed_door.flat_distance(global_position) > SLAM_DISTANCE:
+		return null
+	return _passed_door
+
+
 func _facing(point: Vector3, max_angle: float) -> bool:
 	var to_point := (point - global_position) * Vector3(1, 0, 1)
 	if to_point.length() < 0.05:
@@ -354,6 +391,8 @@ func _update_hint(game_state: GameState) -> void:
 	hint = ""
 	var door := _usable_door()
 	if door == null:
+		if _slam_target():
+			hint = "E - zatrzaśnij drzwi za sobą"
 		return
 	match door.state:
 		Door.State.OPEN:
