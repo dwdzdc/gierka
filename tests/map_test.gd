@@ -32,9 +32,9 @@ func _physics_process(_d: float) -> bool:
 			print("PROBLEMY: %d" % problems)
 			return true
 		main._build_map(seeds[idx], count)
-		first_transforms = main.rooms.map(func(r): return r.transform)
+		first_transforms = main.rooms.map(_room_signature)
 		main._build_map(seeds[idx], count)
-		var same: bool = first_transforms == main.rooms.map(func(r): return r.transform)
+		var same: bool = first_transforms == main.rooms.map(_room_signature)
 		phase = 1
 		frames = 0
 		if not same:
@@ -111,3 +111,9 @@ func _physics_process(_d: float) -> bool:
 		var dead_ends := rooms.filter(func(r): return r.get_doorways().size() - r.find_children("Cap_*", "", true, false).size() <= 1).size()
 		print("seed %d: pokoi %d/%d, kolizje %d, niedostępne %s, pętle %d, ślepe zaułki %d, poziomy y %s\n   %s" % [seeds[idx], rooms.size(), count, overlaps, unreachable, main.map_loops, dead_ends, ys.keys(), names])
 	return false
+
+
+## Położenie pokoju (z odbiciem lustrzanym) i to, które drobiazgi opcjonalne zostały.
+func _room_signature(room: Node3D) -> String:
+	var kept := room.get_node("Geometry").get_children().filter(func(n): return n.name.begins_with("Opt_")).map(func(n): return n.name)
+	return "%s %s" % [room.transform, kept]

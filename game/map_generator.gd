@@ -136,10 +136,19 @@ func _decorate() -> void:
 				light.set_process(true)  # skrypt doklejony po _ready: Godot sam go nie włączy
 		if dark:
 			room.switch_off_lamps()
+		_drop_optional_props(room)
 		# Bez ramp i schodów (pochyłe podłogi) i bez wąskich korytarzy (3,6 m): skrzynia pod jedną
 		# ścianą i mebel pod drugą potrafiły zatkać przejście.
 		if room.bounds.size.y < 8.0 and minf(room.bounds.size.x, room.bounds.size.z) > 4.5 and not _is_corridor(room):
 			_add_clutter(room)
+
+
+## Drobiazgi opcjonalne z gen_rooms.py (15v): każdy zostaje z własną szansą (`metadata/chance`).
+## W scenie stoją wszystkie, więc zasady kamer sprawdzają najgorszy przypadek.
+func _drop_optional_props(room: Room) -> void:
+	for node in room.get_node("Geometry").get_children():
+		if node.name.begins_with("Opt_") and _rng.randf() >= float(node.get_meta("chance", 1.0)):
+			node.free()
 
 
 func _is_corridor(room: Room) -> bool:
@@ -210,7 +219,11 @@ func _spawn_prop(room: Room, position: Vector3, size: float) -> void:
 ## Rzuty na podłogę (XZ) brył, które już stoją w pokoju (meble, regały), plus szafki.
 func _solid_footprints(room: Room) -> Array[Rect2]:
 	var result: Array[Rect2] = []
+	var solids: Array[Node] = []
 	for node in room.get_node("Geometry").get_children():
+		# Drobiazgi opcjonalne (Opt_*) to pod-kombinatory: ich części leżą w nich, w układzie pokoju.
+		solids.append_array(node.get_children() if node.name.begins_with("Opt_") else [node])
+	for node in solids:
 		if node is CSGBox3D and node.position.y < 2.5 and not node.name.begins_with("Wall") and node.name != "Floor":
 			var half := Vector2(node.size.x, node.size.z) / 2.0
 			result.append(Rect2(Vector2(node.position.x, node.position.z) - half, half * 2.0))

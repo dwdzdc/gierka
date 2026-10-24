@@ -38,7 +38,7 @@ func _physics_process(_d: float) -> bool:
 		for r in main.rooms:
 			sig += "%s@%s " % [r.name, r.global_position.snapped(Vector3.ONE * 0.1)]
 			for c in r.get_node("Geometry").get_children():
-				if c.name.begins_with("Clutter"):
+				if c.name.begins_with("Clutter") or c.name.begins_with("Opt_"):
 					sig += "%s@%s " % [c.name, c.position.snapped(Vector3.ONE * 0.01)]
 			for l in r.find_children("*", "OmniLight3D", true, false):
 				sig += "%s:%s " % [l.visible, l.get_script() != null]

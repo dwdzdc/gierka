@@ -131,12 +131,18 @@ height = 1.8
 sides = 10
 material = ExtResource("8")
 
-[node name="Solid6" type="CSGBox3D" parent="Geometry"]
+[node name="Opt_6" type="CSGCombiner3D" parent="Geometry"]
+metadata/chance = 0.6
+
+[node name="Part0" type="CSGBox3D" parent="Geometry/Opt_6"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.4, -5.5)
 size = Vector3(15.6, 0.3, 0.3)
 material = ExtResource("8")
 
-[node name="Solid7" type="CSGBox3D" parent="Geometry"]
+[node name="Opt_7" type="CSGCombiner3D" parent="Geometry"]
+metadata/chance = 0.6
+
+[node name="Part0" type="CSGBox3D" parent="Geometry/Opt_7"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -5.55)
 size = Vector3(15.6, 0.2, 0.2)
 material = ExtResource("9")
@@ -191,14 +197,20 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.22, 0.55, 5.02)
 size = Vector3(0.1, 1.1, 0.1)
 material = ExtResource("8")
 
-[node name="Solid18" type="CSGCylinder3D" parent="Geometry"]
+[node name="Opt_18" type="CSGCombiner3D" parent="Geometry"]
+metadata/chance = 0.6
+
+[node name="Part0" type="CSGCylinder3D" parent="Geometry/Opt_18"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0.6, 4.9)
 radius = 0.4
 height = 1.2
 sides = 10
 material = ExtResource("9")
 
-[node name="Solid19" type="CSGCylinder3D" parent="Geometry"]
+[node name="Opt_19" type="CSGCombiner3D" parent="Geometry"]
+metadata/chance = 0.6
+
+[node name="Part0" type="CSGCylinder3D" parent="Geometry/Opt_19"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.3, 0.6, 5.1)
 radius = 0.4
 height = 1.2

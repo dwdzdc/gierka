@@ -195,7 +195,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.6, 8)
 size = Vector3(19.6, 0.3, 0.4)
 material = ExtResource("7")
 
-[node name="Solid16" type="CSGCylinder3D" parent="Geometry"]
+[node name="Opt_16" type="CSGCombiner3D" parent="Geometry"]
+metadata/chance = 0.6
+
+[node name="Part0" type="CSGCylinder3D" parent="Geometry/Opt_16"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.8, 0.6, -10.2)
 radius = 0.4
 height = 1.2

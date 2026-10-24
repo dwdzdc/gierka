@@ -81,7 +81,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.9, 2, 1.4)
 size = Vector3(0.2, 4, 0.8)
 material = ExtResource("6")
 
-[node name="Solid0" type="CSGBox3D" parent="Geometry"]
+[node name="Opt_0" type="CSGCombiner3D" parent="Geometry"]
+metadata/chance = 0.5
+
+[node name="Part0" type="CSGBox3D" parent="Geometry/Opt_0"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.6, -1.55)
 size = Vector3(4, 0.2, 0.2)
 material = ExtResource("8")

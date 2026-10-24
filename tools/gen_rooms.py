@@ -82,6 +82,14 @@ def group(*parts):
     return ("group", parts)
 
 
+def optional(chance, *parts):
+    """Drobiazg opcjonalny (15v): rura, beczka, skrzynia... Na mapie stoi z szansą `chance`
+    (losuje MapGenerator z RNG mapy, u wszystkich tak samo). W scenie pokoju zawsze jest, więc
+    zasady kamer i mapa pokrycia sprawdzają najgorszy przypadek: bez niego jest tylko luźniej.
+    Nie oznaczać tak mebli, na których leżą znaczniki łupu, ani kryjówek."""
+    return ("optional", chance, parts)
+
+
 def table(pos, length, depth, mat="wood"):
     """Długi stół z prześwitem pod blatem (kryjówka dla kucającego). pos = środek na podłodze."""
     x, z = pos
@@ -144,6 +152,8 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         return (sd[0], at(sd[1])) + tuple(sd[2:])
 
     def place_solid(sd):
+        if sd[0] == "optional":
+            return [("optional", sd[1], [s for part in sd[2] for s in place_solid(part)])]
         if sd[0] != "group":
             return [scale_solid(sd)]
         anchor = sd[1][0][1]
@@ -163,35 +173,35 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         vent = (vent[0] * kx, vent[1] * kz)
     nodes, subs = [], []
 
-    def box(node_name, pos, size, mat, yaw=0.0):
+    def box(node_name, pos, size, mat, yaw=0.0, parent="Geometry"):
         nodes.append(
-            f'[node name="{node_name}" type="CSGBox3D" parent="Geometry"]\n'
+            f'[node name="{node_name}" type="CSGBox3D" parent="{parent}"]\n'
             f"transform = {tf(*pos, yaw)}\nsize = Vector3({v(*size)})\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
 
-    def cyl(node_name, pos, radius, height, mat):
+    def cyl(node_name, pos, radius, height, mat, parent="Geometry"):
         nodes.append(
-            f'[node name="{node_name}" type="CSGCylinder3D" parent="Geometry"]\n'
+            f'[node name="{node_name}" type="CSGCylinder3D" parent="{parent}"]\n'
             f"transform = {tf(*pos)}\nradius = {radius:g}\nheight = {height:g}\nsides = 10\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
 
-    def vprism(node_name, points, y0, y1, mat):
+    def vprism(node_name, points, y0, y1, mat, parent="Geometry"):
         # Profil w XZ wyciągnięty pionowo: CSGPolygon3D obrócony o +90° wokół X
         # (lokalne Y -> świat Z, wyciąganie wzdłuż lokalnego -Z -> świat +Y).
         flat = ", ".join(v(x, z) for x, z in points)
         nodes.append(
-            f'[node name="{node_name}" type="CSGPolygon3D" parent="Geometry"]\n'
+            f'[node name="{node_name}" type="CSGPolygon3D" parent="{parent}"]\n'
             f"transform = Transform3D({v(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, y0, 0)})\npolygon = PackedVector2Array({flat})\ndepth = {y1 - y0:g}\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
 
-    def prism(node_name, points, z0, z1, mat):
+    def prism(node_name, points, z0, z1, mat, parent="Geometry"):
         # CSGPolygon3D wyciąga profil od z=0 w stronę -Z, więc węzeł stoi na z1.
         flat = ", ".join(v(x, y) for x, y in points)
         nodes.append(
-            f'[node name="{node_name}" type="CSGPolygon3D" parent="Geometry"]\n'
+            f'[node name="{node_name}" type="CSGPolygon3D" parent="{parent}"]\n'
             f"transform = {tf(0, 0, z1)}\npolygon = PackedVector2Array({flat})\ndepth = {z1 - z0:g}\n"
             f'material = ExtResource("{EXT_ID[mat]}")\n'
         )
@@ -214,17 +224,27 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
             box(f"Wall{side}{i}", pos, size, "wall")
 
     bars_bodies = []
-    for i, solid in enumerate(solids):
+
+    def emit(solid, node_name, parent="Geometry"):
         if solid[0] == "box":
-            box(f"Solid{i}", solid[1], solid[2], solid[3], solid[4] if len(solid) > 4 else 0.0)
+            box(node_name, solid[1], solid[2], solid[3], solid[4] if len(solid) > 4 else 0.0, parent)
         elif solid[0] == "bars":
-            bars_bodies.append((f"Bars{i}",) + tuple(solid[1:]))
+            bars_bodies.append((node_name,) + tuple(solid[1:]))
         elif solid[0] == "vprism":
-            vprism(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
+            vprism(node_name, solid[1], solid[2], solid[3], solid[4], parent)
         elif solid[0] == "cyl":
-            cyl(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
+            cyl(node_name, solid[1], solid[2], solid[3], solid[4], parent)
         else:
-            prism(f"Solid{i}", solid[1], solid[2], solid[3], solid[4])
+            prism(node_name, solid[1], solid[2], solid[3], solid[4], parent)
+
+    for i, solid in enumerate(solids):
+        if solid[0] == "optional":
+            # Pod-kombinator CSG: generator mapy usuwa go w całości, bryła pokoju przelicza się sama.
+            nodes.append(f'[node name="Opt_{i}" type="CSGCombiner3D" parent="Geometry"]\nmetadata/chance = {solid[1]:g}\n')
+            for j, part in enumerate(solid[2]):
+                emit(part, f"Part{j}", f"Geometry/Opt_{i}")
+        else:
+            emit(solid, f"Solid{i}" if solid[0] != "bars" else f"Bars{i}")
 
     def markers(holder, items):
         nodes.append(f'[node name="{holder}" type="Node3D" parent="."]\n')
@@ -371,10 +391,10 @@ build(
         ("box", (-3.2, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),
         group(("box", (3.5, 0.5, -5.5), (3.0, 1.0, 0.9), "rust"),     # stół warsztatowy
               ("box", (4.2, 1.15, -5.5), (0.6, 0.3, 0.35), "metal")),  # skrzynka z narzędziami
-        ("cyl", (6.9, 0.6, -4.6), 0.4, 1.2, "rust"),             # beczki
-        ("cyl", (6.0, 0.6, -5.3), 0.4, 1.2, "rust"),
-        ("box", (0, 4.5, 5.6), (16, 0.25, 0.25), "metal"),       # rury pod sufitem
-        ("box", (0, 4.15, 5.65), (16, 0.15, 0.15), "rust"),
+        optional(0.6, ("cyl", (6.9, 0.6, -4.6), 0.4, 1.2, "rust")),             # beczki
+        optional(0.6, ("cyl", (6.0, 0.6, -5.3), 0.4, 1.2, "rust")),
+        optional(0.6, ("box", (0, 4.5, 5.6), (16, 0.25, 0.25), "metal")),       # rury pod sufitem
+        optional(0.6, ("box", (0, 4.15, 5.65), (16, 0.15, 0.15), "rust")),
         table((1.5, -1.0), 3.2, 1.3),  # stół z prześwitem: wyspa do krążenia i kryjówka
         # wyjście z mapy: drzwi windy w zachodniej ścianie, zielona futryna i znak
         ("box", (-7.95, 1.3, 3.5), (0.1, 2.6, 2.0), "metal"),
@@ -403,12 +423,12 @@ build(
     "Corridor", 16, 4, 4.0,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
-        ("box", (3, 0.4, 1.4), (0.8, 0.8, 0.8), "wood"),
+        optional(0.6, ("box", (3, 0.4, 1.4), (0.8, 0.8, 0.8), "wood")),
         ("box", (1.5, 0.6, -1.7), (1.6, 1.2, 0.45), "rust"),   # niska szafka
-        ("cyl", (5.6, 0.6, 1.5), 0.4, 1.2, "rust"),             # beczka
-        ("box", (-1.5, 0.3, 1.6), (0.9, 0.6, 0.6), "wood"),     # skrzynka
-        ("box", (0, 3.6, -1.75), (16, 0.2, 0.2), "metal"),      # rury wzdłuż ściany
-        ("box", (0, 3.3, -1.8), (16, 0.12, 0.12), "rust"),
+        optional(0.6, ("cyl", (5.6, 0.6, 1.5), 0.4, 1.2, "rust")),             # beczka
+        optional(0.6, ("box", (-1.5, 0.3, 1.6), (0.9, 0.6, 0.6), "wood")),     # skrzynka
+        optional(0.6, ("box", (0, 3.6, -1.75), (16, 0.2, 0.2), "metal")),      # rury wzdłuż ściany
+        optional(0.6, ("box", (0, 3.3, -1.8), (16, 0.12, 0.12), "rust")),
     ],
     zones=[
         ("WestHalf", (-8, 1, -2, 2), (7.6, 3.6, 1.4), (-5, 0.8, 0), 0.35, 0),
@@ -437,15 +457,15 @@ build(
               ("box", (8.8, 1.8, -8.8), (1.2, 1.2, 1.2), "wood")),
         ("box", (-8.8, 0.5, -8.8), (1.0, 1.0, 1.0), "wood"),
         # palety ze skrzyniami w alejkach przy ścianach
-        group(("box", (0, 0.08, -8.6), (1.4, 0.16, 1.2), "wood"),
-              ("box", (0, 0.65, -8.6), (1.1, 1.0, 1.0), "wood")),
-        group(("box", (3.5, 0.08, 8.6), (1.4, 0.16, 1.2), "wood"),
+        optional(0.7, group(("box", (0, 0.08, -8.6), (1.4, 0.16, 1.2), "wood"),
+              ("box", (0, 0.65, -8.6), (1.1, 1.0, 1.0), "wood"))),
+        optional(0.7, group(("box", (3.5, 0.08, 8.6), (1.4, 0.16, 1.2), "wood"),
               ("box", (3.5, 0.55, 8.6), (1.2, 0.8, 1.0), "wood"),
-              ("box", (3.5, 1.25, 8.6), (0.8, 0.6, 0.8), "wood")),
+              ("box", (3.5, 1.25, 8.6), (0.8, 0.6, 0.8), "wood"))),
         # beczki w kącie
-        ("cyl", (-8.6, 0.6, 8.6), 0.4, 1.2, "rust"),
-        ("cyl", (-7.7, 0.6, 8.7), 0.4, 1.2, "rust"),
-        ("cyl", (-8.5, 0.6, 7.7), 0.4, 1.2, "rust"),
+        optional(0.6, ("cyl", (-8.6, 0.6, 8.6), 0.4, 1.2, "rust")),
+        optional(0.6, ("cyl", (-7.7, 0.6, 8.7), 0.4, 1.2, "rust")),
+        optional(0.6, ("cyl", (-8.5, 0.6, 7.7), 0.4, 1.2, "rust")),
         table((8.2, 3.0), 2.6, 1.2, "rust"),  # stół warsztatowy z prześwitem przy wschodnim pasie
     ],
     zones=[
@@ -469,9 +489,9 @@ build(
     "Turn", 6, 6, 4.0,
     doors=[("West", "W", 0, 0), ("North", "N", 0, 0)],
     solids=[
-        ("box", (2.2, 0.5, -2.2), (0.9, 1.0, 0.9), "wood"),
-        ("cyl", (-2.3, 0.6, 2.3), 0.4, 1.2, "rust"),
-        ("box", (0.8, 3.5, 2.75), (4, 0.2, 0.2), "metal"),  # rura
+        optional(0.6, ("box", (2.2, 0.5, -2.2), (0.9, 1.0, 0.9), "wood")),
+        optional(0.6, ("cyl", (-2.3, 0.6, 2.3), 0.4, 1.2, "rust")),
+        optional(0.6, ("box", (0.8, 3.5, 2.75), (4, 0.2, 0.2), "metal")),  # rura
     ],
     zones=[("All", (-3, 3, -3, 3), (2.8, 3.6, 2.8), (-1.5, 0.5, -1.5), 0.25, 0)],
     lights=[((0, 3.6, 0), COLD, 0.6, 6.0, True)],
@@ -485,9 +505,9 @@ build(
     "Junction", 10, 10, 4.5,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0), ("North", "N", 0, 0)],
     solids=[
-        ("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood"),
-        ("cyl", (4.1, 0.6, 4.1), 0.4, 1.2, "rust"),
-        ("cyl", (3.3, 0.6, 4.4), 0.4, 1.2, "rust"),
+        optional(0.6, ("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood")),
+        optional(0.6, ("cyl", (4.1, 0.6, 4.1), 0.4, 1.2, "rust")),
+        optional(0.6, ("cyl", (3.3, 0.6, 4.4), 0.4, 1.2, "rust")),
         table((0, -1.0), 3.0, 1.2),  # wyspa na środku: krążenie i kryjówka
         group(("box", (3.8, 0.5, -4.4), (2.0, 1.0, 0.8), "rust"),     # stół warsztatowy
               ("box", (3.6, 1.15, -4.4), (0.5, 0.3, 0.3), "metal")),
@@ -507,11 +527,11 @@ build(
     doors=[("West", "W", 0, 0)],
     solids=[
         ("box", (2.5, 0.5, -2.5), (1, 1, 1), "wood"),
-        ("box", (2.6, 0.4, 2.6), (0.8, 0.8, 0.8), "wood"),
+        optional(0.6, ("box", (2.6, 0.4, 2.6), (0.8, 0.8, 0.8), "wood")),
         ("box", (0.5, 1.0, -3.2), (2.0, 2.0, 0.6), "metal"),
         ("box", (3.2, 1.0, 0.2), (0.6, 2.0, 2.4), "metal"),     # regał przy wschodniej ścianie
-        ("cyl", (-2.6, 0.6, -2.6), 0.4, 1.2, "rust"),
-        ("box", (-2.4, 0.3, 2.6), (1.0, 0.6, 0.7), "wood"),
+        optional(0.6, ("cyl", (-2.6, 0.6, -2.6), 0.4, 1.2, "rust")),
+        optional(0.6, ("box", (-2.4, 0.3, 2.6), (1.0, 0.6, 0.7), "wood")),
     ],
     zones=[("All", (-3.5, 3.5, -3.5, 3.5), (3.2, 3.6, 3.2), (-2, 0.6, -1), 0.2, 0)],
     lights=[((0.5, 3.6, 0), WARM, 0.6, 6.0, True)],
@@ -527,8 +547,8 @@ build(
     solids=[
         ("prism", [(-5, 0), (5, 0), (5, S)], -2, 2, "concrete"),
         ("box", (6.5, S / 2, 0), (3, S, 4), "concrete"),  # górny podest
-        ("box", (0, S + 3.4, -1.75), (16, 0.2, 0.2), "metal"),  # rury pod sufitem
-        ("box", (-6.8, 0.4, 1.4), (0.8, 0.8, 0.8), "wood"),
+        optional(0.6, ("box", (0, S + 3.4, -1.75), (16, 0.2, 0.2), "metal")),  # rury pod sufitem
+        optional(0.6, ("box", (-6.8, 0.4, 1.4), (0.8, 0.8, 0.8), "wood")),
     ],
     zones=[
         ("Lower", (-8, 1, -2, 2), (7.6, S + 3.4, 1.4), (-4, 0.8, 0), 0.4, 0),
@@ -549,8 +569,8 @@ build(
         ("box", (4.25, S / 4, 0), (1.5, S / 2, 8), "concrete"),  # półpiętro
         # bieg 2 + górny podest jako jedna pełna bryła (bez pustki pod spodem)
         ("prism", [(-5, 0), (3.5, 0), (3.5, S / 2), (-1.5, S), (-5, S)], 0, 4, "concrete"),
-        ("box", (-4.4, 0.4, -3.5), (0.8, 0.8, 0.7), "wood"),
-        ("cyl", (-4.3, S + 0.6, 3.4), 0.4, 1.2, "rust"),
+        optional(0.6, ("box", (-4.4, 0.4, -3.5), (0.8, 0.8, 0.7), "wood")),
+        optional(0.6, ("cyl", (-4.3, S + 0.6, 3.4), 0.4, 1.2, "rust")),
     ],
     zones=[
         # Każda kamera stoi nad "swoją" stroną klatki, żeby bryła drugiego biegu nie zasłaniała drzwi.
@@ -575,7 +595,7 @@ def link(length):
     build(
         f"Link{length}", li, 3.6, 4.0,
         doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
-        solids=[("box", (0, 3.6, -1.55), (li + 0.4, 0.2, 0.2), "metal")],  # rura wzdłuż ściany
+        solids=[optional(0.5, ("box", (0, 3.6, -1.55), (li + 0.4, 0.2, 0.2), "metal"))],  # rura wzdłuż ściany
         zones=[
             ("WestHalf", (-half, 0.3, -1.8, 1.8), (half - 0.4, 3.6, 1.2), (-half + 1.0, 0.8, 0), 0.3, 0),
             ("EastHalf", (-0.3, half, -1.8, 1.8), (-half + 0.4, 3.6, -1.2), (half - 1.0, 0.8, 0), 0.3, 0),
@@ -613,8 +633,8 @@ build(
     doors=[("West", "W", 2, 0), ("North", "N", 2, 0)],
     solids=[
         fill(-3.8, 0.2, -3.8, 0.2),
-        ("box", (0, 3.6, 3.65), (7.6, 0.2, 0.2), "metal"),  # rura
-        ("box", (-2.6, 0.4, 3.2), (0.8, 0.8, 0.7), "wood"),
+        optional(0.6, ("box", (0, 3.6, 3.65), (7.6, 0.2, 0.2), "metal")),  # rura
+        optional(0.6, ("box", (-2.6, 0.4, 3.2), (0.8, 0.8, 0.7), "wood")),
     ],
     zones=[("All", (-3.8, 3.8, -3.8, 3.8), (3.4, 3.6, 3.4), (-1.0, 0.5, -1.0), 0.3, 0)],
     lights=[((2, 3.6, 2), COLD, 0.7, 7.0, False)],
@@ -630,8 +650,8 @@ build(
     solids=[
         fill(-5.8, -1.8, -3.8, 0.2),
         fill(1.8, 5.8, -3.8, 0.2),
-        ("box", (0, 3.6, 3.65), (11.6, 0.2, 0.2), "metal"),
-        ("cyl", (4.6, 0.6, 3.3), 0.4, 1.2, "rust"),
+        optional(0.6, ("box", (0, 3.6, 3.65), (11.6, 0.2, 0.2), "metal")),
+        optional(0.6, ("cyl", (4.6, 0.6, 3.3), 0.4, 1.2, "rust")),
     ],
     zones=[
         ("WestHalf", (-5.8, 0.2, 0.2, 3.8), (5.4, 3.6, 3.4), (-4.6, 0.8, 2), 0.3, 0),
@@ -651,7 +671,7 @@ build(
     solids=[
         fill(-5.8, -1.8, -5.8, -1.8), fill(1.8, 5.8, -5.8, -1.8),
         fill(-5.8, -1.8, 1.8, 5.8), fill(1.8, 5.8, 1.8, 5.8),
-        ("box", (-4.6, 0.4, 1.3), (0.8, 0.8, 0.7), "wood"),
+        optional(0.6, ("box", (-4.6, 0.4, 1.3), (0.8, 0.8, 0.7), "wood")),
     ],
     zones=[
         ("West", (-5.8, 0, -1.8, 1.8), (5.4, 3.6, 1.2), (-4.6, 0.8, 0), 0.3, 0),
@@ -686,9 +706,9 @@ build(
         ("box", (-5.2, 0.25, -5.1), (2.0, 0.5, 0.9), "wood"),
         ("box", (5.2, 0.25, 5.1), (2.0, 0.5, 0.9), "wood"),
         ("box", (0.4, 0.25, -5.1), (2.0, 0.5, 0.9), "wood"),
-        ("cyl", (-1.5, 0.25, 4.8), 0.25, 0.5, "rust"),
-        ("cyl", (6.5, 0.25, -4.6), 0.25, 0.5, "rust"),
-        ("box", (-6.6, 0.15, 3.6), (0.9, 0.3, 1.6), "wood"),  # zbutwiała słoma/sienik
+        optional(0.6, ("cyl", (-1.5, 0.25, 4.8), 0.25, 0.5, "rust")),
+        optional(0.6, ("cyl", (6.5, 0.25, -4.6), 0.25, 0.5, "rust")),
+        optional(0.6, ("box", (-6.6, 0.15, 3.6), (0.9, 0.3, 1.6), "wood")),  # zbutwiała słoma/sienik
     ],
     zones=[
         ("WestHalf", (-7.8, 0.4, -1.8, 1.8), (7.4, 3.5, 1.2), (-5, 0.7, 0), 0.3, 0),
@@ -721,7 +741,7 @@ build(
         ("box", (0, 7.6, 0), (19.6, 0.3, 0.4), "wood"),      # belki stropu
         ("box", (0, 7.6, -8), (19.6, 0.3, 0.4), "wood"),
         ("box", (0, 7.6, 8), (19.6, 0.3, 0.4), "wood"),
-        ("cyl", (7.8, 0.6, -10.2), 0.4, 1.2, "rust"),
+        optional(0.6, ("cyl", (7.8, 0.6, -10.2), 0.4, 1.2, "rust")),
     ],
     # Połowa holu na ujęcie, kamera wysoko nad przeciwległą ścianą (fontanna w środku zasłania
     # tylko wąski pas, a ten widać z drugiej kamery).
@@ -819,16 +839,16 @@ build(
               ("box", (-1.5, 0.8, -0.95), (1.0, 0.9, 0.12), "metal")),  # drzwiczki paleniska
         group(("cyl", (3.5, 1.5, -3.6), 1.1, 3.0, "rust"),
               ("cyl", (3.5, 3.9, -3.6), 0.25, 1.8, "metal")),
-        ("box", (0, 4.4, -5.5), (15.6, 0.3, 0.3), "metal"),       # rury pod sufitem
-        ("box", (0, 4.0, -5.55), (15.6, 0.2, 0.2), "rust"),
+        optional(0.6, ("box", (0, 4.4, -5.5), (15.6, 0.3, 0.3), "metal")),       # rury pod sufitem
+        optional(0.6, ("box", (0, 4.0, -5.55), (15.6, 0.2, 0.2), "rust")),
         ("box", (6.8, 2.5, -5.5), (0.25, 5.0, 0.25), "metal"),    # piony
         ("box", (-6.5, 2.5, -5.5), (0.25, 5.0, 0.25), "metal"),
         ("box", (7.65, 1.6, -2.0), (0.2, 1.2, 1.6), "metal"),     # tablica z zaworami
         group(("box", (-6.2, 0.4, 4.3), (2.6, 0.8, 2.4), "concrete"),  # hałda węgla
               ("box", (-6.4, 1.0, 4.6), (1.6, 0.5, 1.6), "concrete")),
         table((3.0, 4.6), 2.6, 1.0, "rust"),
-        ("cyl", (0.6, 0.6, 4.9), 0.4, 1.2, "rust"),  # beczki (nie pod kamerą w narożniku)
-        ("cyl", (-0.3, 0.6, 5.1), 0.4, 1.2, "rust"),
+        optional(0.6, ("cyl", (0.6, 0.6, 4.9), 0.4, 1.2, "rust")),  # beczki (nie pod kamerą w narożniku)
+        optional(0.6, ("cyl", (-0.3, 0.6, 5.1), 0.4, 1.2, "rust")),
     ],
     zones=[
         ("West", (-7.8, 0.5, -5.8, 5.8), (6.5, 4.4, 5.2), (-4, 0.5, -2.5), 0.25, 0),
@@ -899,8 +919,8 @@ build(
               ("box", (3.0, 1.1, -7.3), (1.0, 0.2, 0.4), "wood")),   # tace
         ("box", (-2.7, 3.6, -7.3), (3.2, 0.6, 1.2), "metal"),       # okap
         ("box", (6.9, 1.1, -6.9), (1.2, 2.2, 1.0), "metal"),        # lodówka
-        ("cyl", (6.9, 0.45, 6.6), 0.35, 0.9, "rust"),               # kosze
-        ("cyl", (6.1, 0.45, 6.9), 0.35, 0.9, "rust"),
+        optional(0.6, ("cyl", (6.9, 0.45, 6.6), 0.35, 0.9, "rust")),               # kosze
+        optional(0.6, ("cyl", (6.1, 0.45, 6.9), 0.35, 0.9, "rust")),
     ],
     zones=[
         ("West", (-7.8, 0.5, -7.8, 7.8), (7.4, 4.1, -7.4), (-3, 0.5, 2), 0.25, 0),
@@ -934,8 +954,8 @@ build(
         table((-6.0, -4.2), 2.0, 1.0),
         ("box", (-6.8, 0.6, 4.4), (1.2, 1.2, 0.6), "wood"),   # katalog kartkowy
         ("box", (7.4, 1.0, 4.4), (0.6, 2.0, 2.4), "metal"),    # szafa pod wschodnią ścianą
-        ("box", (2.0, 0.3, 4.8), (0.8, 0.6, 0.6), "wood"),     # kartony na podłodze
-        ("box", (2.6, 0.25, 5.2), (0.6, 0.5, 0.5), "wood"),
+        optional(0.6, ("box", (2.0, 0.3, 4.8), (0.8, 0.6, 0.6), "wood")),     # kartony na podłodze
+        optional(0.6, ("box", (2.6, 0.25, 5.2), (0.6, 0.5, 0.5), "wood")),
     ],
     zones=[
         ("North", (-7.8, 7.8, -5.8, 0.3), (-2.0, 3.7, 5.4), (2, 0, -4), 0.2, 0),
@@ -998,7 +1018,7 @@ build(
         ("box", (5.3, 1.0, 6.4), (0.8, 2.0, 1.6), "metal"),
         group(("box", (-4.2, 0.4, 6.6), (2.0, 0.8, 0.9), "wood"),  # pulpit operatora z monitorem
               ("box", (-4.2, 1.05, 6.8), (0.6, 0.45, 0.08), "metal")),
-        ("box", (0, 3.35, -7.0), (11.6, 0.15, 0.4), "metal"),   # korytko pod sufitem
+        optional(0.6, ("box", (0, 3.35, -7.0), (11.6, 0.15, 0.4), "metal")),   # korytko pod sufitem
     ],
     zones=[
         ("North", (-2.2, 2.2, -7.8, 0.3), (-1.5, 3.3, 7.4), (0, 0.5, -5), 0.2, 0),
