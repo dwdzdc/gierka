@@ -1,0 +1,33 @@
+rooms/materials/lamp_off.tres
+  s_bdc84ae5107fd1::t_f0727b9a2317ff 1-4
+fx/flicker_light.gd
+  s_bdc84ae5107fd1::t_f0727b9a2317ff 3-6,10,12-13,17-18,26-38
+game/map_generator.gd
+  s_bdc84ae5107fd1::t_f0727b9a2317ff 107,109
+tests/lamps_test.gd
+  s_bdc84ae5107fd1::t_822ea09b4c06eb 61,71
+  s_bdc84ae5107fd1::t_cb9b8143df61cc 66
+  s_bdc84ae5107fd1::t_1f2861d79b81f3 1-60,62-65,67-70,72-77
+README.md
+  s_bdc84ae5107fd1::t_aed64e33722918 101
+progress.md
+  s_bdc84ae5107fd1::t_aed64e33722918 141,144
+rooms/room.gd
+  s_bdc84ae5107fd1::t_f0727b9a2317ff 20-21,78,81-91,100
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "aa181707ad2f2c7294904c291b24af7750b04c5e",
+  "prompts": {},
+  "sessions": {
+    "s_bdc84ae5107fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "792c5ab2-d9e1-42a7-ac9d-334fee8f0317",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
