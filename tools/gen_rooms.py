@@ -743,8 +743,9 @@ build(
     "Library", 19.6, 19.6, LH,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
-        # ścięte narożniki (ośmiokąt)
-        *[("vprism", [(sx * 9.8, sz * 9.8), (sx * 4.8, sz * 9.8), (sx * 9.8, sz * 4.8)], 0, LH, "wall") for sx in (-1, 1) for sz in (-1, 1)],
+        # ścięte narożniki (ośmiokąt). Ścięcie 3 m zostawia w rogu antresoli ~2,1 m przejścia
+        # (przy 5 m zostawało 0,7 m, węziej niż postać: antresoli nie dało się obejść, 15r).
+        *[("vprism", [(sx * 9.8, sz * 9.8), (sx * 6.8, sz * 9.8), (sx * 9.8, sz * 6.8)], 0, LH, "wall") for sx in (-1, 1) for sz in (-1, 1)],
         # antresola: cztery pasy pod ścianami
         ("box", (0, MEZZ - 0.15, -8.3), (19.6, 0.3, 3.0), "wood"),
         ("box", (0, MEZZ - 0.15, 8.3), (19.6, 0.3, 3.0), "wood"),
