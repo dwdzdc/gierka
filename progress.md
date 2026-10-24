@@ -11,6 +11,17 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [~] Liczba graczy: teraz maks. 5 (`MAX_CLIENTS := 4` w `net/network.gd`, 5 spawnów w hali; podniesione z 4 na prośbę 23.10, bez zmian w balansie). Pomysł (23.10): nawet 10. Technicznie łatwe (stała + więcej spawnów), ale balans jest pod 2–4: liczba potworów (maks. 4), monet i tempo etapów; przy 10 ocalałych udział w puli zero-sum jest znikomy. Rekomendacja: 6–8 i skalowanie trudności z liczbą graczy (do decyzji)
 - [x] Sterowanie: tank (camera-relative odrzucone po playteście)
 
+## Kolejność prac (ustalona 24.10)
+
+1. 47c9 wzrok potworów → 2. 47c10 strażnik goni poza rewir → 3. 16h siatka 2 m + domykanie pętli →
+4. 15i/15j prawdziwe korytarze → 5. 15l–15n drzwi (zwykłe + kratka, potwory, klucze) → 6. 15k nowe pokoje (lochy, hol, biblioteka).
+Potem 41c bateria, 36c sklep, 37 MVP.
+
+Szkielet potwierdzony 24.10:
+- Siatka 2 m w kontrakcie pokoju: wymiary i pozycje przejść w wielokrotnościach 2 m
+- Drzwi jako część przejścia (`Doorways`), wstawiane przez generator, nie na sztywno w scenie pokoju
+- Stan drzwi (otwarte / zamknięte / zakluczone / wyłamane) w `GameState`, autorytet hosta
+
 ## Faza 0: setup
 
 - [x] 1. Projekt Godot, git, struktura folderów
