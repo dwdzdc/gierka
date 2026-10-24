@@ -10,6 +10,8 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [x] Potwory jako typy: wspólna baza + wymienne części. Dwie warstwy AI: **reżyser** (zgrubna nawigacja: dokąd iść, wspólny dla wszystkich typów) i **zmysły** (lokalne szukanie gracza, inne dla każdego typu). Szczegóły w „Potwory: abstrakcja” (faza 8). Interfejsy części do potwierdzenia przed refaktorem
 - [~] Liczba graczy: teraz maks. 5 (`MAX_CLIENTS := 4` w `net/network.gd`, 5 spawnów w hali; podniesione z 4 na prośbę 23.10, bez zmian w balansie). Pomysł (23.10): nawet 10. Technicznie łatwe (stała + więcej spawnów), ale balans jest pod 2–4: liczba potworów (maks. 4), monet i tempo etapów; przy 10 ocalałych udział w puli zero-sum jest znikomy. Rekomendacja: 6–8 i skalowanie trudności z liczbą graczy (do decyzji)
 - [x] Sterowanie: tank (camera-relative odrzucone po playteście)
+- [ ] Pomysł (25.10, hipotetyczny): wersja przeglądarkowa, gracze łączą się kodem pokoju zamiast IP. Bez przepisywania: eksport Web z Godota (WebAssembly). Do zmiany: renderer Mobile → Compatibility (w przeglądarce tylko WebGL2), ENet → WebRTC (`WebRTCMultiplayerPeer`) plus mały serwer sygnalizacyjny z kodami pokoi i STUN/TURN. RPC i synchronizacja zostają, bo sieć jest tylko w `net/network.gd`. Szacunek: 2–3 tygodnie
+  - Uwaga: kłóci się z planem Steam lobby (GodotSteam nie działa w przeglądarce): albo jedno, albo warstwa „lobby” z dwiema implementacjami. Największe ryzyko to wydajność: dużo świateł z cieniami na WebGL2 przy mapie z 60 pokoi. Desktop dołączający do gry z przeglądarki potrzebuje wtyczki webrtc-native
 
 ## Kolejność prac
 
