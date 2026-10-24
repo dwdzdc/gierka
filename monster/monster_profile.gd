@@ -59,9 +59,11 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 @export var can_use_vents := false
 
 @export_group("Strażnik")
-## Promień rewiru wokół gniazda i jak daleko poza niego goni.
+## Promień rewiru wokół gniazda i jak daleko od gniazda najwyżej goni (smycz). Gracza, którego
+## zgubi, nie szuka, tylko wraca do gniazda; smycz jest długa, żeby nie wyglądał, jakby bał się
+## wyjść z pokoju.
 @export var territory_radius := 9.0
-@export var leash := 16.0
+@export var leash := 35.0
 
 
 static func load_by_id(profile_id: String) -> MonsterProfile:

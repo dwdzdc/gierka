@@ -1,7 +1,7 @@
 extends SceneTree
 # Typy potworów (profile) i reżyser:
 #  -- --case=butcher   ślepy rzeźnik: nie widzi gracza przed sobą, słyszy kroki, zabija od razu
-#  -- --case=guard     strażnik: goni, ale za smyczą wraca do rewiru
+#  -- --case=guard     strażnik: goni gracza poza rewir, a gdy go zgubi, wraca do gniazda
 #  -- --case=watcher   obserwator: nie rusza się, krzyczy (hałas w miejscu gracza)
 #  -- --case=director  etapy: nowe potwory i ostrzejsze zmysły; wskaźnik zagrożenia odsyła łowcę
 #  -- --case=nest      strażnik przenosi gniazdo do innego pokoju
@@ -15,6 +15,7 @@ var m
 var p
 var log: Array[String] = []
 var screams := 0
+var max_from_home := 0.0
 
 func _initialize() -> void:
 	for a in OS.get_cmdline_user_args():
@@ -61,7 +62,7 @@ func _physics_process(_d: float) -> bool:
 			"butcher":
 				p.global_position = Vector3(34.3, 0.05, 0)  # 3.5 m przed nim, stoi cicho
 			"guard":
-				p.global_position = Vector3(33.8, 0.05, 0)
+				p.global_position = Vector3(31.8, 0.05, 0)
 			"watcher":
 				p.global_position = Vector3(30.8, 0.05, 0)
 	if f == 2:
@@ -79,10 +80,21 @@ func _physics_process(_d: float) -> bool:
 				print("\n".join(log))
 				return true
 		"guard":
-			if f == 30:
-				p.global_position = Vector3(10, 0.05, 0)  # ucieka daleko, do korytarza
-			if f == 60 * 14:
-				_say("strażnik odległość od gniazda: %.1f (smycz %.0f)" % [m.global_position.distance_to(m.home), m.profile.leash])
+			# Gracz ucieka przed strażnikiem do korytarza, zawsze kilka metrów przed nim
+			# (widoczny), potem znika w hali poza zasięgiem wzroku.
+			if f > 30 and f < 60 * 9 and f % 30 == 0:
+				var target: Vector3 = m.global_position + Vector3(-5, 0, 0)
+				p.global_position = Vector3(maxf(target.x, 4.0), 0.05, 0)
+			if f % 60 == 0 and OS.get_cmdline_user_args().has("--verbose-guard"):
+				_say("m %s p %s %s seen=%s" % [m.global_position.snapped(Vector3.ONE*0.1), p.global_position.snapped(Vector3.ONE*0.1), m.State.keys()[m.state], m.seen_player != null])
+			if f == 60 * 9:
+				p.global_position = Vector3(-6, 0.05, 6)
+			if m:
+				max_from_home = maxf(max_from_home, m.global_position.distance_to(m.home))
+			if f == 60 * 45:
+				_say("strażnik najdalej od gniazda: %.1f m (dawniej smycz 16 m), teraz od gniazda: %.1f m, stan %s" % [max_from_home, m.global_position.distance_to(m.home), m.State.keys()[m.state]])
+				var ok: bool = max_from_home > 18.0 and m.global_position.distance_to(m.home) < m.profile.territory_radius + 1.0
+				_say("%s goni poza rewir i wraca" % ("OK " if ok else "ZLE"))
 				print("\n".join(log))
 				return true
 		"watcher":

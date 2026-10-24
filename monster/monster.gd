@@ -37,6 +37,8 @@ const HEAR_HUNT_DISTANCE := 7.0
 const HEAR_MEMORY := 1.2
 const SCREAM_INTERVAL := 3.0
 const SIGHT_INTERVAL := 0.1
+const BASE_HEIGHT := 2.1  # wysokość kapsuły kolizji przy height_scale = 1
+const MAX_COLLISION_HEIGHT := Room.DOOR_SIZE.y - 0.2
 ## Tyle sekund potwór musi widzieć gracza na granicy zasięgu, żeby go zauważyć (bliżej krócej).
 const NOTICE_TIME_MAX := 0.8
 ## Wysokości punktów ciała, w które celuje wzrok (stojąc i kucając).
@@ -158,9 +160,14 @@ func _apply_profile(new_profile: MonsterProfile) -> void:
 	eye_material.albedo_color = profile.eye_color
 	for eye in [$EyeL, $EyeR]:
 		eye.material_override = eye_material
-	for part in [$Body, $EyeL, $EyeR, $Shape]:
+	for part in [$Body, $EyeL, $EyeR]:
 		part.scale = Vector3.ONE * profile.height_scale
 		part.position.y *= profile.height_scale
+	# Kolizja rośnie najwyżej do wysokości drzwi: wyższy potwór (strażnik) inaczej nie mieści się
+	# w przejściu i utyka w progu własnego pokoju. Wygląd może być wyższy (pochyla się w drzwiach).
+	var shape_scale := minf(profile.height_scale, MAX_COLLISION_HEIGHT / BASE_HEIGHT)
+	$Shape.scale = Vector3.ONE * shape_scale
+	$Shape.position.y *= shape_scale
 	eye_height = 1.8 * profile.height_scale
 
 
@@ -436,6 +443,12 @@ func _next_patrol_point() -> Vector3:
 	return random_floor_point()
 
 
+func _return_home() -> float:
+	_enter(State.PATROL)
+	agent.target_position = random_floor_point_near(home, profile.territory_radius * 0.5)
+	return patrol_speed
+
+
 ## Obserwator: stoi w miejscu i powoli się rozgląda. Krzyk przy zobaczeniu gracza to jego "atak".
 func _watch(delta: float) -> float:
 	rotate_y(0.5 * delta)
@@ -511,17 +524,18 @@ func _hunt(delta: float) -> float:
 	else:
 		_timer += delta
 		if _timer >= lose_sight_time:
+			if profile.behavior == MonsterProfile.Behavior.GUARD:
+				# Strażnik nie szuka zgubionego gracza: wraca pilnować gniazda.
+				return _return_home()
 			# Zgubił gracza: idzie sprawdzić, gdzie go ostatnio widział.
 			_enter(State.INVESTIGATE)
 			agent.target_position = last_seen_position
 			return investigate_speed
 	if is_watcher():
 		return _scream(delta)
-	# Strażnik nie goni w nieskończoność: poza smyczą wraca do rewiru.
+	# Strażnik goni gracza także poza rewir, ale nie przez całą mapę: za długą smyczą odpuszcza.
 	if profile.behavior == MonsterProfile.Behavior.GUARD and global_position.distance_to(home) > profile.leash:
-		_enter(State.PATROL)
-		agent.target_position = random_floor_point_near(home, profile.territory_radius * 0.5)
-		return patrol_speed
+		return _return_home()
 	agent.target_position = last_seen_position
 	if sensed and global_position.distance_to(sensed.global_position) <= attack_range:
 		_enter(State.ATTACK)
