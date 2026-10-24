@@ -1,0 +1,32 @@
+tests/library_test.gd.uid
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 1
+tests/lamps_test.gd.uid
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 1
+monster/monster.gd
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 46-48,686-691
+tests/door_test.gd
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 108,110-111,117
+  s_bdc84ae5107fd1::t_407d36ca112248 109
+assets/sfx/door_pound.tres
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 1-22
+props/door.gd
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 33,98-101
+game/game_state.gd
+  s_bdc84ae5107fd1::t_b8e0dcd12f0380 420-422,599,602
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "98499d865e5bb7049433eb137443de66c9bfc5b4",
+  "prompts": {},
+  "sessions": {
+    "s_bdc84ae5107fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "792c5ab2-d9e1-42a7-ac9d-334fee8f0317",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
