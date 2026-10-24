@@ -1,0 +1,27 @@
+rooms/hall.tscn
+  s_bdc84ae5107fd1::t_d5f36310660d30 122,156,161,166,171
+tools/gen_rooms.py
+  s_bdc84ae5107fd1::t_c1d956542968d3 369-370,375,425-434,437-441,446,488-490,776-777
+  s_bdc84ae5107fd1::t_8ae27aa7a5496b 75-81,89
+  s_bdc84ae5107fd1::t_657c48d870f04c 142-150
+rooms/junction.tscn
+  s_bdc84ae5107fd1::t_d5f36310660d30 118,123,128,133,143
+rooms/storage.tscn
+  s_bdc84ae5107fd1::t_d5f36310660d30 101-103,106-107,111-113,116-117,121-123,126-127,131-132,136-137,141-143,197,202,207,212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "24fa8c01cc001c97fe2c52248f20471e21ee2480",
+  "prompts": {},
+  "sessions": {
+    "s_bdc84ae5107fd1": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "792c5ab2-d9e1-42a7-ac9d-334fee8f0317",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
