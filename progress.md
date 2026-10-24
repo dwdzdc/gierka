@@ -11,11 +11,16 @@ Legenda: `[x]` zrobione · `[~]` częściowo / czeka na decyzję · `[ ]` do zro
 - [~] Liczba graczy: teraz maks. 5 (`MAX_CLIENTS := 4` w `net/network.gd`, 5 spawnów w hali; podniesione z 4 na prośbę 23.10, bez zmian w balansie). Pomysł (23.10): nawet 10. Technicznie łatwe (stała + więcej spawnów), ale balans jest pod 2–4: liczba potworów (maks. 4), monet i tempo etapów; przy 10 ocalałych udział w puli zero-sum jest znikomy. Rekomendacja: 6–8 i skalowanie trudności z liczbą graczy (do decyzji)
 - [x] Sterowanie: tank (camera-relative odrzucone po playteście)
 
-## Kolejność prac (ustalona 24.10)
+## Kolejność prac
 
-1. 47c9 wzrok potworów → 2. 47c10 strażnik goni poza rewir → 3. 16h siatka 2 m + domykanie pętli →
-4. 15i/15j prawdziwe korytarze → 5. 15l–15n drzwi (zwykłe + kratka, potwory, klucze) → 6. 15k nowe pokoje (lochy, hol, biblioteka).
-Potem 41c bateria, 36c sklep, 37 MVP.
+Zrobione 24.10: 47c9 wzrok, 47c10 strażnik, 16h siatka i pętle, 15i/15j korytarze, 15l–15n drzwi, 15k nowe pokoje.
+
+Następna sesja (ustalone 24.10, w tej kolejności):
+1. 15w meble rozjechane przez skalowanie siatki (bug) → 2. 15o głowa w podglądzie przez kratkę (bug) →
+3. 15r antresola biblioteki dookoła bez skakania → 4. 15q zgaszone lampy nie świecą →
+5. 15p dźwięki wyważania drzwi → 6. 15t zamykanie drzwi za sobą w biegu → 7. 15s limity wystąpień typów pokoi →
+8. 15u nowe unikalne typy pokoi → 9. 15v warianty pokoi (drobiazgi opcjonalne, potem warianty układu).
+Potem: 33b łup w pojemnikach, 41c bateria, 36c sklep, 37 MVP. Otwierane kraty w lochach: odłożone (24.10).
 
 Szkielet potwierdzony 24.10:
 - Siatka 2 m w kontrakcie pokoju: wymiary i pozycje przejść w wielokrotnościach 2 m
@@ -104,7 +109,7 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
 - Uwaga (kamery): kolumny pod antresolą to dokładnie problem „filar zasłania postać” z playtestu 23.10; antresola to drugi poziom w jednym pokoju (NavMesh, schody, pokrycie kamer z dwóch wysokości). Biblioteka będzie najdroższym pokojem do zrobienia, zacząć od korytarzy i lochów
 - Uwaga: różnorodność pomaga orientacji tylko, jeśli pokoje są rozpoznawalne. Tani dodatek: charakterystyczne punkty orientacyjne w pokojach (kolor światła, unikalny rekwizyt)
   - Zrobione (24.10): `Cells` (lochy 16×12: korytarz i po 3 cele z każdej strony za kratą z otwartymi drzwiczkami; kamera do każdej celi zza korytarza), `Atrium` (hol 20×24×8 m z fontanną, 6 kolumn, ławki, 2 szafki), `Library` (rotunda 20×20×8 m: ośmiokąt, antresola na 3,6 m z regałami i balustradą, rampa na górę, 9 kolumn, stoliki, chłodny świetlik). W jednej puli z resztą (wagi w `ROOM_TYPES`)
-  - [ ] Pomysł (24.10): część krat w lochach otwarta, żeby dało się wejść do celi. Uwaga: dziś WSZYSTKIE cele mają otwarte drzwiczki (przerwa ~1 m w kracie przy ściance), tylko nie widać tego, bo nie ma skrzydła drzwiczek. Do zrobienia: widoczne skrzydło kraty (otwarte odchylone, zamknięte w ramie), losowo z seeda część cel zamknięta, część otwarta; ewentualnie zamknięte otwierane jak drzwi (E, potwór wyważa)
+  - [~] Odłożone 24.10 (decyzja użytkownika). Pomysł: część krat w lochach otwarta, żeby dało się wejść do celi. Uwaga: dziś WSZYSTKIE cele mają otwarte drzwiczki (przerwa ~1 m w kracie przy ściance), tylko nie widać tego, bo nie ma skrzydła drzwiczek. Do zrobienia: widoczne skrzydło kraty (otwarte odchylone, zamknięte w ramie), losowo z seeda część cel zamknięta, część otwarta; ewentualnie zamknięte otwierane jak drzwi (E, potwór wyważa)
   - Nowa warstwa fizyki 4 „bars”: kraty zatrzymują graczy i potwory, ale nie zasłaniają wzroku ani kamer (potwór widzi gracza w celi)
   - Pokrycie kamer: lochy 96%, hol 88% (fontanna zasłania wąski pas), biblioteka 98% (mapa pokrycia liczy tylko parter)
   - Przy okazji: skrzynie z seeda nie trafiają już do korytarzy (w 3,6 m potrafiły je zatkać); `camera_rules_test` sprawdza, że geometria pokoju nie wystaje poza jego bryłę (tak ścięte narożniki biblioteki zatykały sąsiednie korytarze)
