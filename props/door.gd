@@ -30,6 +30,7 @@ const WOOD := preload("res://rooms/materials/wood.tres")
 const METAL := preload("res://rooms/materials/metal.tres")
 const CREAK := preload("res://assets/sfx/creak.tres")
 const BANG := preload("res://assets/sfx/vent_bangs.tres")
+const POUND := preload("res://assets/sfx/door_pound.tres")
 
 var state := State.CLOSED
 var _leaf: Node3D
@@ -94,9 +95,10 @@ func in_grate(point: Vector3) -> bool:
 	return absf(local.x) <= GRATE_HALF_WIDTH and local.y >= GRATE_Y.x and local.y <= GRATE_Y.y
 
 
-## Dźwięk szarpania klamki (potwór otwiera) — wywoływany u wszystkich przez GameState.
-func rattle() -> void:
-	_play(CREAK)
+## Potwór przy drzwiach — wywoływane u wszystkich przez GameState: szarpanie klamki, gdy
+## otwiera, albo łomot, gdy wyważa (seria łomotów, na końcu trzask z `apply_state`).
+func rattle(pound := false) -> void:
+	_play(POUND if pound else CREAK)
 
 
 func _play(stream: AudioStream) -> void:

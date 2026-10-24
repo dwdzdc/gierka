@@ -105,11 +105,16 @@ func _physics_process(_d: float) -> bool:
 				m._prey = p
 				m.last_seen_position = p.global_position
 				m._enter(m.State.HUNT)
+			if t == 1:
+				root.get_node("NoiseBus").noise_made.connect(func(_pos, radius, source):
+					if source == m and is_equal_approx(radius, m.DOOR_POUND_NOISE):
+						set_meta("pounds", get_meta("pounds", 0) + 1))
 			if t > 1 and door.state == door.State.BROKEN and not has_meta("broken"):
 				set_meta("broken", t)
 			if t == 60 * 3:
 				var at = get_meta("broken", -1)
 				_check(at > 0 and at < 60 * 2.2, "pościg wyważa szybko (po %.1f s)" % (at / 60.0))
+				_check(get_meta("pounds", 0) >= 2, "przed wyłamaniem seria łomotów (%d)" % get_meta("pounds", 0))
 				m.set_physics_process(false)
 				gs.doors["Door00"] = door.State.CLOSED
 				gs._broadcast_doors()

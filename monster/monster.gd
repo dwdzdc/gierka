@@ -43,6 +43,9 @@ const DOOR_BREAK_TIME := 1.2
 const DOOR_REACH := 2.2
 const DOOR_RATTLE_NOISE := 7.0
 const DOOR_BREAK_NOISE := 16.0
+## Wyważanie to seria łomotów (co tyle sekund, przy 1,2 s: trzy), każdy słychać daleko.
+const DOOR_POUND_INTERVAL := 0.4
+const DOOR_POUND_NOISE := 12.0
 ## Zamknięte drzwi między potworem a źródłem hałasu: tyle z zasięgu hałasu zostaje.
 const DOOR_MUFFLE := 0.5
 const BASE_HEIGHT := 2.1  # wysokość kapsuły kolizji przy height_scale = 1
@@ -680,13 +683,12 @@ func _handle_doors(speed: float, delta: float) -> float:
 			return speed
 		face(_door.global_position - global_position, delta)
 		_door_timer += delta
-		if not _door_breaking:
-			_rattle_timer -= delta
-			if _rattle_timer <= 0.0:
-				_rattle_timer = 1.0
-				if game_state:
-					game_state.monster_rattle(_door.name)
-				NoiseBus.emit_noise(_door.global_position, DOOR_RATTLE_NOISE, self)
+		_rattle_timer -= delta
+		if _rattle_timer <= 0.0:
+			_rattle_timer = DOOR_POUND_INTERVAL if _door_breaking else 1.0
+			if game_state:
+				game_state.monster_rattle(_door.name, _door_breaking)
+			NoiseBus.emit_noise(_door.global_position, DOOR_POUND_NOISE if _door_breaking else DOOR_RATTLE_NOISE, self)
 		if _door_timer >= (DOOR_BREAK_TIME if _door_breaking else DOOR_OPEN_TIME):
 			if game_state:
 				game_state.monster_door(_door.name, _door_breaking)

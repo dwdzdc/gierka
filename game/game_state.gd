@@ -417,9 +417,9 @@ func monster_door(door_name: String, broken: bool) -> void:
 	_broadcast_doors()
 
 
-## Potwór szarpie za klamkę: dźwięk u wszystkich.
-func monster_rattle(door_name: String) -> void:
-	_door_rattle.rpc(door_name)
+## Potwór szarpie za klamkę albo (`pound`) łomocze w drzwi: dźwięk u wszystkich.
+func monster_rattle(door_name: String, pound := false) -> void:
+	_door_rattle.rpc(door_name, pound)
 
 
 ## Kto wywołał RPC. Lokalne wywołanie u hosta daje 0, więc zamieniamy je na 1 (host).
@@ -596,10 +596,10 @@ func _apply_doors(state: Dictionary) -> void:
 
 
 @rpc("authority", "call_local", "reliable")
-func _door_rattle(door_name: String) -> void:
+func _door_rattle(door_name: String, pound: bool) -> void:
 	var door := _door_node(door_name)
 	if door:
-		door.rattle()
+		door.rattle(pound)
 
 
 @rpc("authority", "call_local", "reliable")
