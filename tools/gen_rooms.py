@@ -72,6 +72,13 @@ def wall_pieces(length, h, doors):
 TABLE_TOP = 1.1  # spód blatu: kucający gracz (1.0 m) mieści się pod spodem, stojący i potwór nie
 
 
+def group(*parts):
+    """Mebel z kilku części (box/cyl). Dopasowanie pokoju do siatki skaluje pozycje, ale nie rozmiary,
+    więc części skalowane osobno rozjeżdżają się (nogi obok blatu). Grupa przesuwa się jako całość:
+    skaluje się tylko jej punkt zaczepienia (pierwsza część), reszta zachowuje odstępy."""
+    return ("group", parts)
+
+
 def table(pos, length, depth, mat="wood"):
     """Długi stół z prześwitem pod blatem (kryjówka dla kucającego). pos = środek na podłodze."""
     x, z = pos
@@ -79,7 +86,7 @@ def table(pos, length, depth, mat="wood"):
     for dx in (-length / 2 + 0.08, length / 2 - 0.08):
         for dz in (-depth / 2 + 0.08, depth / 2 - 0.08):
             parts.append(("box", (x + dx, TABLE_TOP / 2, z + dz), (0.1, TABLE_TOP, 0.1), "metal"))
-    return parts
+    return group(*parts)
 
 
 GRID = 2.0  # siatka mapy: patrz snap_room()
@@ -132,7 +139,15 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
             k = kx if along_x else kz
             return ("bars", p0, p1, [(g0 * k, g1 * k) for g0, g1 in sd[3]])
         return (sd[0], at(sd[1])) + tuple(sd[2:])
-    solids = [scale_solid(sd) for sd in solids]
+
+    def place_solid(sd):
+        if sd[0] != "group":
+            return [scale_solid(sd)]
+        anchor = sd[1][0][1]
+        moved = at(anchor)
+        dx, dz = moved[0] - anchor[0], moved[2] - anchor[2]
+        return [(p[0], (p[1][0] + dx, p[1][1], p[1][2] + dz)) + tuple(p[2:]) for p in sd[1]]
+    solids = [s for sd in solids for s in place_solid(sd)]
     zones = [(z[0], (z[1][0] * kx, z[1][1] * kx, z[1][2] * kz, z[1][3] * kz), at(z[2]), at(z[3])) + tuple(z[4:]) for z in zones]
     lights = [(at(l[0]),) + tuple(l[1:]) for l in lights]
     loot = [(m[0], at(m[1])) + tuple(m[2:]) for m in loot]
@@ -351,13 +366,13 @@ build(
         ("box", (-7.6, 1.0, -3), (0.6, 2.0, 3), "metal"),       # szafki pod zachodnią ścianą
         ("box", (-4.8, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),  # krzesła przy stole
         ("box", (-3.2, 0.25, -2.6), (0.45, 0.5, 0.45), "wood"),
-        ("box", (3.5, 0.5, -5.5), (3.0, 1.0, 0.9), "rust"),     # stół warsztatowy
-        ("box", (4.2, 1.15, -5.5), (0.6, 0.3, 0.35), "metal"),  # skrzynka z narzędziami
+        group(("box", (3.5, 0.5, -5.5), (3.0, 1.0, 0.9), "rust"),     # stół warsztatowy
+              ("box", (4.2, 1.15, -5.5), (0.6, 0.3, 0.35), "metal")),  # skrzynka z narzędziami
         ("cyl", (6.9, 0.6, -4.6), 0.4, 1.2, "rust"),             # beczki
         ("cyl", (6.0, 0.6, -5.3), 0.4, 1.2, "rust"),
         ("box", (0, 4.5, 5.6), (16, 0.25, 0.25), "metal"),       # rury pod sufitem
         ("box", (0, 4.15, 5.65), (16, 0.15, 0.15), "rust"),
-        *table((1.5, -1.0), 3.2, 1.3),  # stół z prześwitem: wyspa do krążenia i kryjówka
+        table((1.5, -1.0), 3.2, 1.3),  # stół z prześwitem: wyspa do krążenia i kryjówka
         # wyjście z mapy: drzwi windy w zachodniej ścianie, zielona futryna i znak
         ("box", (-7.95, 1.3, 3.5), (0.1, 2.6, 2.0), "metal"),
         ("box", (-7.92, 1.45, 2.4), (0.15, 2.9, 0.15), "exit"),
@@ -407,28 +422,28 @@ build(
     "Storage", 20, 20, 6.0,
     doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
     solids=[
-        ("box", (2.0, 1.1, -3.5), (9, 2.2, 1.0), "metal"),    # regał A
-        ("box", (2.0, 1.1, 3.5), (9, 2.2, 1.0), "metal"),     # regał B
-        ("box", (8.8, 0.6, -8.8), (1.2, 1.2, 1.2), "wood"),
-        ("box", (8.8, 0.6, -7.4), (1.2, 1.2, 1.2), "wood"),
-        ("box", (8.8, 1.8, -8.8), (1.2, 1.2, 1.2), "wood"),
+        # regały z towarem
+        group(("box", (2.0, 1.1, -3.5), (9, 2.2, 1.0), "metal"),
+              ("box", (1.0, 2.5, -3.5), (1.2, 0.6, 0.8), "wood"),
+              ("box", (3.0, 2.45, -3.5), (0.9, 0.5, 0.8), "wood")),
+        group(("box", (2.0, 1.1, 3.5), (9, 2.2, 1.0), "metal"),
+              ("box", (2.0, 2.5, 3.5), (1.4, 0.6, 0.8), "wood"),
+              ("box", (5.0, 2.4, 3.5), (0.7, 0.4, 0.7), "metal")),
+        group(("box", (8.8, 0.6, -8.8), (1.2, 1.2, 1.2), "wood"),  # stos skrzyń
+              ("box", (8.8, 0.6, -7.4), (1.2, 1.2, 1.2), "wood"),
+              ("box", (8.8, 1.8, -8.8), (1.2, 1.2, 1.2), "wood")),
         ("box", (-8.8, 0.5, -8.8), (1.0, 1.0, 1.0), "wood"),
-        # towar na regałach
-        ("box", (1.0, 2.5, -3.5), (1.2, 0.6, 0.8), "wood"),
-        ("box", (3.0, 2.45, -3.5), (0.9, 0.5, 0.8), "wood"),
-        ("box", (2.0, 2.5, 3.5), (1.4, 0.6, 0.8), "wood"),
-        ("box", (5.0, 2.4, 3.5), (0.7, 0.4, 0.7), "metal"),
         # palety ze skrzyniami w alejkach przy ścianach
-        ("box", (0, 0.08, -8.6), (1.4, 0.16, 1.2), "wood"),
-        ("box", (0, 0.65, -8.6), (1.1, 1.0, 1.0), "wood"),
-        ("box", (3.5, 0.08, 8.6), (1.4, 0.16, 1.2), "wood"),
-        ("box", (3.5, 0.55, 8.6), (1.2, 0.8, 1.0), "wood"),
-        ("box", (3.5, 1.25, 8.6), (0.8, 0.6, 0.8), "wood"),
+        group(("box", (0, 0.08, -8.6), (1.4, 0.16, 1.2), "wood"),
+              ("box", (0, 0.65, -8.6), (1.1, 1.0, 1.0), "wood")),
+        group(("box", (3.5, 0.08, 8.6), (1.4, 0.16, 1.2), "wood"),
+              ("box", (3.5, 0.55, 8.6), (1.2, 0.8, 1.0), "wood"),
+              ("box", (3.5, 1.25, 8.6), (0.8, 0.6, 0.8), "wood")),
         # beczki w kącie
         ("cyl", (-8.6, 0.6, 8.6), 0.4, 1.2, "rust"),
         ("cyl", (-7.7, 0.6, 8.7), 0.4, 1.2, "rust"),
         ("cyl", (-8.5, 0.6, 7.7), 0.4, 1.2, "rust"),
-        *table((8.2, 3.0), 2.6, 1.2, "rust"),  # stół warsztatowy z prześwitem przy wschodnim pasie
+        table((8.2, 3.0), 2.6, 1.2, "rust"),  # stół warsztatowy z prześwitem przy wschodnim pasie
     ],
     zones=[
         ("Entry", (-10, -2.5, -10, 10), (2, 5.6, -9.6), (-7, 0.6, 2), 0.25, 0),
@@ -470,9 +485,9 @@ build(
         ("box", (-4, 0.5, 4), (1.0, 1.0, 1.0), "wood"),
         ("cyl", (4.1, 0.6, 4.1), 0.4, 1.2, "rust"),
         ("cyl", (3.3, 0.6, 4.4), 0.4, 1.2, "rust"),
-        *table((0, -1.0), 3.0, 1.2),  # wyspa na środku: krążenie i kryjówka
-        ("box", (3.8, 0.5, -4.4), (2.0, 1.0, 0.8), "rust"),     # stół warsztatowy
-        ("box", (3.6, 1.15, -4.4), (0.5, 0.3, 0.3), "metal"),
+        table((0, -1.0), 3.0, 1.2),  # wyspa na środku: krążenie i kryjówka
+        group(("box", (3.8, 0.5, -4.4), (2.0, 1.0, 0.8), "rust"),     # stół warsztatowy
+              ("box", (3.6, 1.15, -4.4), (0.5, 0.3, 0.3), "metal")),
     ],
     # Kamera stromo w dół: widzi też pas tuż pod sobą (wykryte mapą pokrycia, tools/coverage_map.gd).
     zones=[("All", (-5, 5, -5, 5), (0, 4.3, 4.9), (0, 0, 0.5), 0.2, 0)],
@@ -758,8 +773,8 @@ build(
         ("box", (-3.0, 1.0, -9.45), (3.0, 2.0, 0.6), "wood"),
         ("box", (3.0, 1.0, 9.45), (3.0, 2.0, 0.6), "wood"),
         # stoliki i krzesła na środku
-        *table((-3.0, 2.5), 2.4, 1.2),
-        *table((3.0, 3.5), 2.4, 1.2),
+        table((-3.0, 2.5), 2.4, 1.2),
+        table((3.0, 3.5), 2.4, 1.2),
         ("box", (-3.0, 0.25, 3.6), (0.45, 0.5, 0.45), "wood"),
         ("box", (3.6, 0.25, 4.6), (0.45, 0.5, 0.45), "wood"),
         ("box", (-2.0, 0.25, 1.4), (0.45, 0.5, 0.45), "wood"),

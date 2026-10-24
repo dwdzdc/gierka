@@ -119,7 +119,7 @@ size = Vector3(3, 1, 0.9)
 material = ExtResource("9")
 
 [node name="Solid7" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.095, 1.15, -5.3167)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.1125, 1.15, -5.3167)
 size = Vector3(0.6, 0.3, 0.35)
 material = ExtResource("8")
 
@@ -153,22 +153,22 @@ size = Vector3(3.2, 0.1, 1.3)
 material = ExtResource("7")
 
 [node name="Solid13" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0195, 0.55, -1.5177)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0575, 0.55, -1.5367)
 size = Vector3(0.1, 1.1, 0.1)
 material = ExtResource("8")
 
 [node name="Solid14" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0195, 0.55, -0.4157)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0575, 0.55, -0.3967)
 size = Vector3(0.1, 1.1, 0.1)
 material = ExtResource("8")
 
 [node name="Solid15" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9445, 0.55, -1.5177)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9825, 0.55, -1.5367)
 size = Vector3(0.1, 1.1, 0.1)
 material = ExtResource("8")
 
 [node name="Solid16" type="CSGBox3D" parent="Geometry"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9445, 0.55, -0.4157)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.9825, 0.55, -0.3967)
 size = Vector3(0.1, 1.1, 0.1)
 material = ExtResource("8")
 
