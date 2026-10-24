@@ -39,9 +39,15 @@ var crouching := false:
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
-enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE, HIDE }
-const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE", Help.HIDE: "CHOWANIE"}
+enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE, HIDE, DOOR }
+const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE", Help.HIDE: "CHOWANIE", Help.DOOR: "DRZWI"}
 const HIDE_TIME := 0.5
+const DOOR_TIME := 0.25
+const UNLOCK_TIME := 1.0
+## Podgląd przez kratkę: stań przy zamkniętych drzwiach przodem do nich i nie ruszaj się.
+const PEEK_DISTANCE := 1.4
+const PEEK_DELAY := 0.6
+const FACING_ANGLE := 40.0
 const RESCUE_TIME := 1.5
 ## Pełna kieszeń hałasuje: przy tylu monetach kroki są słyszalne 2x dalej.
 const COINS_FOR_DOUBLE_NOISE := 300.0
@@ -59,6 +65,12 @@ const LANDING_NOISE_RADIUS := 7.0
 var help_kind := Help.NONE
 var help_target: Player
 var help_progress := 0.0
+## Podpowiedź do HUD-a (u właściciela), np. "E - otwórz".
+var hint := ""
+var door_target: Door
+var _interact_consumed := false  # E trzeba puścić po otwarciu drzwi, inaczej zaraz by je zamknął
+var _peek_door: Door
+var _peek_timer := 0.0
 
 
 func _enter_tree() -> void:
@@ -141,6 +153,7 @@ func _physics_process(delta: float) -> void:
 		return
 	_update_crouch()
 	var helping := _update_help(delta)
+	_update_peek(delta)
 	if Input.is_action_just_pressed("jump") and is_on_floor() and is_up() and not crouching and not helping:
 		velocity.y = JUMP_VELOCITY
 	var desired := Vector3.ZERO if _quick_turning or helping or not is_up() else _tank_movement(delta)
@@ -253,6 +266,7 @@ func _follow_carrier() -> bool:
 ## o wykonanie. Licznik jest lokalny (to tylko czekanie), decyzję podejmuje host.
 ## Zwraca true, gdy właśnie coś robimy (wtedy stoimy w miejscu).
 func _update_help(delta: float) -> bool:
+	hint = ""
 	var kind := Help.NONE
 	var target: Player = null
 	var game_state := _game_state()
@@ -275,16 +289,25 @@ func _update_help(delta: float) -> bool:
 				if hide_target:
 					target = self
 					kind = Help.HIDE
+			if target == null and not _interact_consumed:
+				door_target = _usable_door()
+				if door_target and (door_target.state != Door.State.LOCKED or game_state.keys(me) > 0):
+					target = self
+					kind = Help.DOOR
 		elif Input.is_action_pressed("bandage_self") and game_state.is_bleeding(me) and game_state.bandages(me) > 0:
 			target = self
 			kind = Help.BANDAGE
+		if not Input.is_action_pressed("interact"):
+			_interact_consumed = false
+		_update_hint(game_state)
 	if target == null or target != help_target or kind != help_kind:
 		help_progress = 0.0
 	help_target = target
 	help_kind = kind if target else Help.NONE
 	if help_target == null:
 		return false
-	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME, Help.HIDE: HIDE_TIME}[kind]
+	var door_time := UNLOCK_TIME if kind == Help.DOOR and door_target.state == Door.State.LOCKED else DOOR_TIME
+	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME, Help.HIDE: HIDE_TIME, Help.DOOR: door_time}[kind]
 	help_progress += delta / duration
 	if help_progress >= 1.0:
 		help_progress = 0.0
@@ -300,7 +323,71 @@ func _update_help(delta: float) -> bool:
 				game_state.request_rescue.rpc_id(1, target_id)
 			Help.HIDE:
 				game_state.request_hide.rpc_id(1, str(hide_target.get_path()))
+			Help.DOOR:
+				game_state.request_door.rpc_id(1, door_target.name)
+				_interact_consumed = true
 	return true
+
+
+## Drzwi, którymi można teraz coś zrobić: blisko i mniej więcej przed postacią.
+func _usable_door() -> Door:
+	var best: Door = null
+	for node in get_tree().get_nodes_in_group(&"doors"):
+		var door := node as Door
+		if door.state == Door.State.BROKEN or door.flat_distance(global_position) > Door.USE_DISTANCE:
+			continue
+		if not _facing(door.global_position + Vector3.UP * 1.3, FACING_ANGLE * 1.6):
+			continue
+		if best == null or door.flat_distance(global_position) < best.flat_distance(global_position):
+			best = door
+	return best
+
+
+func _facing(point: Vector3, max_angle: float) -> bool:
+	var to_point := (point - global_position) * Vector3(1, 0, 1)
+	if to_point.length() < 0.05:
+		return true
+	return rad_to_deg((-global_transform.basis.z).angle_to(to_point.normalized())) <= max_angle
+
+
+func _update_hint(game_state: GameState) -> void:
+	hint = ""
+	var door := _usable_door()
+	if door == null:
+		return
+	match door.state:
+		Door.State.OPEN:
+			hint = "E - zamknij drzwi"
+		Door.State.CLOSED:
+			hint = "E - otwórz drzwi"
+		Door.State.LOCKED:
+			hint = "E - otwórz kluczem" if game_state.keys(get_multiplayer_authority()) > 0 else "Zakluczone. Potrzebny klucz"
+	if _peek_door:
+		hint = "Patrzysz przez kratkę (ruch - koniec)"
+
+
+## Podgląd przez kratkę w drzwiach (jak szpary szafki): przy zamkniętych drzwiach, przodem do
+## nich, bez ruchu przez chwilę. Każdy ruch albo otwarcie drzwi kończy podgląd.
+func _update_peek(delta: float) -> void:
+	var director := get_tree().get_first_node_in_group(&"camera_director") as CameraDirector
+	var moving := Input.get_axis("move_back", "move_forward") != 0.0 or Input.get_axis("move_right", "move_left") != 0.0
+	var door := _usable_door()
+	var can_peek := is_up() and not moving and door != null and door.blocks() \
+			and door.flat_distance(global_position) <= PEEK_DISTANCE and _facing(door.global_position, FACING_ANGLE)
+	if _peek_door and (not can_peek or door != _peek_door):
+		_peek_door = null
+		_peek_timer = 0.0
+		if director:
+			director.release_hold()
+	if not can_peek:
+		_peek_timer = 0.0
+		return
+	if _peek_door == null:
+		_peek_timer += delta
+		if _peek_timer >= PEEK_DELAY:
+			_peek_door = door
+			if director:
+				director.hold_camera(door.peek_camera(global_position))
 
 
 func _nearest_teammate(matches: Callable) -> Player:

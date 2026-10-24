@@ -68,10 +68,12 @@ func generate(parent: Node3D, map_seed: int, room_count: int) -> Array[Room]:
 			best_variant = variant
 		if size >= room_count and loop_count >= wanted_loops:
 			_decorate()
+			_plan_doors()
 			return rooms
 		_clear()
 	_build_variant(map_seed, best_variant, room_count)
 	_decorate()
+	_plan_doors()
 	return rooms
 
 
@@ -231,6 +233,74 @@ func _connect_loops() -> void:
 		loops += 1
 		_open.remove_at(matched)
 		_open.remove_at(i)
+
+
+# --- Drzwi (15l, 15m) ----------------------------------------------------------------
+
+## Drzwi stoją w części przejść; część z nich na start otwarta, kilka zakluczonych.
+const DOOR_CHANCE := 0.65
+const DOOR_START_OPEN_CHANCE := 0.3
+## Zakluczonych losowo od 0 do tej części wszystkich drzwi (nie zawsze tyle).
+const MAX_LOCKED_FRACTION := 0.1
+
+## Plan drzwi: [{"a": Marker3D, "b": Marker3D, "state": Door.State}]. Drzwi stoją w miejscu
+## przejścia `a` (oś -Z w stronę `b`). Main stawia według tego węzły Door.
+var door_plan: Array[Dictionary] = []
+## Pokoje osiągalne z hali bez przechodzenia przez zakluczone drzwi: tam leżą klucze.
+var key_rooms: Array[Room] = []
+
+
+func _plan_doors() -> void:
+	door_plan.clear()
+	for connection in connections:
+		if _rng.randf() < DOOR_CHANCE:
+			var state := Door.State.OPEN if _rng.randf() < DOOR_START_OPEN_CHANCE else Door.State.CLOSED
+			door_plan.append({"a": connection.a, "b": connection.b, "state": state})
+	# Zakluczone: nigdy w hali (start i winda), i tak, żeby zostało gdzie położyć klucze.
+	var lockable: Array[Dictionary] = door_plan.filter(func(d: Dictionary) -> bool:
+		return _room_of(d.a) != rooms[0] and _room_of(d.b) != rooms[0])
+	_shuffle(lockable)
+	var locked_count := _rng.randi_range(0, int(door_plan.size() * MAX_LOCKED_FRACTION))
+	for door in lockable.slice(0, locked_count):
+		door.state = Door.State.LOCKED
+	key_rooms = _rooms_reachable_without_locked()
+	if key_rooms.size() < 2:  # sama hala: nie ma gdzie położyć kluczy, nic nie zakluczamy
+		for door in door_plan:
+			if door.state == Door.State.LOCKED:
+				door.state = Door.State.CLOSED
+		key_rooms = _rooms_reachable_without_locked()
+	key_rooms.erase(rooms[0])
+
+
+func locked_door_count() -> int:
+	return door_plan.filter(func(d: Dictionary) -> bool: return d.state == Door.State.LOCKED).size()
+
+
+func _rooms_reachable_without_locked() -> Array[Room]:
+	var locked := {}
+	for door in door_plan:
+		if door.state == Door.State.LOCKED:
+			locked[door.a] = true
+	var neighbours := {}
+	for room in rooms:
+		neighbours[room] = []
+	for connection in connections:
+		if locked.has(connection.a):
+			continue
+		neighbours[_room_of(connection.a)].append(_room_of(connection.b))
+		neighbours[_room_of(connection.b)].append(_room_of(connection.a))
+	var result: Array[Room] = [rooms[0]]
+	var i := 0
+	while i < result.size():
+		for next in neighbours[result[i]]:
+			if not result.has(next):
+				result.append(next)
+		i += 1
+	return result
+
+
+func _room_of(marker: Marker3D) -> Room:
+	return marker.get_parent().get_parent() as Room
 
 
 # --- Domykanie pętli łącznikami (16h) ----------------------------------------------

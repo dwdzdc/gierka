@@ -79,6 +79,12 @@ func _physics_process(_d: float) -> bool:
 			print("ZLE seed %d: brak pętli" % seeds[idx])
 		var corridors := rooms.filter(func(r): return r.name.contains("Corridor") or r.name.contains("Link") or r.name.contains("Bend")).size()
 		print("   korytarze: %d%% (%d z %d)" % [100 * corridors / rooms.size(), corridors, rooms.size()])
+		var doors: Array = main.get_tree().get_nodes_in_group(&"doors")
+		var locked := doors.filter(func(d): return d.state == d.State.LOCKED).size()
+		print("   drzwi: %d na %d przejść (%d%%), zakluczone %d, kluczy do położenia %d, pokoi z kluczami %d" % [doors.size(), main.map_connections.size(), 100 * doors.size() / maxi(main.map_connections.size(), 1), locked, main.locked_doors, main.key_rooms.size()])
+		if locked > doors.size() / 10:
+			problems += 1
+			print("ZLE za dużo zakluczonych drzwi")
 		var dead_ends := rooms.filter(func(r): return r.get_doorways().size() - r.find_children("Cap_*", "", true, false).size() <= 1).size()
 		print("seed %d: pokoi %d/%d, kolizje %d, niedostępne %s, pętle %d, ślepe zaułki %d, poziomy y %s\n   %s" % [seeds[idx], rooms.size(), count, overlaps, unreachable, main.map_loops, dead_ends, ys.keys(), names])
 	return false

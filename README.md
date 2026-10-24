@@ -82,7 +82,7 @@ godot --path . -- --join=192.168.1.23
 
 ## Sterowanie
 
-WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
+WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
 
 ## Pokoje
 
@@ -96,6 +96,7 @@ godot --headless --path . -s tests/walk_test.gd        # przejście przez pokoje
 godot --headless --path . -s tests/visibility_test.gd  # gdzie kamera nie widzi postaci
 godot --headless --path . -s tests/map_test.gd -- --rooms=20  # generator: kolizje, determinizm, dostępność
 godot --headless --path . -s tests/camera_rules_test.gd       # każde przejście widoczne z kamery swojej strefy
+godot --headless --path . -s tests/door_test.gd               # drzwi: gracz, klucz, potwór otwiera/wyważa, kratka
 godot --headless --path . -s tools/coverage_map.gd            # mapy pokrycia kamer -> docs/coverage/*.png
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host

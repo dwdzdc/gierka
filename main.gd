@@ -16,6 +16,7 @@ signal navigation_ready
 
 const PLAYER_SCENE := preload("res://player/player.tscn")
 const COIN_SCENE := preload("res://loot/coin_pile.tscn")
+const KEY_SCENE := preload("res://loot/key_pickup.tscn")
 
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
@@ -44,6 +45,9 @@ var map_layout: Array = []
 var rooms: Array[Room] = []
 var map_connections: Array[Dictionary] = []
 var map_loops := 0
+## Z planu drzwi (host kładzie tyle kluczy, ile jest zakluczonych drzwi).
+var key_rooms: Array[Room] = []
+var locked_doors := 0
 ## Ilu monet szukać na mapie (na pokój, poza halą), oprócz znaczników LootSpawns.
 var coins_per_room := 2
 
@@ -61,6 +65,7 @@ func _ready() -> void:
 	add_to_group(&"main")
 	camera_director.camera_changed.connect(_on_camera_changed)
 	game_state.changed.connect(_on_game_state_changed)
+	game_state.doors_changed.connect(_on_doors_changed)
 	game_state.player_hit.connect(_on_player_hit)
 	game_state.coins_picked.connect(_on_coins_picked)
 	game_state.round_finished.connect(_on_round_finished)
@@ -165,10 +170,41 @@ func _build_map(seed_value: int, count: int) -> void:
 	map_connections = generator.connections
 	map_loops = generator.loops + generator.closed_loops
 	game_state.exit_position = rooms[0].get_exit().global_position
+	_place_doors(generator)
 	# NavMesh potrzebny tylko hostowi (AI potwora). Na dachach i regałach powstają
 	# "wyspy" NavMeshu; potwór losuje punkty tylko na poziomie podłogi (Monster.random_floor_point).
 	if multiplayer.is_server():
 		_bake_navigation()
+
+
+## Drzwi według planu generatora, u każdego peera tak samo (nazwa = identyfikator w sieci).
+## Poza węzłem nawigacji: NavMesh ich nie widzi, potwór sam otwiera albo wyważa drzwi.
+func _place_doors(generator: MapGenerator) -> void:
+	var holder := get_node_or_null(^"Doors")
+	if holder == null:
+		holder = Node3D.new()
+		holder.name = "Doors"
+		add_child(holder)
+	for child in holder.get_children():
+		child.free()
+	var states := {}
+	for i in generator.door_plan.size():
+		var plan: Dictionary = generator.door_plan[i]
+		var door := Door.new()
+		door.name = "Door%02d" % i
+		door.state = plan.state
+		holder.add_child(door)
+		door.global_transform = plan.a.global_transform
+		states[door.name] = plan.state
+	key_rooms = generator.key_rooms
+	locked_doors = generator.locked_door_count()
+	if multiplayer.is_server():
+		game_state.init_doors(states)
+
+
+func _on_doors_changed() -> void:
+	for door in get_tree().get_nodes_in_group(&"doors"):
+		door.apply_state(game_state.door_state(door.name))
 
 
 func _bake_navigation() -> void:
@@ -285,6 +321,27 @@ func _spawn_loot() -> void:
 			var distance := point.distance_to(start)
 			var value := roundi(rng.randi_range(5, 20) * (1.0 + distance / 40.0))
 			_spawn_coin_pile(point, value)
+	_spawn_keys(rng, map)
+
+
+## Tyle kluczy, ile zakluczonych drzwi, w pokojach osiągalnych bez przechodzenia przez nie.
+func _spawn_keys(rng: RandomNumberGenerator, map: RID) -> void:
+	if key_rooms.is_empty():
+		return
+	for i in locked_doors:
+		for attempt in 10:
+			var room: Room = key_rooms[rng.randi_range(0, key_rooms.size() - 1)]
+			var local := Vector3(
+				rng.randf_range(room.bounds.position.x + 1.5, room.bounds.end.x - 1.5), 0.2,
+				rng.randf_range(room.bounds.position.z + 1.5, room.bounds.end.z - 1.5))
+			var spot := room.to_global(local)
+			var point := NavigationServer3D.map_get_closest_point(map, spot)
+			if point.distance_to(spot) > 1.5:
+				continue
+			var key: KeyPickup = KEY_SCENE.instantiate()
+			key.position = point
+			loot.add_child(key, true)
+			break
 
 
 func _spawn_coin_pile(position: Vector3, value: int) -> void:
@@ -435,7 +492,10 @@ func _update_hud() -> void:
 	var lines: Array[String] = []
 	match game_state.life(me):
 		GameState.Life.OK:
-			lines.append("HP %d    monety %d    bandaże %d" % [game_state.hp(me), game_state.coins(me), game_state.bandages(me)])
+			var status := "HP %d    monety %d    bandaże %d" % [game_state.hp(me), game_state.coins(me), game_state.bandages(me)]
+			if game_state.keys(me) > 0:
+				status += "    klucze %d" % game_state.keys(me)
+			lines.append(status)
 			if game_state.is_bleeding(me):
 				lines.append("KRWAWISZ  (H - bandaż)")
 			if game_state.is_hidden(me):
@@ -453,6 +513,8 @@ func _update_hud() -> void:
 	var me_node: Player = players.get_node_or_null(str(me))
 	if me_node and me_node.help_target:
 		lines.append("%s %d%%" % [Player.HELP_NAMES[me_node.help_kind], int(me_node.help_progress * 100)])
+	elif me_node and me_node.hint != "":
+		lines.append(me_node.hint)
 	if Time.get_ticks_msec() < _threat_until:
 		lines.append(_threat_text)
 	lines.append("[Tab] statystyki")

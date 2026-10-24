@@ -37,6 +37,14 @@ const HEAR_HUNT_DISTANCE := 7.0
 const HEAR_MEMORY := 1.2
 const SCREAM_INTERVAL := 3.0
 const SIGHT_INTERVAL := 0.1
+## Drzwi (15n): otwieranie długie (szarpie klamkę), wyważanie krótsze i głośne.
+const DOOR_OPEN_TIME := 3.5
+const DOOR_BREAK_TIME := 1.2
+const DOOR_REACH := 2.2
+const DOOR_RATTLE_NOISE := 7.0
+const DOOR_BREAK_NOISE := 16.0
+## Zamknięte drzwi między potworem a źródłem hałasu: tyle z zasięgu hałasu zostaje.
+const DOOR_MUFFLE := 0.5
 const BASE_HEIGHT := 2.1  # wysokość kapsuły kolizji przy height_scale = 1
 const MAX_COLLISION_HEIGHT := Room.DOOR_SIZE.y - 0.2
 ## Tyle sekund potwór musi widzieć gracza na granicy zasięgu, żeby go zauważyć (bliżej krócej).
@@ -98,6 +106,10 @@ var _heard_player_time := -INF
 
 var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 var _sight_timer := 0.0
+var _door: Door  # drzwi, które właśnie otwiera albo wyważa
+var _door_timer := 0.0
+var _door_breaking := false
+var _rattle_timer := 0.0
 var _notice := {}  # Player -> ile sekund z rzędu go widzi (stopniowe zauważanie)
 var _stuck_time := 0.0
 var _state_time := 0.0  # ile sekund trwa bieżący stan
@@ -235,7 +247,7 @@ func _physics_process(delta: float) -> void:
 		velocity.y -= _gravity * delta
 	_update_sight(delta)
 	_state_time += delta
-	var speed := _think(delta)
+	var speed := _handle_doors(_think(delta), delta)
 	_heard_new = false
 	_steer(speed, delta)
 	var before := global_position
@@ -655,12 +667,88 @@ func _retreat() -> float:
 	return retreat_speed
 
 
+# --- Drzwi ---------------------------------------------------------------------
+
+## Zamknięte drzwi na drodze: potwór staje i je otwiera (powoli, gdy tylko przechodzi) albo
+## wyważa (szybko, gdy ma powód: goni, tropi, sprawdza hałas; albo drzwi są zakluczone).
+## Patrolujący nie wyważa zakluczonych drzwi, tylko wybiera inny cel.
+func _handle_doors(speed: float, delta: float) -> float:
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	if _door:
+		if not is_instance_valid(_door) or not _door.blocks():
+			_door = null  # ktoś otworzył albo drzwi zniknęły
+			return speed
+		face(_door.global_position - global_position, delta)
+		_door_timer += delta
+		if not _door_breaking:
+			_rattle_timer -= delta
+			if _rattle_timer <= 0.0:
+				_rattle_timer = 1.0
+				if game_state:
+					game_state.monster_rattle(_door.name)
+				NoiseBus.emit_noise(_door.global_position, DOOR_RATTLE_NOISE, self)
+		if _door_timer >= (DOOR_BREAK_TIME if _door_breaking else DOOR_OPEN_TIME):
+			if game_state:
+				game_state.monster_door(_door.name, _door_breaking)
+			if _door_breaking:
+				NoiseBus.emit_noise(_door.global_position, DOOR_BREAK_NOISE, self)
+			_door = null
+		return 0.0
+	if speed <= 0.0 or agent.is_navigation_finished():
+		return speed
+	var door := _door_ahead()
+	if door == null:
+		return speed
+	var has_reason := state in [State.HUNT, State.INVESTIGATE, State.TRACK, State.CARRY, State.ATTACK]
+	if door.state == Door.State.LOCKED and not has_reason:
+		agent.target_position = global_position  # stan wybierze inny cel
+		return 0.0
+	_door = door
+	_door_timer = 0.0
+	_rattle_timer = 0.0
+	_door_breaking = has_reason or door.state == Door.State.LOCKED
+	velocity.x = 0.0
+	velocity.z = 0.0
+	return 0.0
+
+
+## Zamknięte drzwi tuż przed potworem, przez które prowadzi jego ścieżka.
+func _door_ahead() -> Door:
+	var next := agent.get_next_path_position()
+	for node in get_tree().get_nodes_in_group(&"doors"):
+		var door := node as Door
+		if not door.blocks() or door.flat_distance(global_position) > DOOR_REACH or door.lateral(global_position) > 1.2:
+			continue
+		var here := door.side(global_position)
+		if signf(here) != signf(door.side(next)) or signf(here) != signf(door.side(agent.target_position)):
+			return door
+	return null
+
+
+## Ile zamkniętych drzwi stoi na odcinku a-b (hałas przez drzwi słychać słabiej).
+func _closed_doors_between(a: Vector3, b: Vector3) -> int:
+	var count := 0
+	for node in get_tree().get_nodes_in_group(&"doors"):
+		var door := node as Door
+		if not door.blocks():
+			continue
+		var side_a := door.side(a)
+		var side_b := door.side(b)
+		if signf(side_a) == signf(side_b):
+			continue
+		var crossing := a.lerp(b, side_a / (side_a - side_b))
+		if door.lateral(crossing) <= Door.SIZE.x / 2.0 + 0.3 and door.flat_distance(crossing) <= Door.SIZE.x:
+			count += 1
+	return count
+
+
 # --- Percepcja -----------------------------------------------------------------
 
 func _on_noise(position: Vector3, radius: float, source: Node) -> void:
 	if source == self:
 		return
 	var distance := global_position.distance_to(position)
+	radius *= pow(DOOR_MUFFLE, _closed_doors_between(global_position + Vector3.UP, position + Vector3.UP * 0.5))
 	if distance <= radius * hearing * sense_boost:
 		heard_position = position
 		_heard_new = true
@@ -759,10 +847,23 @@ func can_see(player: Player) -> bool:
 	# Kilka punktów ciała: wystarczy, że widać którykolwiek (głowa nad skrzynią, nogi pod stołem).
 	var space := get_world_3d().direct_space_state
 	for height in (CROUCH_SIGHT_POINTS if player.crouching else SIGHT_POINTS):
-		var query := PhysicsRayQueryParameters3D.create(eye, player.global_position + Vector3.UP * height, sight_blockers)
-		if space.intersect_ray(query).is_empty():
+		var target: Vector3 = player.global_position + Vector3.UP * height
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(eye, target, sight_blockers))
+		if hit.is_empty():
 			return true
+		if hit.collider is Door and _sees_through_grate(hit.collider, hit.position):
+			var past_door := PhysicsRayQueryParameters3D.create(eye, target, sight_blockers, [hit.collider.get_rid()])
+			if space.intersect_ray(past_door).is_empty():
+				return true
 	return false
+
+
+## Przez kratkę w drzwiach potwór widzi tylko z bliska i patrząc prosto na drzwi.
+func _sees_through_grate(door: Door, hit_position: Vector3) -> bool:
+	if not door.in_grate(hit_position) or door.flat_distance(global_position) > Door.GRATE_SIGHT_DISTANCE:
+		return false
+	var to_door := (door.global_position - global_position) * Vector3(1, 0, 1)
+	return rad_to_deg((-global_transform.basis.z).angle_to(to_door.normalized())) <= Door.GRATE_SIGHT_ANGLE
 
 
 # --- Ruch ----------------------------------------------------------------------

@@ -11,6 +11,7 @@ extends Area3D
 
 
 func _ready() -> void:
+	add_to_group(&"camera_zones")
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 

@@ -17,6 +17,10 @@ signal player_died(peer_id: int)
 signal coins_dropped(peer_id: int, amount: int, position: Vector3)
 signal player_extracted(peer_id: int)
 signal player_hid(peer_id: int, spot_path: String)
+## Zmienił się stan drzwi (u każdego peera).
+signal doors_changed
+## Promień hałasu otwierania/zamykania drzwi przez gracza.
+const DOOR_NOISE_RADIUS := 5.0
 ## Promień hałasu przy wchodzeniu do szafki (skrzypnięcie drzwi).
 const HIDE_NOISE_RADIUS := 5.0
 
@@ -43,6 +47,8 @@ const SHARED_FRACTION := 0.5
 ## peer_id -> {"name", "hp", "life", "bleeding", "bleed_out", "bandages",
 ##             "coins" (niesione), "banked" (wyniesione w tej rundzie), "session" (suma sesji)}
 var players := {}
+## Nazwa węzła drzwi -> Door.State. Zmienia tylko host, rozsyła całość (jak `players`).
+var doors := {}
 ## Gdzie jest wyjście z mapy (ustawia main po złożeniu mapy). Tylko host.
 var exit_position := Vector3.INF
 var round_over := false
@@ -121,6 +127,14 @@ func coins(peer_id: int) -> int:
 	return players.get(peer_id, {}).get("coins", 0)
 
 
+func keys(peer_id: int) -> int:
+	return players.get(peer_id, {}).get("keys", 0)
+
+
+func door_state(door_name: String) -> Door.State:
+	return doors.get(door_name, Door.State.OPEN)
+
+
 func player_name(peer_id: int) -> String:
 	return players.get(peer_id, {}).get("name", "?")
 
@@ -158,6 +172,7 @@ func add_player(peer_id: int) -> void:
 	assert(multiplayer.is_server())
 	players[peer_id] = _fresh_entry({"name": "Gracz %d" % (players.size() + 1), "session": 0})
 	_broadcast()
+	_broadcast_doors()  # nowy gracz dostaje bieżący stan drzwi
 
 
 func remove_player(peer_id: int) -> void:
@@ -305,7 +320,7 @@ func _kill(peer_id: int) -> void:
 func _fresh_entry(keep: Dictionary) -> Dictionary:
 	return {"name": keep.get("name", "?"), "session": keep.get("session", 0),
 		"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0,
-		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": "", "extract_order": 0}
+		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": "", "extract_order": 0, "keys": 0}
 
 
 ## Runda się kończy, gdy nikt nie został na mapie (każdy zginął albo wyszedł).
@@ -372,6 +387,39 @@ func _round_preserving_total(shares: Dictionary, ids: Array) -> Dictionary:
 
 func _broadcast() -> void:
 	_apply_state.rpc(players)
+
+
+func _broadcast_doors() -> void:
+	_apply_doors.rpc(doors)
+
+
+## Nowa mapa: stan wszystkich drzwi z planu generatora.
+func init_doors(states: Dictionary) -> void:
+	assert(multiplayer.is_server())
+	doors = states
+	_broadcast_doors()
+
+
+## Gracz podniósł klucz.
+func add_key(peer_id: int) -> void:
+	assert(multiplayer.is_server())
+	if players.has(peer_id):
+		players[peer_id].keys = keys(peer_id) + 1
+		_broadcast()
+
+
+## Potwór otworzył (`broken` = false) albo wyważył drzwi.
+func monster_door(door_name: String, broken: bool) -> void:
+	assert(multiplayer.is_server())
+	if not doors.has(door_name):
+		return
+	doors[door_name] = Door.State.BROKEN if broken else Door.State.OPEN
+	_broadcast_doors()
+
+
+## Potwór szarpie za klamkę: dźwięk u wszystkich.
+func monster_rattle(door_name: String) -> void:
+	_door_rattle.rpc(door_name)
 
 
 ## Kto wywołał RPC. Lokalne wywołanie u hosta daje 0, więc zamieniamy je na 1 (host).
@@ -498,6 +546,40 @@ func request_extract() -> void:
 	_check_round_end()
 
 
+## Gracz otwiera/zamyka drzwi (E). Zakluczone otwiera kluczem (zużywa go).
+@rpc("any_peer", "call_local", "reliable")
+func request_door(door_name: String) -> void:
+	if not multiplayer.is_server():
+		return
+	var peer_id := _caller()
+	var body := _player_node(peer_id)
+	var door := _door_node(door_name)
+	if body == null or door == null or not is_up(peer_id) or door.flat_distance(body.global_position) > Door.USE_DISTANCE + 0.5:
+		return
+	match door_state(door_name):
+		Door.State.OPEN:
+			doors[door_name] = Door.State.CLOSED
+		Door.State.CLOSED:
+			doors[door_name] = Door.State.OPEN
+		Door.State.LOCKED:
+			if keys(peer_id) <= 0:
+				return
+			players[peer_id].keys -= 1
+			doors[door_name] = Door.State.OPEN
+			_broadcast()
+		_:
+			return
+	_broadcast_doors()
+	NoiseBus.emit_noise(door.global_position, DOOR_NOISE_RADIUS, body)
+
+
+func _door_node(door_name: String) -> Door:
+	for node in get_tree().get_nodes_in_group(&"doors"):
+		if node.name == door_name:
+			return node
+	return null
+
+
 # --- Wszyscy (wywoływane przez hosta) -----------------------------------------
 
 # "authority": tylko właściciel węzła (host) może to wywołać; "call_local": u hosta też się wykona.
@@ -505,6 +587,19 @@ func request_extract() -> void:
 func _apply_state(state: Dictionary) -> void:
 	players = state
 	changed.emit()
+
+
+@rpc("authority", "call_local", "reliable")
+func _apply_doors(state: Dictionary) -> void:
+	doors = state
+	doors_changed.emit()
+
+
+@rpc("authority", "call_local", "reliable")
+func _door_rattle(door_name: String) -> void:
+	var door := _door_node(door_name)
+	if door:
+		door.rattle()
 
 
 @rpc("authority", "call_local", "reliable")

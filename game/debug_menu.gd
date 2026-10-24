@@ -79,6 +79,7 @@ func _build_actions() -> Array[Dictionary]:
 	actions.append({"name": "Nieśmiertelność: %s" % ("WŁ" if _immortal else "wył"), "run": _toggle_immortal})
 	actions.append({"name": "Ulecz (HP 100, bez krwawienia, +bandaże)", "run": _heal})
 	actions.append({"name": "+100 monet", "run": _add_coins})
+	actions.append({"name": "+1 klucz", "run": func() -> void: _main.game_state.add_key(multiplayer.get_unique_id())})
 	actions.append({"name": "Teleport do windy", "run": _teleport_to_exit})
 	return actions
 
