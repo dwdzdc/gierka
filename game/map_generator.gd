@@ -104,9 +104,9 @@ func _decorate() -> void:
 				light.visible = false
 			elif _rng.randf() < LIGHT_FLICKER_CHANCE and light.get_script() == null:
 				light.set_script(FLICKER_SCRIPT)
+				light.set_process(true)  # skrypt doklejony po _ready: Godot sam go nie włączy
 		if dark:
-			for fixture in room.find_children("Fixture*", "MeshInstance3D", true, false):
-				fixture.visible = false  # zgaszona oprawa nie świeci
+			room.switch_off_lamps()
 		# Bez ramp i schodów (pochyłe podłogi) i bez wąskich korytarzy (3,6 m): skrzynia pod jedną
 		# ścianą i mebel pod drugą potrafiły zatkać przejście.
 		if room.bounds.size.y < 8.0 and minf(room.bounds.size.x, room.bounds.size.z) > 4.5 and not _is_corridor(room):

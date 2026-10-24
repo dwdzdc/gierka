@@ -17,6 +17,8 @@ const WALL_THICKNESS := 0.2
 const CAP_MATERIAL := preload("res://rooms/materials/wall.tres")
 const FRAME_MATERIAL := preload("res://rooms/materials/door_frame.tres")
 const LAMP_MATERIAL := preload("res://rooms/materials/door_lamp.tres")
+const LAMP_OFF_MATERIAL := preload("res://rooms/materials/lamp_off.tres")
+const SKYLIGHT_MATERIAL := preload("res://rooms/materials/skylight.tres")
 
 ## Bryła pokoju razem ze ścianami (lokalnie). Generator nie pozwala, żeby bryły się przecinały.
 @export var bounds := AABB()
@@ -73,10 +75,20 @@ func add_door_frame(doorway: Marker3D) -> void:
 	for side in [-1.0, 1.0]:
 		_frame_box(frame, Vector3(side * (DOOR_SIZE.x / 2.0 + post / 2.0), jamb_height / 2.0, depth), Vector3(post, jamb_height, 0.1), FRAME_MATERIAL)
 	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post / 2.0, depth), Vector3(DOOR_SIZE.x + 2.0 * post, post, 0.1), FRAME_MATERIAL)
-	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post + 0.15, depth + 0.03), Vector3(0.5, 0.12, 0.16), LAMP_MATERIAL)
+	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post + 0.15, depth + 0.03), Vector3(0.5, 0.12, 0.16), LAMP_MATERIAL).name = "Lamp"
 
 
-func _frame_box(parent: Node3D, position: Vector3, size: Vector3, material: Material) -> void:
+## Zgaszony pokój: oprawy lamp, lampki nad drzwiami po tej stronie i świetlik zostają na
+## miejscu, ale nie świecą. Słaba poświata futryn zostaje, żeby drzwi dało się znaleźć.
+func switch_off_lamps() -> void:
+	for lamp in find_children("Fixture*", "MeshInstance3D", true, false) + find_children("Lamp", "MeshInstance3D", true, false):
+		lamp.material_override = LAMP_OFF_MATERIAL
+	for solid in $Geometry.get_children():
+		if solid is CSGPrimitive3D and solid.material == SKYLIGHT_MATERIAL:
+			solid.material = LAMP_OFF_MATERIAL
+
+
+func _frame_box(parent: Node3D, position: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	mesh.material = material
@@ -85,6 +97,7 @@ func _frame_box(parent: Node3D, position: Vector3, size: Vector3, material: Mate
 	instance.position = position
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)
+	return instance
 
 
 func _markers(group_node: StringName) -> Array[Marker3D]:
