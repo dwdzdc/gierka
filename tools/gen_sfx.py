@@ -102,9 +102,44 @@ def panic_breath() -> np.ndarray:
     return np.concatenate(parts)
 
 
+def door_thud() -> np.ndarray:
+    """~0.7 s: ciężkie uderzenie w drewniane drzwi. Niskie „bum” skrzydła, krótki trzask
+    drewna na początku i brzęczenie futryny/zawiasów (15x: Kenney ma tylko miękkie puknięcia)."""
+    seconds = 0.7
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    body = np.sin(2 * np.pi * (72 - 20 * t) * t) * np.exp(-t * 7)          # rezonans skrzydła
+    body += 0.5 * np.sin(2 * np.pi * 143 * t) * np.exp(-t * 11)
+    knock = band_noise(seconds, 150, 1800) * np.exp(-t * 38)               # uderzenie w deski
+    rattle = band_noise(seconds, 900, 3500) * np.exp(-t * 9) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 23 * t)))
+    return body * 1.0 + knock * 0.8 + rattle * 0.12
+
+
+def door_splinter() -> np.ndarray:
+    """~1.3 s: wyłamanie. Najmocniejsze uderzenie, pękanie desek (seria trzasków) i upadek skrzydła."""
+    seconds = 1.3
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    hit = door_thud()
+    signal = np.zeros(n)
+    signal[: hit.size] += hit * 1.2
+    cracks = np.zeros(n)
+    for start in rng.uniform(0.02, 0.45, 14):                              # drzazgi
+        i = int(start * RATE)
+        m = int(0.05 * RATE)
+        cracks[i:i + m] += band_noise(0.05, 1200, 6000)[: n - i] * np.exp(-np.arange(min(m, n - i)) / RATE * 90) * rng.uniform(0.4, 1.0)
+    signal += cracks * 0.7
+    fall = int(0.75 * RATE)                                                # skrzydło uderza o podłogę
+    tf = np.arange(n - fall) / RATE
+    signal[fall:] += (np.sin(2 * np.pi * 55 * tf) * np.exp(-tf * 6) + band_noise((n - fall) / RATE + 0.01, 100, 900)[: n - fall] * np.exp(-tf * 14) * 0.6)
+    return signal / np.max(np.abs(signal))
+
+
 if __name__ == "__main__":
     save("ambient_drone.wav", ambient_drone(), 0.5)
     save("heartbeat.wav", heartbeat(), 0.9)
     save("panic_breath.wav", panic_breath(), 0.5)
     save("monster_breath.wav", breath_loop(), 0.7)
     save("monster_growl.wav", growl(), 0.8)
+    save("door_thud.wav", door_thud() / np.max(np.abs(door_thud())), 0.95)
+    save("door_splinter.wav", door_splinter(), 0.95)

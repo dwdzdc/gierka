@@ -111,10 +111,14 @@ func _physics_process(_d: float) -> bool:
 						set_meta("pounds", get_meta("pounds", 0) + 1))
 			if t > 1 and door.state == door.State.BROKEN and not has_meta("broken"):
 				set_meta("broken", t)
+				set_meta("splinter", door._impact.playing and door._impact.stream == door.SPLINTER)
+			if door._impact.playing and door._impact.stream == door.POUND:
+				set_meta("pound_audible", true)
 			if t == 60 * 3:
 				var at = get_meta("broken", -1)
-				_check(at > 0 and at < 60 * 2.2, "pościg wyważa szybko (po %.1f s)" % (at / 60.0))
+				_check(at > 0 and at < 60 * 2.8, "pościg wyważa szybko (po %.1f s)" % (at / 60.0))
 				_check(get_meta("pounds", 0) >= 2, "przed wyłamaniem seria łomotów (%d)" % get_meta("pounds", 0))
+				_check(get_meta("pound_audible", false) and get_meta("splinter", false), "łomot i trzask grają z odtwarzacza uderzeń")
 				m.set_physics_process(false)
 				gs.doors["Door00"] = door.State.CLOSED
 				gs._broadcast_doors()

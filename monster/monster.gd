@@ -47,12 +47,12 @@ const SCREAM_INTERVAL := 3.0
 const SIGHT_INTERVAL := 0.1
 ## Drzwi (15n): otwieranie długie (szarpie klamkę), wyważanie krótsze i głośne.
 const DOOR_OPEN_TIME := 3.5
-const DOOR_BREAK_TIME := 1.2
+const DOOR_BREAK_TIME := 1.8
 const DOOR_REACH := 2.2
 const DOOR_RATTLE_NOISE := 7.0
 const DOOR_BREAK_NOISE := 16.0
-## Wyważanie to seria łomotów (co tyle sekund, przy 1,2 s: trzy), każdy słychać daleko.
-const DOOR_POUND_INTERVAL := 0.4
+## Wyważanie to seria łomotów (co tyle sekund, przy 1,8 s: trzy, potem trzask), każdy słychać daleko.
+const DOOR_POUND_INTERVAL := 0.6
 const DOOR_POUND_NOISE := 12.0
 ## Zamknięte drzwi między potworem a źródłem hałasu: tyle z zasięgu hałasu zostaje.
 const DOOR_MUFFLE := 0.5
@@ -801,18 +801,20 @@ func _handle_doors(speed: float, delta: float) -> float:
 			return speed
 		face(_door.global_position - global_position, delta)
 		_door_timer += delta
-		_rattle_timer -= delta
-		if _rattle_timer <= 0.0:
-			_rattle_timer = DOOR_POUND_INTERVAL if _door_breaking else 1.0
-			if game_state:
-				game_state.monster_rattle(_door.name, _door_breaking)
-			NoiseBus.emit_noise(_door.global_position, DOOR_POUND_NOISE if _door_breaking else DOOR_RATTLE_NOISE, self)
+		# Najpierw koniec, potem łomot: w klatce wyłamania słychać sam trzask (BUM… BUM… BUM… TRZASK).
 		if _door_timer >= (DOOR_BREAK_TIME if _door_breaking else DOOR_OPEN_TIME):
 			if game_state:
 				game_state.monster_door(_door.name, _door_breaking)
 			if _door_breaking:
 				NoiseBus.emit_noise(_door.global_position, DOOR_BREAK_NOISE, self)
 			_door = null
+			return 0.0
+		_rattle_timer -= delta
+		if _rattle_timer <= 0.0:
+			_rattle_timer = DOOR_POUND_INTERVAL if _door_breaking else 1.0
+			if game_state:
+				game_state.monster_rattle(_door.name, _door_breaking)
+			NoiseBus.emit_noise(_door.global_position, DOOR_POUND_NOISE if _door_breaking else DOOR_RATTLE_NOISE, self)
 		return 0.0
 	if speed <= 0.0 or agent.is_navigation_finished():
 		return speed

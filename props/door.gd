@@ -25,11 +25,12 @@ const PEEK_BACK := 0.6  # jak daleko za skrzydłem stoi kamera podglądu
 ## Warstwa renderu, na którą podglądający przenosi swoją postać: kamera podglądu jej nie rysuje,
 ## bo stoi za plecami gracza i jego głowa zasłoniłaby kratkę. Inne postacie zostają widoczne.
 const PEEK_HIDDEN_LAYER := 4  # warstwa 3 (bit)
+const SHAKE_DISTANCE := 10.0
 
 const WOOD := preload("res://rooms/materials/wood.tres")
 const METAL := preload("res://rooms/materials/metal.tres")
 const CREAK := preload("res://assets/sfx/creak.tres")
-const BANG := preload("res://assets/sfx/vent_bangs.tres")
+const SPLINTER := preload("res://assets/sfx/generated/door_splinter.wav")
 const POUND := preload("res://assets/sfx/door_pound.tres")
 
 var state := State.CLOSED
@@ -37,6 +38,10 @@ var _leaf: Node3D
 var _shape: CollisionShape3D
 var _debris: Node3D
 var _sound: AudioStreamPlayer3D
+## Łomot i wyłamanie mają własny, głośniejszy odtwarzacz: nie ucinają skrzypienia ani siebie
+## nawzajem, a słychać je z sąsiednich pokoi (15x).
+var _impact: AudioStreamPlayer3D
+var _jolt: Tween
 
 
 func _ready() -> void:
@@ -59,7 +64,12 @@ func apply_state(new_state: State, audible := true) -> void:
 	var target_yaw := -PI / 2.0 if state == State.OPEN else 0.0
 	if changed and audible and is_inside_tree():
 		create_tween().tween_property(_leaf, "rotation:y", target_yaw, 0.35)
-		_play(BANG if state == State.BROKEN else CREAK)
+		if state == State.BROKEN:
+			_impact.stream = SPLINTER
+			_impact.play()
+			_shake_nearby(0.3)
+		else:
+			_play(CREAK)
 	else:
 		_leaf.rotation.y = target_yaw
 
@@ -98,7 +108,29 @@ func in_grate(point: Vector3) -> bool:
 ## Potwór przy drzwiach — wywoływane u wszystkich przez GameState: szarpanie klamki, gdy
 ## otwiera, albo łomot, gdy wyważa (seria łomotów, na końcu trzask z `apply_state`).
 func rattle(pound := false) -> void:
-	_play(POUND if pound else CREAK)
+	if not pound:
+		_play(CREAK)
+		return
+	_impact.stream = POUND
+	_impact.play()
+	# Skrzydło drga w futrynie (w stronę pokoju A, bo tam się otwiera), kamera lekko się trzęsie.
+	if _jolt:
+		_jolt.kill()
+	_jolt = create_tween()
+	_jolt.tween_property(_leaf, "rotation:y", -0.06, 0.05)
+	_jolt.tween_property(_leaf, "rotation:y", 0.0, 0.2).set_trans(Tween.TRANS_BOUNCE)
+	_shake_nearby(0.12)
+
+
+## Wstrząs kamery u tego peera, gdy jego postać jest blisko (słabnie z odległością).
+func _shake_nearby(strength: float) -> void:
+	var director := get_tree().get_first_node_in_group(&"camera_director") as CameraDirector
+	var cam := get_viewport().get_camera_3d() as FixedCamera
+	if director == null or cam == null or not is_instance_valid(director.target):
+		return
+	var falloff := 1.0 - clampf(flat_distance(director.target.global_position) / SHAKE_DISTANCE, 0.0, 1.0)
+	if falloff > 0.0:
+		cam.shake(strength * falloff)
 
 
 func _play(stream: AudioStream) -> void:
@@ -159,6 +191,12 @@ func _build() -> void:
 	_sound.position = Vector3(0, 1.3, 0)
 	_sound.max_distance = 16.0
 	add_child(_sound)
+	_impact = AudioStreamPlayer3D.new()
+	_impact.position = Vector3(0, 1.3, 0)
+	_impact.unit_size = 6.0
+	_impact.volume_db = 4.0
+	_impact.max_distance = 28.0
+	add_child(_impact)
 
 
 func _leaf_box(position: Vector3, size: Vector3, material: Material) -> void:
