@@ -100,6 +100,7 @@ godot --headless --path . -s tests/stamina_test.gd            # bieg: zadyszka p
 godot --headless --path . -s tests/kite_test.gd [-- --off|--no-burst]  # łowca vs bieg w kółko wokół fontanny
 godot --headless --path . -s tests/battery_test.gd            # bateria latarki: zużycie, migotanie, gaśnięcie, znajdźka
 godot --headless --path . -s tests/container_test.gd          # skrzynie: przeszukanie E, zawartość, hałas
+godot --headless --path . -s tests/monster_states_test.gd -- --scenario=walk_away  # też run_away, sidestep, dodge, escape, attack, noise, death
 godot --headless --path . -s tests/door_test.gd               # drzwi: gracz, klucz, potwór otwiera/wyważa, kratka
 godot --headless --path . -s tests/library_test.gd            # biblioteka: antresolę da się obejść dookoła
 godot --headless --path . -s tests/lamps_test.gd              # zgaszone pokoje nie świecą, oprawy migoczą z żarówkami

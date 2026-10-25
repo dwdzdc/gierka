@@ -108,6 +108,7 @@ Każdy potwór ma dwie warstwy AI, wzorowane na Alien: Isolation: **reżyser** z
 - **Wskaźnik zagrożenia.** Rośnie, gdy Łowca długo kręci się przy graczach; po progu reżyser odsyła go daleko, żeby dać wam odetchnąć.
 - **Nauka.** Im częściej gracze uciekają, chowając się w szafkach, tym częściej potwory je sprawdzają (od 10% do 70%).
 - **Stany:** patrol → sprawdzanie hałasu → pościg → atak z widocznym zamachem (oczy rozbłyskują, można odskoczyć) → wycofanie. Do tego tropienie krwi, porywanie i przejścia wentylacją.
+- **Doskok.** W czasie zamachu potwór sunie za tobą w kierunku, w którym zaczął cios, i prawie się nie obraca. Marsz w tył nie ucieka, bieg ledwo; ratuje krok w bok (ok. 1 m z linii ciosu) albo skok.
 - **Zryw.** Łowca i Porywacz przez pierwsze 3 s pościgu biegną szybciej od ciebie (4,9 i 4,8 m/s, odnawia się po 10 s), potem zwalniają. Zauważenie z bliska jest groźne, ratunek to zerwać kontakt i się schować.
 - **Bieganie w kółko nie działa.** Potwór pamięta twoją trasę; gdy krążysz wokół fontanny, regału albo pętli korytarzy, wychodzi ci naprzeciw drugą stroną i tam czeka.
 - **Przeszukiwanie.** Gdy cię zgubi, przez 20–35 s chodzi po okolicy (do 9 m od miejsca, gdzie cię stracił), rozgląda się i często zagląda do szafek; dopiero potem wraca do patrolu. Strażnik od razu wraca do gniazda.

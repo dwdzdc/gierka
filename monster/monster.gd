@@ -38,6 +38,11 @@ const HEAR_HUNT_DISTANCE := 7.0
 ## wrócił na LOOP_MATCH_DISTANCE do punktu sprzed co najmniej LOOP_MIN_AGE s.
 const TRAIL_STEP := 0.25
 const SEARCH_HIDING_CHECK := 0.35
+## Doskok w zamachu (47h): ułamek prędkości pościgu, obrót wolniejszy niż zwykle, stop tuż przed celem.
+const LUNGE_SPEED_FACTOR := 0.9
+const LUNGE_TURN_FACTOR := 0.1
+const ATTACK_HALF_WIDTH := 0.9
+const LUNGE_STOP_DISTANCE := 0.8
 const TRAIL_SIZE := 48
 const LOOP_MIN_AGE := 3.0
 const LOOP_MATCH_DISTANCE := 1.5
@@ -137,6 +142,7 @@ var _vent_plan := {}
 var _vent_progress := 0.0
 var _climb_from := Vector3.ZERO
 var _slowed_until := 0.0  # po odzyskiwaniu: do tej chwili (s) goni wolniej
+var _lunge_dir := Vector3.ZERO  # kierunek doskoku w zamachu (ATTACK)
 var _burst_until := 0.0  # zryw na początku pościgu: do tej chwili (s)
 var _next_burst := 0.0
 # Anty-kiting: ślad gracza w pościgu i punkt, w którym potwór chce go przeciąć.
@@ -291,6 +297,7 @@ func _enter(new_state: State) -> void:
 	_state_time = 0.0
 	_timer = 0.0
 	_stuck_time = 0.0
+	_lunge_dir = Vector3.ZERO
 	agent.target_position = global_position  # każdy stan sam ustawia sobie cel
 
 
@@ -718,9 +725,25 @@ func _follow_drop(drop: Dictionary) -> void:
 	agent.target_position = drop.position
 
 
+## Zamach z doskokiem (47h): kierunek ustala się na początku zamachu, potem potwór sunie w nim
+## i tylko powoli się obraca. Marsz prosto w tył już nie ucieka (za blisko po doskoku), bieg
+## ledwo; zejście z linii w bok albo skok dalej działa, bo potwór nie nadąża z obrotem.
 func _attack(delta: float) -> float:
+	var lunge := 0.0
 	if is_instance_valid(_prey):
-		face(_prey.global_position - global_position, delta)
+		var to_prey := (_prey.global_position - global_position) * Vector3(1, 0, 1)
+		if _lunge_dir == Vector3.ZERO and to_prey.length() > 0.01:
+			# Początek zamachu: od razu przodem do celu (np. usłyszał go za plecami), potem już
+			# tylko powolny obrót, żeby unik w bok miał sens.
+			_lunge_dir = to_prey.normalized()
+			rotation.y = atan2(-_lunge_dir.x, -_lunge_dir.z)
+		# Gracz przeszedł przez potwora (nie zderzają się) albo stoi tuż przy nim: obrót normalny,
+		# inaczej przejście na plecy byłoby pewnym unikiem.
+		var behind := to_prey.dot(-global_transform.basis.z) < LUNGE_STOP_DISTANCE * 0.6
+		face(to_prey, delta * (1.0 if behind else LUNGE_TURN_FACTOR))
+		_lunge_dir = (-global_transform.basis.z * Vector3(1, 0, 1)).normalized()
+		if not is_watcher() and to_prey.dot(_lunge_dir) > LUNGE_STOP_DISTANCE:
+			lunge = hunt_speed * LUNGE_SPEED_FACTOR
 	if _state_time >= attack_windup:
 		_on_attack_land()
 		if state == State.CARRY:
@@ -731,7 +754,8 @@ func _attack(delta: float) -> float:
 			_enter(State.RECOVER)
 		else:
 			_start_retreat()
-	return 0.0
+		return 0.0
+	return lunge
 
 
 ## Po ciosie: stoi (otrząsa się), potem wraca do pościgu, ale przez chwilę wolniej.
@@ -753,7 +777,11 @@ func _on_attack_land() -> void:
 		return
 	var to_prey := (_prey.global_position - global_position) * Vector3(1, 0, 1)
 	var forward := -global_transform.basis.z
-	if to_prey.length() > attack_reach or rad_to_deg(forward.angle_to(to_prey.normalized())) >= 70.0:
+	# Cios to pas przed potworem (zasięg × szerokość), a nie stożek: z doskokiem stożek łapał też
+	# gracza, który zszedł w bok (47h). Teraz unik bokiem na ~1 m wystarcza, ucieczka w tył nie.
+	var ahead := to_prey.dot(forward)
+	var aside := (to_prey - forward * ahead).length()
+	if to_prey.length() > attack_reach or ahead < 0.0 or aside > ATTACK_HALF_WIDTH:
 		return
 	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 	var peer_id := _prey.get_multiplayer_authority()
@@ -1018,6 +1046,10 @@ func random_floor_point_near(center: Vector3, radius: float) -> Vector3:
 
 
 func _steer(speed: float, delta: float) -> void:
+	if state == State.ATTACK:
+		velocity.x = _lunge_dir.x * speed
+		velocity.z = _lunge_dir.z * speed
+		return
 	var direction := Vector3.ZERO
 	if speed > 0.0 and not agent.is_navigation_finished():
 		direction = agent.get_next_path_position() - global_position
