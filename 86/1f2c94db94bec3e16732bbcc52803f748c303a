@@ -1,0 +1,20 @@
+docs/spec.md
+  s_f2f22258b99fad::t_74ae71aa34a476 1-28,30-193
+  s_f2f22258b99fad::t_b4b91146327b69 29
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "861f2c94db94bec3e16732bbcc52803f748c303a",
+  "prompts": {},
+  "sessions": {
+    "s_f2f22258b99fad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9774cbc7-8eb9-4dff-905a-36a88d208bc7",
+        "model": "unknown"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
