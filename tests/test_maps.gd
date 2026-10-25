@@ -8,3 +8,8 @@ const CLASSIC := [
 	["res://rooms/corridor.tscn", "East", "West"],
 	["res://rooms/storage.tscn", "East", "West"],
 ]
+
+## KITE: hala -> atrium z fontanną (do testu biegania w kółko wokół przeszkody).
+const KITE := [
+	["res://rooms/atrium.tscn", "East", "West"],
+]

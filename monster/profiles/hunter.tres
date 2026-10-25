@@ -13,6 +13,7 @@ height_scale = 1.0
 patrol_speed = 1.5
 investigate_speed = 2.4
 hunt_speed = 3.8
+burst_speed = 4.9
 retreat_speed = 3.4
 sight_range_dark = 6.0
 sight_range_flashlight = 14.0

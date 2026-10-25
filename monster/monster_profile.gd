@@ -28,6 +28,11 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 ## Chód gracza to 2.2, bieg 4.6: pościg wolniejszy niż bieg daje szansę ucieczki kosztem hałasu.
 @export var hunt_speed := 3.8
 @export var retreat_speed := 3.4
+## Zryw (47g): na początku pościgu szybciej niż bieg gracza, żeby zauważenie z bliska było
+## groźne, a nie tylko hałaśliwe. 0 = bez zrywu. Odnawia się po `burst_cooldown`.
+@export var burst_speed := 0.0
+@export var burst_time := 3.0
+@export var burst_cooldown := 10.0
 
 @export_group("Zmysły")
 ## 0 = ślepy. `sight_range_dark`: gracz w zgaszonym pokoju bez latarki (i bliska strefa, w której

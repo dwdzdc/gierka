@@ -34,6 +34,13 @@ const VENT_CLIMB_TIME := 1.2  # ile trwa widoczne wspinanie się do kratki
 ## Z bliska potwór rozpoznaje po dźwięku, KTO hałasuje, i goni go jak widzianego
 ## (ślepy potwór poluje tylko tak). Ile metrów (przy słuchu 1.0) i jak długo pamięta.
 const HEAR_HUNT_DISTANCE := 7.0
+## Anty-kiting: ślad gracza co TRAIL_STEP s z ostatnich TRAIL_SIZE * TRAIL_STEP s. Pętla = gracz
+## wrócił na LOOP_MATCH_DISTANCE do punktu sprzed co najmniej LOOP_MIN_AGE s.
+const TRAIL_STEP := 0.25
+const TRAIL_SIZE := 48
+const LOOP_MIN_AGE := 3.0
+const LOOP_MATCH_DISTANCE := 1.5
+const RUN_SPEED_ESTIMATE := 4.6  # bieg gracza; z zapasem, żeby potwór zdążył
 const HEAR_MEMORY := 1.2
 const SCREAM_INTERVAL := 3.0
 const SIGHT_INTERVAL := 0.1
@@ -126,6 +133,13 @@ var _vent_plan := {}
 var _vent_progress := 0.0
 var _climb_from := Vector3.ZERO
 var _slowed_until := 0.0  # po odzyskiwaniu: do tej chwili (s) goni wolniej
+var _burst_until := 0.0  # zryw na początku pościgu: do tej chwili (s)
+var _next_burst := 0.0
+# Anty-kiting: ślad gracza w pościgu i punkt, w którym potwór chce go przeciąć.
+var anti_kiting := true  # do porównań w testach
+var _prey_trail: Array[Vector3] = []
+var _trail_timer := 0.0
+var _intercept := Vector3.INF
 var _vent_bang_timer := 0.0
 var _heard_new := false
 var _smell_timer := 0.0
@@ -265,6 +279,8 @@ func _enter(new_state: State) -> void:
 		_check_spot = null
 	if new_state != state:
 		_checked_this_search = false
+		_prey_trail.clear()
+		_intercept = Vector3.INF
 	state = new_state
 	_state_time = 0.0
 	_timer = 0.0
@@ -280,6 +296,7 @@ func _think(delta: float) -> float:
 	if sensed and state in [State.PATROL, State.INVESTIGATE, State.TRACK]:
 		_prey = sensed
 		_enter(State.HUNT)
+		_start_burst()
 	elif _heard_new and state in [State.PATROL, State.INVESTIGATE] and not is_watcher():
 		_enter(State.INVESTIGATE)
 		agent.target_position = heard_position
@@ -555,8 +572,79 @@ func _hunt(delta: float) -> float:
 	if sensed and global_position.distance_to(sensed.global_position) <= attack_range:
 		_enter(State.ATTACK)
 		return 0.0
-	var slowed := Time.get_ticks_msec() / 1000.0 < _slowed_until
-	return hunt_speed * (profile.slowed_factor if slowed else 1.0)
+	_cut_off_kiting(sensed, delta)
+	var now := Time.get_ticks_msec() / 1000.0
+	if now < _slowed_until:
+		return hunt_speed * profile.slowed_factor
+	if now < _burst_until:
+		return maxf(profile.burst_speed, hunt_speed)
+	return hunt_speed
+
+
+func _start_burst() -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	if profile.burst_speed > 0.0 and now >= _next_burst:
+		_burst_until = now + profile.burst_time
+		_next_burst = now + profile.burst_cooldown
+
+
+## Anty-kiting: gracz biega w kółko wokół przeszkody (fontanna, regał, pętla korytarzy), a potwór
+## idzie za nim po NavMesh i nigdy go nie dogania. Potwór pamięta trasę gracza; gdy gracz wraca
+## tam, gdzie już był (pętla), wybiera punkt na tej trasie, do którego zdąży przed graczem,
+## i idzie tam (zwykle drugą stroną przeszkody, naprzeciw). Na miejscu czeka.
+func _cut_off_kiting(sensed: Player, delta: float) -> void:
+	# Chwilowa utrata kontaktu (np. trzon fontanny zasłania) nie kasuje śladu; nowy pościg tak (_enter).
+	if sensed == null or not anti_kiting:
+		return
+	_trail_timer -= delta
+	if _trail_timer > 0.0:
+		if _intercept != Vector3.INF:
+			agent.target_position = _intercept
+		return
+	_trail_timer = TRAIL_STEP
+	var position := sensed.global_position
+	_prey_trail.append(position)
+	if _prey_trail.size() > TRAIL_SIZE:
+		_prey_trail.remove_at(0)
+	_intercept = _loop_intercept(position)
+	if _intercept != Vector3.INF:
+		agent.target_position = _intercept
+
+
+## Szuka pętli w śladzie gracza: dawny punkt (sprzed co najmniej LOOP_MIN_AGE), w którym gracz
+## znów jest. Jeśli jest, to punkty śladu po nim pokazują, którędy gracz zaraz pobiegnie.
+## Zwraca pierwszy taki punkt, do którego potwór dojdzie szybciej niż gracz, albo INF.
+func _loop_intercept(position: Vector3) -> Vector3:
+	var newest := _prey_trail.size() - 1
+	var loop_start := -1
+	for i in range(newest - int(LOOP_MIN_AGE / TRAIL_STEP), -1, -1):
+		if _prey_trail[i].distance_to(position) <= LOOP_MATCH_DISTANCE:
+			loop_start = i
+			break
+	if loop_start < 0 or newest < 1:
+		return Vector3.INF
+	# Gracz zawrócił: ślad pętli prowadzi teraz w drugą stronę, więc nie pokazuje, dokąd pobiegnie.
+	var heading := _prey_trail[newest] - _prey_trail[newest - 1]
+	var loop_heading := _prey_trail[loop_start + 1] - _prey_trail[loop_start]
+	if heading.dot(loop_heading) <= 0.0:
+		return Vector3.INF
+	var prey_distance := 0.0
+	for i in range(loop_start + 1, newest):
+		prey_distance += _prey_trail[i - 1].distance_to(_prey_trail[i])
+		if i % 2 == 1:
+			continue  # co drugi punkt wystarczy, liczenie drogi po NavMesh nie jest darmowe
+		if _path_length_to(_prey_trail[i]) / hunt_speed < prey_distance / RUN_SPEED_ESTIMATE:
+			return _prey_trail[i]
+	return Vector3.INF
+
+
+## Długość drogi po NavMesh do punktu (liczona osobno, bo cel agenta to może już być przewidywanie).
+func _path_length_to(point: Vector3) -> float:
+	var path := NavigationServer3D.map_get_path(agent.get_navigation_map(), global_position, point, true)
+	var length := 0.0
+	for i in range(1, path.size()):
+		length += path[i - 1].distance_to(path[i])
+	return length
 
 
 ## Obserwator widzi gracza: patrzy na niego i co kilka sekund krzyczy. Krzyk to hałas,
