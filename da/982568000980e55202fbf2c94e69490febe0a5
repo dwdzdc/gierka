@@ -1,0 +1,38 @@
+game/debug_menu.gd
+  s_f2f22258b99fad::t_6cfc322c8133a2 83,124-128
+tests/battery_test.gd
+  s_f2f22258b99fad::t_6cfc322c8133a2 1-49,51-57
+  s_f2f22258b99fad::t_3e56dc2e731751 50
+player/player.gd
+  s_f2f22258b99fad::t_6677188f1de1f1 76-77,97-98,122,146,152-172,194
+game/game_state.gd
+  s_f2f22258b99fad::t_d09f352da1f7ad 41-43,173-175,268,333,414-432
+main.tscn
+  s_f2f22258b99fad::t_6677188f1de1f1 56
+loot/battery_pickup.gd
+  s_f2f22258b99fad::t_6677188f1de1f1 1-54
+main.gd
+  s_f2f22258b99fad::t_6677188f1de1f1 20-22,328-349,526
+loot/battery_pickup.gd.uid
+  s_f2f22258b99fad::t_6cfc322c8133a2 1
+tests/battery_test.gd.uid
+  s_f2f22258b99fad::t_6cfc322c8133a2 1
+loot/battery_pickup.tscn
+  s_f2f22258b99fad::t_6677188f1de1f1 1-27
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "da982568000980e55202fbf2c94e69490febe0a5",
+  "prompts": {},
+  "sessions": {
+    "s_f2f22258b99fad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9774cbc7-8eb9-4dff-905a-36a88d208bc7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
