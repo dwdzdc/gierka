@@ -16,7 +16,7 @@ Drużyna schodzi do opuszczonego kompleksu, zbiera monety i próbuje wyjść win
 Runda trwa, dopóki ktokolwiek jest na mapie: kończy się, gdy każdy gracz zginął albo wyszedł. Nie ma limitu czasu, jest za to rosnąca trudność.
 
 1. Host wybiera liczbę pokoi (3–60), mapa składa się z seeda. Wszyscy startują w hali.
-2. Gracze rozchodzą się po kompleksie i zbierają kupki monet. Dalej od hali są cenniejsze.
+2. Gracze rozchodzą się po kompleksie i zbierają monety: kupki na podłodze i meblach oraz skrzynie do przeszukania. Dalej od hali łup jest cenniejszy.
 3. W najdalszym pokoju budzi się pierwszy potwór (Łowca). Co etap (3 min + 15 s na pokój, czyli ok. 5 min przy 8 pokojach) dochodzi kolejny, maks. 4, a wszystkie mają ostrzejsze zmysły (+10% na etap).
 4. Ranni krwawią i zostawiają ślad, po którym idą koledzy i potwory. Powalonego można podnieść, porwanego odbić.
 5. Kto chce, wraca do hali i wychodzi windą (trzymaj E). Wyniesione monety są bezpieczne. Wydostany albo martwy gracz ogląda kamery kolegów.
@@ -30,6 +30,7 @@ Punktacja jest zero-sum: połowę wyniesionych monet zatrzymujesz, a drugą poł
 wynik_i = 0{,}5 \cdot W_i + \sum_{k:\ wyszedł\ przed\ i\ lub\ to\ i} \frac{0{,}5 \cdot W_k}{liczba\ ocalałych,\ którzy\ wyszli\ nie\ wcześniej\ niż\ k}
 ```
 
+- **Skrzynie:** niskie drewniane skrzynie z wiekiem (inne niż szafki do chowania). Przeszukanie to E przez 1,5 s, a hałas słychać z 6 m. W środku zwykle monety (ok. 2× więcej niż w kupce), czasem bateria, czasem nic. Otwartą widać po podniesionym wieku. Kupek jest mniej niż kiedyś, ale są cenniejsze; część leży na meblach w zasięgu ręki.
 - Kto zginął, dostaje 0, a jego niesione monety wypadają kupką na ziemię: koledzy (albo on sam w następnym życiu) mogą je zgarnąć.
 - Pełna kieszeń hałasuje: przy 300 monetach kroki słychać 2× dalej. Chciwość kosztuje.
 - Proporcję 50/50 zmienia jedna stała (`SHARED_FRACTION`).
@@ -58,7 +59,7 @@ Każdy gracz ma własne, nieruchome ujęcia, przecinane według tego, gdzie stoi
 | Spacja | skok (\~1 m), lądowanie hałasuje |
 | Q | szybki obrót o 180° |
 | F | latarka (widzisz więcej, ale potwory widzą cię z 14 m zamiast 6 m; zużywa baterię) |
-| E (trzymaj) | podnieś powalonego, odbij porwanego, bandaż dla kolegi, wejdź do szafki, wyjdź windą, otwórz/zamknij drzwi (zakluczone: kluczem, 1 s); stuknięcie tuż po przebiegnięciu przez drzwi zatrzaskuje je za sobą |
+| E (trzymaj) | podnieś powalonego, odbij porwanego, bandaż dla kolegi, wejdź do szafki, przeszukaj skrzynię (1,5 s, hałas), wyjdź windą, otwórz/zamknij drzwi (zakluczone: kluczem, 1 s); stuknięcie tuż po przebiegnięciu przez drzwi zatrzaskuje je za sobą |
 | stój przodem do zamkniętych drzwi | po 0,6 s podgląd przez kratkę w drzwiach (ruch kończy) |
 | E w szafce | wyjście z szafki |
 | H (trzymaj) | bandaż dla siebie |

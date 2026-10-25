@@ -18,6 +18,12 @@ const PLAYER_SCENE := preload("res://player/player.tscn")
 const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 const KEY_SCENE := preload("res://loot/key_pickup.tscn")
 const BATTERY_SCENE := preload("res://loot/battery_pickup.tscn")
+const CONTAINER_SCENE := preload("res://loot/loot_container.tscn")
+## Łup (33b): znacznik na meblu do tej wysokości zostaje na meblu (sięga się z ziemi albo skokiem),
+## wyżej spada na podłogę. Część znaczników zamienia się w pojemnik do przeszukania.
+const LOOT_REACH_HEIGHT := 1.1
+const CONTAINER_CHANCE := 0.45
+const NAV_SYNC_MAX_FRAMES := 600
 ## Baterie do latarki: jedna na tyle pokoi mapy (co najmniej jedna).
 const ROOMS_PER_BATTERY := 4
 
@@ -52,7 +58,7 @@ var map_loops := 0
 var key_rooms: Array[Room] = []
 var locked_doors := 0
 ## Ilu monet szukać na mapie (na pokój, poza halą), oprócz znaczników LootSpawns.
-var coins_per_room := 2
+var coins_per_room := 1
 
 var _spectate_index := 0
 var _threat_text := ""
@@ -62,6 +68,8 @@ var _bleed_pulse := 0.0
 var _last_hp := -1
 var _last_hit_time := 0.0
 var _threat_until := 0
+var _search_text := ""  # wynik przeszukania pojemnika, przez chwilę w HUD
+var _search_until := 0
 
 
 func _ready() -> void:
@@ -71,6 +79,7 @@ func _ready() -> void:
 	game_state.doors_changed.connect(_on_doors_changed)
 	game_state.player_hit.connect(_on_player_hit)
 	game_state.coins_picked.connect(_on_coins_picked)
+	game_state.container_searched.connect(_on_container_searched)
 	game_state.round_finished.connect(_on_round_finished)
 	director.new_threat.connect(_on_new_threat)
 	director.monster_spawned.connect(func(m: Monster) -> void: m.state_changed.connect(func(_s: Monster.State) -> void: _update_hud()))
@@ -217,9 +226,18 @@ func _bake_navigation() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	navigation.bake_navigation_mesh(false)
-	# Jeszcze chwila na synchronizację mapy nawigacji, zanim ktoś zacznie z niej korzystać.
-	for i in 5:
+	# Mapa nawigacji synchronizuje się z wypieczoną siatką z opóźnieniem, a przy dużych mapach
+	# (20+ pokoi) stała liczba klatek nie wystarczała: łup spawnowany za wcześnie dostawał
+	# z `map_get_closest_point` punkty spoza mapy i wszystko było odrzucane. Czekamy, aż mapa
+	# zna już region z podłogą hali (z limitem, żeby nigdy nie zawisnąć).
+	var map := navigation.get_navigation_map()
+	var probe := rooms[0].global_position if not rooms.is_empty() else Vector3.ZERO
+	for i in NAV_SYNC_MAX_FRAMES:
 		await get_tree().physics_frame
+		# Pusta mapa zwraca (0, 0, 0), a hala stoi w (0, 0, 0): sprawdzamy więc, czy punkt ma
+		# właściciela (region nawigacji), a nie samą odległość.
+		if i >= 4 and NavigationServer3D.map_get_closest_point_owner(map, probe).is_valid():
+			break
 	navigation_ready.emit()
 
 
@@ -298,8 +316,8 @@ func _spawn_transform(index: int) -> Transform3D:
 	return spawns[index % spawns.size()].global_transform
 
 
-## Monety: na znacznikach LootSpawns i w losowych miejscach pokoi. Dalej od hali = cenniejsze
-## (chciwość ma kosztować ryzyko). Wszystko kładziemy na podłodze, w zasięgu gracza.
+## Łup: na znacznikach LootSpawns (część w pojemnikach do przeszukania, część na meblach)
+## i w losowych miejscach pokoi. Dalej od hali = cenniejsze (chciwość ma kosztować ryzyko).
 func _spawn_loot() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = map_seed
@@ -316,14 +334,17 @@ func _spawn_loot() -> void:
 				rng.randf_range(room.bounds.position.z + 1.5, room.bounds.end.z - 1.5))
 			spots.append(room.to_global(local))
 		for spot in spots:
-			# Na podłogę obok (znacznik może stać na skrzyni, a tam nie da się wejść).
+			# Na podłodze obok (do NavMesh), chyba że znacznik jest na meblu w zasięgu ręki/skoku.
 			var floor_spot := Vector3(spot.x, room.global_position.y + 0.2, spot.z)
 			var point := NavigationServer3D.map_get_closest_point(map, floor_spot)
 			if point.distance_to(floor_spot) > 1.5:
 				continue
-			var distance := point.distance_to(start)
-			var value := roundi(rng.randi_range(5, 20) * (1.0 + distance / 40.0))
-			_spawn_coin_pile(point, value)
+			var value := roundi(rng.randi_range(8, 25) * (1.0 + point.distance_to(start) / 40.0))
+			if rng.randf() < CONTAINER_CHANCE:
+				_spawn_container(rng, point, value * 2)
+				continue
+			var height: float = spot.y - room.global_position.y
+			_spawn_coin_pile(spot if height > 0.4 and height <= LOOT_REACH_HEIGHT else point, value)
 	_spawn_keys(rng, map)
 	_spawn_batteries(rng, map)
 
@@ -367,6 +388,21 @@ func _spawn_keys(rng: RandomNumberGenerator, map: RID) -> void:
 			key.position = point
 			loot.add_child(key, true)
 			break
+
+
+## Pojemnik: zwykle monety (więcej niż w kupce, bo trzeba poświęcić czas i hałasować),
+## czasem bateria, czasem nic. Zawartość zna tylko host.
+func _spawn_container(rng: RandomNumberGenerator, position: Vector3, value: int) -> void:
+	var container: LootContainer = CONTAINER_SCENE.instantiate()
+	container.position = position
+	container.rotation.y = rng.randi_range(0, 3) * PI / 2.0
+	var roll := rng.randf()
+	if roll < 0.65:
+		container.content = LootContainer.Content.COINS
+		container.value = value
+	elif roll < 0.75:
+		container.content = LootContainer.Content.BATTERY
+	loot.add_child(container, true)
 
 
 func _spawn_coin_pile(position: Vector3, value: int) -> void:
@@ -483,6 +519,18 @@ func _on_coins_picked(_peer_id: int, position: Vector3) -> void:
 	$CoinSound.play()
 
 
+func _on_container_searched(content: int, amount: int) -> void:
+	match content:
+		LootContainer.Content.COINS:
+			_search_text = "Znalazłeś %d monet" % amount
+		LootContainer.Content.BATTERY:
+			_search_text = "Znalazłeś baterię do latarki"
+		_:
+			_search_text = "Pusto"
+	_search_until = Time.get_ticks_msec() + 2500
+	_update_hud()
+
+
 func _on_player_hit(peer_id: int, _amount: int) -> void:
 	if peer_id == multiplayer.get_unique_id():
 		_last_hit_time = Time.get_ticks_msec() / 1000.0
@@ -546,6 +594,8 @@ func _update_hud() -> void:
 		lines.append(me_node.hint)
 	if Time.get_ticks_msec() < _threat_until:
 		lines.append(_threat_text)
+	if Time.get_ticks_msec() < _search_until:
+		lines.append(_search_text)
 	lines.append("[Tab] statystyki")
 	info_label.text = "\n".join(lines)
 	$HUD/Slats.visible = game_state.is_hidden(me)

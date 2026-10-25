@@ -24,7 +24,7 @@ Było ustalone 24.10 (zrobione 25.10):
 3. 15r antresola biblioteki dookoła bez skakania → 4. 15q zgaszone lampy nie świecą →
 5. 15p dźwięki wyważania drzwi → 6. 15t zamykanie drzwi za sobą w biegu → 7. 15s limity wystąpień typów pokoi →
 8. 15u nowe unikalne typy pokoi → 9. 15v warianty pokoi (drobiazgi opcjonalne, potem warianty układu).
-Potem: 33b łup w pojemnikach, 41c bateria (zrobione 25.10), 36c sklep, 37 MVP.
+Potem: 33b łup w pojemnikach i 41c bateria (zrobione 25.10), 36c sklep, 37 MVP.
 Nowe z playtestu 25.10: 15x dźwięk wyważania drzwi (zrobione 25.10), 47g potwory za słabe (1–4 zrobione 25.10; 5–7 i reżyser 47f otwarte), 34b winda losowo na mapie (szkielet do potwierdzenia). Otwierane kraty w lochach: odłożone (24.10).
 
 Szkielet potwierdzony 24.10:
@@ -181,9 +181,12 @@ wielkie schody na starcie), Mineshaft (wąskie kamienne pokoje i jaskinie, dwie 
   - Propozycja: osobne, głośne próbki (ciężkie uderzenie w drewno + trzask drzazg; CC0 z freesound/Sonniss, bo Kenney nie ma takiego), osobny odtwarzacz na trzask, wyższy `unit_size`/`volume_db` i zasięg ~25 m, lekki wstrząs kamery i drgnięcie skrzydła przy każdym łomocie. Rytm: 3 łomoty co ~0,6 s + trzask (wyważenie 1,2 → ~1,8 s)
   - Uwaga: dłuższe wyważanie to więcej czasu na ucieczkę w pościgu, czyli potwór słabszy, a to kłóci się z 47g. Albo zostawić 1,2 s i zagęścić łomoty, ale wtedy „BUM BUM” zleje się w jeden; wolę 1,8 s i nadrobić szybkością potwora (47g)
   - Zrobione 25.10: rytm 3 łomoty co 0,6 s + trzask (wyważenie 1,8 s; nadrabiają to zryw i anty-kiting z 47g). Własne wygenerowane próbki (`tools/gen_sfx.py`: `door_thud` = niskie „bum” skrzydła + stuk desek + brzęk futryny, `door_splinter` = uderzenie, seria trzasków drzazg, upadek skrzydła) zamiast Kenney `impactSoft` i metalicznych `vent_bangs`. Osobny odtwarzacz uderzeń (`unit_size` 6, +4 dB, zasięg 28 m), skrzypienie go nie ucina. Przy łomocie skrzydło drga, a kamera trzęsie się, gdy jesteś do 10 m od drzwi. Do playtestu: czy próbki brzmią jak drewno, czy trzeba szukać CC0
-- [ ] 33b. Monety lepiej schowane (24.10: „zbiera się jak w pacmanie, za tanie”). Dziś monety leżą na podłodze, a znaczniki na meblach są celowo zsuwane na podłogę (`main._spawn_loot`), plus losowe kupki w każdym pokoju (`coins_per_room`)
+- [x] 33b. Monety lepiej schowane (24.10: „zbiera się jak w pacmanie, za tanie”). Dziś monety leżą na podłodze, a znaczniki na meblach są celowo zsuwane na podłogę (`main._spawn_loot`), plus losowe kupki w każdym pokoju (`coins_per_room`)
   - Propozycja: mniej kupek, ale cenniejszych; część w pojemnikach do przeszukania (szuflady, skrzynie, szafki na akta: E 1–2 s, hałas, czasem puste), część na meblach w zasięgu skoku (do ~1 m), mało na środku podłogi
   - Uwaga: pojemniki muszą być innym rekwizytem niż szafki do chowania (inaczej E przy szafce znaczy dwie rzeczy, a „zajęta” szafka z łupem myli). Przeszukiwanie z hałasem robi z łupu decyzję (czas i ryzyko), a nie spacer. Wartości do strojenia razem z punktacją zero-sum (mniej monet = większe różnice w wynikach)
+  - Zrobione 25.10 (szkielet potwierdzony): `LootContainer` = niska skrzynia z wiekiem, spawnuje host przez `LootSpawner` (bez zmian w `gen_rooms.py`), bez kolizji (stawiana po wypieczeniu NavMesh). Stan `opened` synchronizowany na węźle, zawartość zna tylko host; gracz prosi `GameState.request_search`. E 1,5 s, hałas 6 m, komunikat w HUD („Znalazłeś N monet” / „baterię” / „Pusto”). 45% znaczników łupu to skrzynie: 65% monety (2× wartość kupki), 10% bateria, 25% puste. Znacznik na meblu do 1,1 m zostaje na meblu, wyżej spada na podłogę; losowych kupek 1 na pokój zamiast 2, wartości 8–25 zamiast 5–20 (nadal rosną z odległością od hali, do zmiany razem z 34b). Na mapie 20 pokoi: było 50–59 kupek (1180–1490 monet), jest 25–31 miejsc, w tym 9–11 skrzyń (1120–1360 monet). Test `container_test`
+  - Przy okazji naprawione: na dużych mapach (20+ pokoi) w testach headless łup nie pojawiał się wcale, bo `navigation_ready` przychodziło po stałych 5 klatkach, zanim mapa nawigacji znała region (`map_get_closest_point` zwracał (0, 0, 0), wszystko odrzucone). Teraz `_bake_navigation` czeka, aż punkt w hali ma właściciela na mapie nawigacji (limit 600 klatek). Czy to dotykało gry z oknem, nie wiadomo (tam klatki są wolniejsze); w playteście sprawdzić, czy na dużej mapie jest łup
+  - Do playtestu: czy skrzynie bez kolizji nie wyglądają źle (można przez nie przejść); czy 1,5 s + 6 m hałasu to dobra cena
 
 ## Chowanie się i ruch (po playteście 23.10)
 
