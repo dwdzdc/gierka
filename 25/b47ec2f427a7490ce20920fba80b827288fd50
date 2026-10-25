@@ -1,0 +1,30 @@
+game/game_state.gd
+  s_f2f22258b99fad::t_a234a6944e1ac5 12,45-46,581-605
+main.tscn
+  s_f2f22258b99fad::t_a234a6944e1ac5 56
+main.gd
+  s_f2f22258b99fad::t_edda1fe237b6dc 26,229-231,233-235,240
+  s_f2f22258b99fad::t_5d3fbbae984b36 319-320
+  s_f2f22258b99fad::t_af9ba7d36c73a3 71-72,82,522-533,597-598
+  s_f2f22258b99fad::t_bc5893d8bf505d 232,237-239
+  s_f2f22258b99fad::t_ff8a3a775d1b9c 21-25,61,337,342-345,347,393-405
+  s_f2f22258b99fad::t_a6c363ea4e692e 346
+player/player.gd
+  s_f2f22258b99fad::t_a234a6944e1ac5 42-43,46,87,353-357,382,401-403,407-418,466-468
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "25b47ec2f427a7490ce20920fba80b827288fd50",
+  "prompts": {},
+  "sessions": {
+    "s_f2f22258b99fad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9774cbc7-8eb9-4dff-905a-36a88d208bc7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
