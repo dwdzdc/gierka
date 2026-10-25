@@ -1,0 +1,38 @@
+tools/gen_sfx.py
+  s_f2f22258b99fad::t_04416a2c64b054 134
+monster/monster.gd
+  s_f2f22258b99fad::t_72c45fc659ccb1 54
+  s_f2f22258b99fad::t_1012874e301ea6 50,55
+  s_f2f22258b99fad::t_718c5d6e200609 804,811-817
+props/door.gd
+  s_f2f22258b99fad::t_1012874e301ea6 28,33,41-44,67-72,111-133,194-199
+progress.md
+  ai_agent 176,183
+assets/sfx/generated/door_splinter.wav.import
+  s_f2f22258b99fad::t_72c45fc659ccb1 1-24
+assets/sfx/generated/door_thud.wav.import
+  s_f2f22258b99fad::t_72c45fc659ccb1 1-24
+tests/door_test.gd
+  s_f2f22258b99fad::t_37e938f173c7dd 114-116,121
+  s_f2f22258b99fad::t_718c5d6e200609 119
+assets/sfx/door_pound.tres
+  s_f2f22258b99fad::t_1012874e301ea6 1,3,6-8
+tests/kite_test.gd.uid
+  s_f2f22258b99fad::t_72c45fc659ccb1 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "5d0ed33ec214ca1f888302307eebe96daf4231da",
+  "prompts": {},
+  "sessions": {
+    "s_f2f22258b99fad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9774cbc7-8eb9-4dff-905a-36a88d208bc7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
