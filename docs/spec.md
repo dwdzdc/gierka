@@ -53,11 +53,11 @@ Każdy gracz ma własne, nieruchome ujęcia, przecinane według tego, gdzie stoi
 | --- | --- |
 | W / S | przód / tył (względem postaci) |
 | A / D | obrót |
-| Shift | bieg (głośniejszy) |
+| Shift | bieg (głośniejszy, ok. 6 s, potem zadyszka) |
 | Ctrl albo C (trzymaj) | kucanie: ciszej, trudniej cię zauważyć, mieścisz się pod stołem |
 | Spacja | skok (\~1 m), lądowanie hałasuje |
 | Q | szybki obrót o 180° |
-| F | latarka (widzisz więcej, ale potwory widzą cię z 14 m zamiast 6 m) |
+| F | latarka (widzisz więcej, ale potwory widzą cię z 14 m zamiast 6 m; zużywa baterię) |
 | E (trzymaj) | podnieś powalonego, odbij porwanego, bandaż dla kolegi, wejdź do szafki, wyjdź windą, otwórz/zamknij drzwi (zakluczone: kluczem, 1 s); stuknięcie tuż po przebiegnięciu przez drzwi zatrzaskuje je za sobą |
 | stój przodem do zamkniętych drzwi | po 0,6 s podgląd przez kratkę w drzwiach (ruch kończy) |
 | E w szafce | wyjście z szafki |
@@ -107,6 +107,9 @@ Każdy potwór ma dwie warstwy AI, wzorowane na Alien: Isolation: **reżyser** z
 - **Wskaźnik zagrożenia.** Rośnie, gdy Łowca długo kręci się przy graczach; po progu reżyser odsyła go daleko, żeby dać wam odetchnąć.
 - **Nauka.** Im częściej gracze uciekają, chowając się w szafkach, tym częściej potwory je sprawdzają (od 10% do 70%).
 - **Stany:** patrol → sprawdzanie hałasu → pościg → atak z widocznym zamachem (oczy rozbłyskują, można odskoczyć) → wycofanie. Do tego tropienie krwi, porywanie i przejścia wentylacją.
+- **Zryw.** Łowca i Porywacz przez pierwsze 3 s pościgu biegną szybciej od ciebie (4,9 i 4,8 m/s, odnawia się po 10 s), potem zwalniają. Zauważenie z bliska jest groźne, ratunek to zerwać kontakt i się schować.
+- **Bieganie w kółko nie działa.** Potwór pamięta twoją trasę; gdy krążysz wokół fontanny, regału albo pętli korytarzy, wychodzi ci naprzeciw drugą stroną i tam czeka.
+- **Przeszukiwanie.** Gdy cię zgubi, przez 20–35 s chodzi po okolicy (do 9 m od miejsca, gdzie cię stracił), rozgląda się i często zagląda do szafek; dopiero potem wraca do patrolu. Strażnik od razu wraca do gniazda.
 - **Zmysły:** wzrok w stożku 120°: gracza w zgaszonym pokoju bez latarki widzi z 6 m, w oświetlonym pokoju albo z latarką z 14 m; z bliska zauważa od razu, dalej potrzebuje chwili (do 0,8 s); patrzy na głowę, tors i nogi, więc skrzynia zasłania tylko część; słuch zależny od hałasu (chód 4 m, bieg 10 m, kucanie 1,4 m); z bliska poluje na słuch; czuje krew do 90 s wstecz.
 - **Wentylacja:** kratki w suficie każdego pokoju. Łowca i Porywacz widocznie wspinają się do kratki i przemieszczają się szybami niewidoczni, słychać metaliczne dudnienie nad głową, zeskakują z kratki w innym pokoju.
 
@@ -126,6 +129,8 @@ Zero HP nie oznacza śmierci, tylko powalenie: masz 30 s, żeby kolega cię podn
 
 - **HP:** 100. Cios zwykłego potwora to 35, Strażnika 50.
 - **Krwawienie:** 60% trafień otwiera ranę, która zabiera 2 HP/s, dopóki jej nie opatrzysz.
+- **Kondycja:** bieg starcza na ok. 6 s, odnawia się wolniej (po 1 s odpoczynku). Po wyczerpaniu łapiesz zadyszkę: tylko marsz, aż wróci 40%, i głośne dyszenie, które słychać z 12 m, a potwory słyszą z 5 m. W HUD „kondycja N%”.
+- **Bateria latarki:** 4,5 min świecenia, zużywa się tylko przy włączonej. Poniżej 20% latarka przygasa i rwie się, pusta gaśnie. Baterie leżą na mapie (jedna na 4 pokoje, +50%); z pełną baterią jej nie podniesiesz, zostaje dla kolegi. W HUD „bateria N%”.
 - **Bandaże:** 2 na start. H (trzymaj 2 s) opatruje ciebie, E przy krwawiącym koledze opatruje jego twoim bandażem.
 - **Powalenie:** leżysz, nie ruszasz się, 30 s do wykrwawienia. Kolega trzyma przy tobie E przez 3 s i wstajesz z 30 HP. Potwór może powalonego dobić.
 - **Ślady krwi:** krwawiący zostawia krople co 0,7 m, powalony kałużę. Widać je z każdej kamery, zostają do końca rundy, a potwory nimi idą.
@@ -148,7 +153,7 @@ Drzwi stoją w ok. 65% przejść; zamknięte zatrzymują potwora na chwilę, ale
 
 - **Gracz:** E otwiera i zamyka (słychać z 5 m). Uciekając, stuknij E do 1,5 s po przebiegnięciu przez otwarte drzwi: zatrzaśniesz je za sobą bez odwracania się (słychać z 9 m). W drzwiach jest kratka: stań przodem do zamkniętych drzwi, a po 0,6 s zobaczysz, co jest po drugiej stronie.
 - **Zakluczone:** losowo od 0 do 10% drzwi, nigdy przy hali. Kluczy jest tyle, ile zakluczonych drzwi, i leżą tam, gdzie da się dojść bez nich. Dowolny klucz otwiera dowolne drzwi i się zużywa.
-- **Potwór otwiera powoli** (3,5 s, słychać szarpanie klamki), gdy tylko przechodzi. **Wyważa szybko** (1,2 s: trzy łomoty słychać z 12 m, na końcu huk z 16 m, drzwi zostają wyłamane), gdy goni, idzie po krwi albo sprawdza hałas. Patrol zakluczonych drzwi nie rusza.
+- **Potwór otwiera powoli** (3,5 s, słychać szarpanie klamki), gdy tylko przechodzi. **Wyważa szybko** (1,8 s: „BUM… BUM… BUM… TRZASK”, łomoty co 0,6 s potwory słyszą z 12 m, a gracze z sąsiednich pokoi; skrzydło drga, kamera się trzęsie, gdy jesteś blisko; na końcu trzask drzazg z 16 m i drzwi zostają wyłamane), gdy goni, idzie po krwi albo sprawdza hałas. Patrol zakluczonych drzwi nie rusza.
 - **Przez kratkę** potwór widzi tylko z bliska (do 2,6 m) i patrząc prosto na drzwi. Zamknięte drzwi tłumią hałas o połowę.
 
 ## Napięcie
