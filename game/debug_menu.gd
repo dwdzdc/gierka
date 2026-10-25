@@ -80,6 +80,7 @@ func _build_actions() -> Array[Dictionary]:
 	actions.append({"name": "Ulecz (HP 100, bez krwawienia, +bandaże)", "run": _heal})
 	actions.append({"name": "+100 monet", "run": _add_coins})
 	actions.append({"name": "+1 klucz", "run": func() -> void: _main.game_state.add_key(multiplayer.get_unique_id())})
+	actions.append({"name": "Bateria latarki: 15 s", "run": _drain_battery})
 	actions.append({"name": "Teleport do windy", "run": _teleport_to_exit})
 	return actions
 
@@ -118,6 +119,13 @@ func _remove_monsters() -> void:
 func _toggle_immortal() -> void:
 	_immortal = not _immortal
 	_main.game_state.set_invulnerable(multiplayer.get_unique_id(), _immortal)
+
+
+## Do sprawdzania migotania i gaśnięcia latarki bez czekania 4,5 minuty.
+func _drain_battery() -> void:
+	var game_state: GameState = _main.game_state
+	game_state.players[multiplayer.get_unique_id()].battery = 15
+	game_state._broadcast()
 
 
 func _heal() -> void:

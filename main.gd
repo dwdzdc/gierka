@@ -17,6 +17,9 @@ signal navigation_ready
 const PLAYER_SCENE := preload("res://player/player.tscn")
 const COIN_SCENE := preload("res://loot/coin_pile.tscn")
 const KEY_SCENE := preload("res://loot/key_pickup.tscn")
+const BATTERY_SCENE := preload("res://loot/battery_pickup.tscn")
+## Baterie do latarki: jedna na tyle pokoi mapy (co najmniej jedna).
+const ROOMS_PER_BATTERY := 4
 
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
@@ -322,6 +325,28 @@ func _spawn_loot() -> void:
 			var value := roundi(rng.randi_range(5, 20) * (1.0 + distance / 40.0))
 			_spawn_coin_pile(point, value)
 	_spawn_keys(rng, map)
+	_spawn_batteries(rng, map)
+
+
+## Baterie w losowych pokojach poza halą, na podłodze osiągalnej z NavMesh.
+func _spawn_batteries(rng: RandomNumberGenerator, map: RID) -> void:
+	var candidates := rooms.slice(1)
+	if candidates.is_empty():
+		return
+	for i in maxi(1, candidates.size() / ROOMS_PER_BATTERY):
+		for attempt in 10:
+			var room: Room = candidates[rng.randi_range(0, candidates.size() - 1)]
+			var local := Vector3(
+				rng.randf_range(room.bounds.position.x + 1.5, room.bounds.end.x - 1.5), 0.2,
+				rng.randf_range(room.bounds.position.z + 1.5, room.bounds.end.z - 1.5))
+			var spot := room.to_global(local)
+			var point := NavigationServer3D.map_get_closest_point(map, spot)
+			if point.distance_to(spot) > 1.5:
+				continue
+			var battery: BatteryPickup = BATTERY_SCENE.instantiate()
+			battery.position = point
+			loot.add_child(battery, true)
+			break
 
 
 ## Tyle kluczy, ile zakluczonych drzwi, w pokojach osiągalnych bez przechodzenia przez nie.
@@ -498,6 +523,7 @@ func _update_hud() -> void:
 				status += "    kondycja %d%%" % roundi(me_player.stamina / Player.STAMINA_MAX * 100.0)
 			if game_state.keys(me) > 0:
 				status += "    klucze %d" % game_state.keys(me)
+			status += "    bateria %d%%" % roundi(100.0 * game_state.battery(me) / GameState.BATTERY_MAX)
 			lines.append(status)
 			if game_state.is_bleeding(me):
 				lines.append("KRWAWISZ  (H - bandaż)")

@@ -24,8 +24,8 @@ Było ustalone 24.10 (zrobione 25.10):
 3. 15r antresola biblioteki dookoła bez skakania → 4. 15q zgaszone lampy nie świecą →
 5. 15p dźwięki wyważania drzwi → 6. 15t zamykanie drzwi za sobą w biegu → 7. 15s limity wystąpień typów pokoi →
 8. 15u nowe unikalne typy pokoi → 9. 15v warianty pokoi (drobiazgi opcjonalne, potem warianty układu).
-Potem: 33b łup w pojemnikach, 41c bateria, 36c sklep, 37 MVP.
-Nowe z playtestu 25.10 (do ustalenia kolejności): 15x dźwięk wyważania drzwi (bug), 47g potwory za słabe (wytrzymałość, zryw, anty-kiting), 34b winda losowo na mapie (szkielet do potwierdzenia). Otwierane kraty w lochach: odłożone (24.10).
+Potem: 33b łup w pojemnikach, 41c bateria (zrobione 25.10), 36c sklep, 37 MVP.
+Nowe z playtestu 25.10: 15x dźwięk wyważania drzwi (zrobione 25.10), 47g potwory za słabe (1–4 zrobione 25.10; 5–7 i reżyser 47f otwarte), 34b winda losowo na mapie (szkielet do potwierdzenia). Otwierane kraty w lochach: odłożone (24.10).
 
 Szkielet potwierdzony 24.10:
 - Siatka 2 m w kontrakcie pokoju: wymiary i pozycje przejść w wielokrotnościach 2 m
@@ -328,8 +328,9 @@ Ustalenia (23.10):
   - Zrobione: `MapGenerator.DARK_ROOM_CHANCE = 0.2` (hala zawsze jasna), w jasnych pokojach 20% lamp migocze. Pomiar na 10 mapach × 20 pokoi: 25% ciemnych. Nie pilnuje jeszcze, żeby ciemny pokój nie był jedyną drogą do windy
   - Potwierdzone 23.10: 20% ciemnych pokoi (pustość wynikała z ciemności wszędzie, teraz kontrast); proporcja do strojenia po testach, jedna stała
   - Uwaga: kłóci się częściowo z 15g (pokoje wyglądały na puste, bo w ciemności nie było widać mebli; światło podbite o 30%). Dlatego kontrast między pokojami zamiast równego przyciemnienia wszystkiego. Ciemny pokój nie powinien być jedyną drogą do windy, a przynajmniej nie bez baterii w zasięgu
-- [ ] 41c. Bateria latarki: ograniczony czas świecenia (np. 4–5 min), migotanie przy słabej baterii, baterie do znalezienia na mapie (nowy typ znaleziska obok monet), podniesienie doładowuje
+- [x] 41c. Bateria latarki: ograniczony czas świecenia (np. 4–5 min), migotanie przy słabej baterii, baterie do znalezienia na mapie (nowy typ znaleziska obok monet), podniesienie doładowuje
   - Uwaga: rozładowana latarka + ciemny pokój = ślepota, która frustruje zamiast straszyć; liczba baterii i ciemnych pokoi do strojenia razem. Wzmacnia istniejący dylemat (latarka = potwory widzą cię z 14 m zamiast 6 m). Naturalny kandydat do podawania przedmiotów (43)
+  - Zrobione 25.10: 270 s świecenia (4,5 min), liczy host w `GameState` (`battery`, jak HP), zużycie tylko przy włączonej latarce. Poniżej 20% latarka przygasa i rwie się coraz częściej, pusta gaśnie i nie da się jej włączyć. Baterie na mapie (`BatteryPickup`, jak klucz): jedna na 4 pokoje, +135 s, gracz z pełną baterią jej nie podnosi (zostaje dla kolegi). W HUD „bateria N%”. Menu testowe: „Bateria latarki: 15 s”. Test `battery_test`. Strojenie (czas, liczba baterii vs 20% ciemnych pokoi) w playteście
 
 ## Faza 7: napięcie i niepewność
 

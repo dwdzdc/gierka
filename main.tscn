@@ -53,7 +53,7 @@ navigation_mesh = SubResource("navmesh")
 [node name="Loot" type="Node3D" parent="."]
 
 [node name="LootSpawner" type="MultiplayerSpawner" parent="."]
-_spawnable_scenes = PackedStringArray("res://loot/coin_pile.tscn", "res://loot/key_pickup.tscn")
+_spawnable_scenes = PackedStringArray("res://loot/coin_pile.tscn", "res://loot/key_pickup.tscn", "res://loot/battery_pickup.tscn")
 spawn_path = NodePath("../Loot")
 
 [node name="Players" type="Node3D" parent="."]

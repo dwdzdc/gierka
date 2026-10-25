@@ -73,6 +73,8 @@ const WINDED_RECOVER := 0.4
 ## Dyszenie słychać (i potwory je słyszą) z tej odległości, co tyle sekund.
 const WINDED_NOISE_RADIUS := 5.0
 const WINDED_NOISE_INTERVAL := 1.0
+## Poniżej tej części baterii latarka zaczyna migać.
+const LOW_BATTERY := 0.2
 
 ## Bieżąca akcja "trzymaj klawisz" (tylko u właściciela postaci, do HUD-a).
 var help_kind := Help.NONE
@@ -92,6 +94,8 @@ var stamina := STAMINA_MAX
 var _stamina_rest := 0.0
 var _winded_noise_timer := 0.0
 var _breath_player: AudioStreamPlayer3D
+var _flashlight_energy := 1.0
+var _flicker_time := 0.0
 ## Synchronizowane: inni słyszą dyszenie, a host robi z niego hałas dla potworów.
 var winded := false
 
@@ -115,6 +119,7 @@ func _ready() -> void:
 	_breath_player.volume_db = -4.0
 	_breath_player.position.y = 1.5
 	add_child(_breath_player)
+	_flashlight_energy = flashlight.light_energy
 	if is_multiplayer_authority():
 		get_tree().call_group(&"camera_director", &"set_target", self)
 
@@ -138,9 +143,31 @@ func _process(_delta: float) -> void:
 	$Body.rotation.x = PI / 2.0 if lying else 0.0
 	$Body.position.y = 0.35 if lying else 0.85
 	$Visor.visible = life != GameState.Life.DEAD
+	_update_flashlight_battery(_delta)
 	var gone := life == GameState.Life.EXTRACTED or (game_state != null and game_state.is_hidden(get_multiplayer_authority()))
 	visible = not gone
 	collision_layer = 0 if gone else 2
+
+
+func _battery() -> int:
+	var game_state := _game_state()
+	return GameState.BATTERY_MAX if game_state == null else game_state.battery(get_multiplayer_authority())
+
+
+## Słaba bateria (41c): latarka przygasa i rwie się, coraz częściej; pusta gaśnie (wyłącza
+## właściciel, bo to on steruje latarką). Migotanie liczy każdy peer u siebie (to tylko wygląd).
+func _update_flashlight_battery(delta: float) -> void:
+	var charge := float(_battery()) / GameState.BATTERY_MAX
+	if charge <= 0.0 and flashlight.visible and is_multiplayer_authority():
+		flashlight.visible = false
+	var weak := clampf(1.0 - charge / LOW_BATTERY, 0.0, 1.0)  # 0 = w porządku, 1 = prawie pusta
+	_flicker_time -= delta
+	if weak > 0.0 and _flicker_time <= 0.0:
+		var out := randf() < 0.25 + 0.5 * weak
+		flashlight.light_energy = _flashlight_energy * (randf_range(0.0, 0.25) if out else randf_range(0.5, 0.9))
+		_flicker_time = randf_range(0.04, 0.18) if out else randf_range(0.2, 1.5 * (1.0 - weak) + 0.2)
+	elif weak <= 0.0:
+		flashlight.light_energy = _flashlight_energy
 
 
 ## Host przenosi gracza (np. respawn). Pozycją steruje właściciel, więc host musi go poprosić.
@@ -164,7 +191,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not is_multiplayer_authority() or not is_up():
 		return
 	if event.is_action_pressed("toggle_flashlight"):
-		flashlight.visible = not flashlight.visible
+		flashlight.visible = not flashlight.visible and _battery() > 0
 	elif event.is_action_pressed("quick_turn"):
 		_quick_turn()
 

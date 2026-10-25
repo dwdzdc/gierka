@@ -38,6 +38,9 @@ const BLEED_CHANCE := 0.6
 const BLEED_DAMAGE_PER_SECOND := 2
 const BLEED_OUT_SECONDS := 30
 const REVIVE_HP := 30
+## Bateria latarki (41c), w sekundach świecenia. Bateria do znalezienia doładowuje ułamek pełnej.
+const BATTERY_MAX := 270
+const BATTERY_PICKUP := 135
 const START_BANDAGES := 2
 ## Jak blisko trzeba stać, żeby pomóc koledze / wyjść (host to sprawdza).
 const HELP_DISTANCE := 2.0
@@ -167,6 +170,9 @@ func _physics_process(delta: float) -> void:
 			dirty = true
 			if entry.hp == 0:
 				_kill(peer_id)  # porwany nie ma powalenia: zjedzony to zjedzony
+		if entry.life == Life.OK and _flashlight_on(peer_id) and battery(peer_id) > 0:
+			entry.battery = battery(peer_id) - 1
+			dirty = true
 	if dirty:
 		_broadcast()
 
@@ -259,6 +265,7 @@ func debug_heal(peer_id: int) -> void:
 	entry.bleeding = false
 	entry.bleed_out = 0
 	entry.bandages = maxi(entry.bandages, START_BANDAGES)
+	entry.battery = BATTERY_MAX
 	entry.life = Life.OK
 	entry.carried_by = ""
 	_broadcast()
@@ -323,7 +330,7 @@ func _kill(peer_id: int) -> void:
 func _fresh_entry(keep: Dictionary) -> Dictionary:
 	return {"name": keep.get("name", "?"), "session": keep.get("session", 0),
 		"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0,
-		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": "", "extract_order": 0, "keys": 0}
+		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": "", "extract_order": 0, "keys": 0, "battery": BATTERY_MAX}
 
 
 ## Runda się kończy, gdy nikt nie został na mapie (każdy zginął albo wyszedł).
@@ -404,6 +411,25 @@ func init_doors(states: Dictionary) -> void:
 
 
 ## Gracz podniósł klucz.
+func battery(peer_id: int) -> int:
+	return players.get(peer_id, {}).get("battery", BATTERY_MAX)
+
+
+## Latarkę włącza właściciel postaci (widoczność synchronizowana), host tylko liczy zużycie.
+func _flashlight_on(peer_id: int) -> bool:
+	for node in get_tree().get_nodes_in_group(&"players"):
+		if node.get_multiplayer_authority() == peer_id:
+			return node.flashlight.visible
+	return false
+
+
+func add_battery(peer_id: int) -> void:
+	assert(multiplayer.is_server())
+	if players.has(peer_id):
+		players[peer_id].battery = mini(battery(peer_id) + BATTERY_PICKUP, BATTERY_MAX)
+		_broadcast()
+
+
 func add_key(peer_id: int) -> void:
 	assert(multiplayer.is_server())
 	if players.has(peer_id):
