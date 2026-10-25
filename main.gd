@@ -493,6 +493,9 @@ func _update_hud() -> void:
 	match game_state.life(me):
 		GameState.Life.OK:
 			var status := "HP %d    monety %d    bandaże %d" % [game_state.hp(me), game_state.coins(me), game_state.bandages(me)]
+			var me_player: Player = players.get_node_or_null(str(me))
+			if me_player:
+				status += "    kondycja %d%%" % roundi(me_player.stamina / Player.STAMINA_MAX * 100.0)
 			if game_state.keys(me) > 0:
 				status += "    klucze %d" % game_state.keys(me)
 			lines.append(status)

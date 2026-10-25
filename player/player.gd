@@ -63,6 +63,16 @@ const CROUCH_NOISE_FACTOR := 0.35
 const CROUCH_SIGHT_FACTOR := 0.6
 const JUMP_VELOCITY := 4.5  # ~1 m w górę
 const LANDING_NOISE_RADIUS := 7.0
+## Wytrzymałość (47g): bez niej bieg zawsze wygrywa z potworem. Pełna = tyle sekund biegu;
+## odnawia się wolniej, niż schodzi, i dopiero chwilę po zatrzymaniu biegu.
+const STAMINA_MAX := 6.0
+const STAMINA_REGEN := 0.6  # sekundy biegu odzyskane na sekundę
+const STAMINA_REGEN_DELAY := 1.0
+## Zadyszka: po wyczerpaniu nie da się biec, dopóki nie wróci ta część wytrzymałości.
+const WINDED_RECOVER := 0.4
+## Dyszenie słychać (i potwory je słyszą) z tej odległości, co tyle sekund.
+const WINDED_NOISE_RADIUS := 5.0
+const WINDED_NOISE_INTERVAL := 1.0
 
 ## Bieżąca akcja "trzymaj klawisz" (tylko u właściciela postaci, do HUD-a).
 var help_kind := Help.NONE
@@ -77,6 +87,13 @@ var _peek_timer := 0.0
 var _door_sides := {}  # Door -> po której stronie drzwi byliśmy w poprzedniej klatce
 var _passed_door: Door  # ostatnie otwarte drzwi, przez które przeszliśmy
 var _passed_timer := 0.0
+## Wytrzymałość liczy właściciel postaci (to część ruchu), reszta zna tylko `winded`.
+var stamina := STAMINA_MAX
+var _stamina_rest := 0.0
+var _winded_noise_timer := 0.0
+var _breath_player: AudioStreamPlayer3D
+## Synchronizowane: inni słyszą dyszenie, a host robi z niego hałas dla potworów.
+var winded := false
 
 
 func _enter_tree() -> void:
@@ -92,6 +109,12 @@ func _ready() -> void:
 	# bo kucanie zmienia jego wysokość.
 	$Shape.shape = $Shape.shape.duplicate()
 	_tint_body()
+	_breath_player = AudioStreamPlayer3D.new()
+	_breath_player.stream = preload("res://assets/sfx/generated/panic_breath.wav")
+	_breath_player.max_distance = 12.0
+	_breath_player.volume_db = -4.0
+	_breath_player.position.y = 1.5
+	add_child(_breath_player)
 	if is_multiplayer_authority():
 		get_tree().call_group(&"camera_director", &"set_target", self)
 
@@ -148,6 +171,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_footsteps(delta)
+	_winded_breath(delta)
 	if not is_multiplayer_authority():
 		return
 	if not is_on_floor():
@@ -163,6 +187,7 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_just_pressed("jump") and is_on_floor() and is_up() and not crouching and not helping:
 		velocity.y = JUMP_VELOCITY
 	var desired := Vector3.ZERO if _quick_turning or helping or not is_up() else _tank_movement(delta)
+	_update_stamina(delta, desired)
 	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)
 	var was_airborne := _air_time
@@ -457,7 +482,7 @@ func _tank_movement(delta: float) -> Vector3:
 		speed = CROUCH_SPEED
 	elif throttle < 0.0:
 		speed *= backward_speed_factor
-	elif Input.is_action_pressed("run"):
+	elif Input.is_action_pressed("run") and not winded:
 		speed = run_speed
 	# W Godocie "przód" węzła to -Z.
 	return -global_transform.basis.z * throttle * speed
@@ -489,6 +514,40 @@ func _footsteps(delta: float) -> void:
 			if game_state:
 				radius *= 1.0 + minf(game_state.coins(get_multiplayer_authority()) / COINS_FOR_DOUBLE_NOISE, 1.0)
 			NoiseBus.emit_noise(global_position, radius, self)
+
+
+## Bieg zużywa wytrzymałość (liczy się chęć biegu w ruchu, nie zmierzona prędkość, żeby
+## bieg w ścianę też męczył). Po wyczerpaniu: zadyszka, tylko marsz, aż wróci WINDED_RECOVER.
+func _update_stamina(delta: float, desired: Vector3) -> void:
+	var running := Input.is_action_pressed("run") and not winded and not crouching \
+			and desired.length() > walk_speed + 0.1
+	if running:
+		stamina = maxf(stamina - delta, 0.0)
+		_stamina_rest = 0.0
+		if stamina <= 0.0:
+			winded = true
+		return
+	_stamina_rest += delta
+	if _stamina_rest >= STAMINA_REGEN_DELAY:
+		stamina = minf(stamina + STAMINA_REGEN * delta, STAMINA_MAX)
+	if winded and stamina >= STAMINA_MAX * WINDED_RECOVER:
+		winded = false
+
+
+## Zadyszka u każdego peera: słychać dyszenie, a u hosta to hałas dla potworów.
+func _winded_breath(delta: float) -> void:
+	var breathing := winded and is_up()
+	if breathing and not _breath_player.playing:
+		_breath_player.play()
+	elif not breathing and _breath_player.playing:
+		_breath_player.stop()
+	if not breathing or not multiplayer.is_server():
+		_winded_noise_timer = 0.0
+		return
+	_winded_noise_timer -= delta
+	if _winded_noise_timer <= 0.0:
+		_winded_noise_timer = WINDED_NOISE_INTERVAL
+		NoiseBus.emit_noise(global_position, WINDED_NOISE_RADIUS, self)
 
 
 func _quick_turn() -> void:
