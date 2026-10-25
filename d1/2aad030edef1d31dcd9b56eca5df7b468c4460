@@ -1,0 +1,28 @@
+tests/monster_states_test.gd
+  s_f2f22258b99fad::t_d1ae211b9df392 11-12,45,54-57,59-60,65-67
+progress.md
+  s_f2f22258b99fad::t_50f2c510e44871 416,419-420
+monster/monster.gd
+  s_f2f22258b99fad::t_6dc0afc04c4d8b 740-743
+  s_f2f22258b99fad::t_3df091bf295892 43-44,780-784
+  s_f2f22258b99fad::t_c7b380181af9b0 736-737,739
+  s_f2f22258b99fad::t_d1ae211b9df392 41-42,45,145,300,728-730,732,734-735,738,744-746,757-758,1049-1052
+docs/spec.md
+  s_f2f22258b99fad::t_50f2c510e44871 111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "d12aad030edef1d31dcd9b56eca5df7b468c4460",
+  "prompts": {},
+  "sessions": {
+    "s_f2f22258b99fad": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "9774cbc7-8eb9-4dff-905a-36a88d208bc7",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
