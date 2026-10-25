@@ -37,6 +37,7 @@ const HEAR_HUNT_DISTANCE := 7.0
 ## Anty-kiting: ślad gracza co TRAIL_STEP s z ostatnich TRAIL_SIZE * TRAIL_STEP s. Pętla = gracz
 ## wrócił na LOOP_MATCH_DISTANCE do punktu sprzed co najmniej LOOP_MIN_AGE s.
 const TRAIL_STEP := 0.25
+const SEARCH_HIDING_CHECK := 0.35
 const TRAIL_SIZE := 48
 const LOOP_MIN_AGE := 3.0
 const LOOP_MATCH_DISTANCE := 1.5
@@ -69,6 +70,9 @@ const CROUCH_SIGHT_POINTS := [0.85, 0.5]
 @export var turn_speed := 8.0
 @export var patrol_pause := Vector2(1.0, 3.0)  # losowa pauza między punktami patrolu (s)
 @export var investigate_linger := 3.0  # ile się rozgląda na miejscu (s)
+## Po zgubieniu gracza w pościgu: tyle sekund przeszukuje okolicę, zanim wróci do patrolu (47g).
+@export var search_time := Vector2(20.0, 35.0)
+@export var search_radius := 9.0
 @export var lose_sight_time := 1.5  # po tylu sekundach bez kontaktu przestaje gonić
 @export var retreat_time := 5.0
 @export var retreat_min_distance := 10.0
@@ -140,6 +144,8 @@ var anti_kiting := true  # do porównań w testach
 var _prey_trail: Array[Vector3] = []
 var _trail_timer := 0.0
 var _intercept := Vector3.INF
+var _search_until := 0.0  # przeszukiwanie okolicy po zgubieniu gracza: do tej chwili (s)
+var _search_center := Vector3.ZERO
 var _vent_bang_timer := 0.0
 var _heard_new := false
 var _smell_timer := 0.0
@@ -504,9 +510,36 @@ func _investigate(delta: float) -> float:
 			return investigate_speed
 	_timer += delta
 	rotate_y(1.5 * delta)
-	if _timer >= investigate_linger:
+	var searching := _searching()
+	if _timer >= investigate_linger * (0.5 if searching else 1.0):
+		if searching:
+			_next_search_point()
+			return investigate_speed
 		_enter(State.PATROL)
 	return 0.0
+
+
+## Zgubił gracza: idzie sprawdzić, gdzie go ostatnio widział, i przeszukuje okolicę
+## (żywego; po zabiciu albo porwaniu nie ma kogo szukać).
+func _lose_prey() -> void:
+	_enter(State.INVESTIGATE)
+	agent.target_position = last_seen_position
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	if is_instance_valid(_prey) and game_state and game_state.is_up(_prey.get_multiplayer_authority()):
+		_search_center = last_seen_position
+		_search_until = Time.get_ticks_msec() / 1000.0 + randf_range(search_time.x, search_time.y)
+
+
+func _searching() -> bool:
+	return Time.get_ticks_msec() / 1000.0 < _search_until
+
+
+## Przeszukiwanie: kolejny losowy punkt blisko miejsca, gdzie zgubił gracza; przy każdym może
+## zajrzeć do szafki (`_checked_this_search` od nowa).
+func _next_search_point() -> void:
+	_timer = 0.0
+	_checked_this_search = false
+	agent.target_position = random_floor_point_near(_search_center, search_radius)
 
 
 ## Idź do szafki i zajrzyj do środka.
@@ -559,9 +592,7 @@ func _hunt(delta: float) -> float:
 			if profile.behavior == MonsterProfile.Behavior.GUARD:
 				# Strażnik nie szuka zgubionego gracza: wraca pilnować gniazda.
 				return _return_home()
-			# Zgubił gracza: idzie sprawdzić, gdzie go ostatnio widział.
-			_enter(State.INVESTIGATE)
-			agent.target_position = last_seen_position
+			_lose_prey()
 			return investigate_speed
 	if is_watcher():
 		return _scream(delta)
@@ -712,8 +743,7 @@ func _recover(delta: float) -> float:
 		if sensed_prey():
 			_enter(State.HUNT)
 		else:
-			_enter(State.INVESTIGATE)
-			agent.target_position = last_seen_position
+			_lose_prey()
 	return 0.0
 
 
