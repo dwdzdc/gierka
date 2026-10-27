@@ -27,7 +27,8 @@ func _physics_process(_d: float) -> bool:
 		gs = main.get_node("GameState")
 		gs.round_finished.connect(func(r): results = r)
 	if f == 40:
-		var piles = main.get_node("Loot").get_children()
+		# Same kupki monet (w łupie są też baterie i skrzynie).
+		var piles = main.get_node("Loot").get_children().filter(func(n): return n.scene_file_path.ends_with("coin_pile.tscn"))
 		var total := 0
 		for p in piles:
 			total += p.value

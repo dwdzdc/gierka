@@ -40,7 +40,8 @@ func _physics_process(d: float) -> bool:
 			walk_speed_when_winded = speed
 		if winded_at > 0.0 and not p.winded and recovered_at < 0.0:
 			recovered_at = t
-	last_pos = p.global_position
+	if p:  # w 1. klatce gracza jeszcze nie ma
+		last_pos = p.global_position
 	if f == 10 + 60 * 9:
 		Input.action_release("move_forward")
 		Input.action_release("move_left")
