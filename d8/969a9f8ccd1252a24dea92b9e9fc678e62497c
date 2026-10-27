@@ -1,0 +1,30 @@
+main.tscn
+  s_e8a5e88c51e83a::t_4327b36bcfe931 1,19,126
+fx/monster_glitch.gd.uid
+  s_e8a5e88c51e83a::t_4327b36bcfe931 1
+tests/floor_learning_test.gd.uid
+  s_e8a5e88c51e83a::t_4327b36bcfe931 1
+fx/monster_glitch.gd
+  s_e8a5e88c51e83a::t_4327b36bcfe931 1-39
+tests/glitch_test.gd
+  s_e8a5e88c51e83a::t_31e4a5c65acde7 1-36
+fx/retro_post.gdshader
+  s_e8a5e88c51e83a::t_4327b36bcfe931 9-10,19-22,24-33,35-44
+  s_e8a5e88c51e83a::t_31e4a5c65acde7 34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "d8969a9f8ccd1252a24dea92b9e9fc678e62497c",
+  "prompts": {},
+  "sessions": {
+    "s_e8a5e88c51e83a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "007bec83-4e90-445b-a436-5a99d1977aa0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
