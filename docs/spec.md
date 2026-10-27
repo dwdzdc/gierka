@@ -115,13 +115,13 @@ Każdy potwór ma dwie warstwy AI, wzorowane na Alien: Isolation: **reżyser** z
 - **Zmysły:** wzrok w stożku 120°: gracza w zgaszonym pokoju bez latarki widzi z 6 m, w oświetlonym pokoju albo z latarką z 14 m; z bliska zauważa od razu, dalej potrzebuje chwili (do 0,8 s); patrzy na głowę, tors i nogi, więc skrzynia zasłania tylko część; słuch zależny od hałasu (chód 4 m, bieg 10 m, kucanie 1,4 m); z bliska poluje na słuch; czuje krew do 90 s wstecz.
 - **Wentylacja:** kratki w suficie każdego pokoju. Łowca i Porywacz widocznie wspinają się do kratki i przemieszczają się szybami niewidoczni, słychać metaliczne dudnienie nad głową, zeskakują z kratki w innym pokoju.
 
-| Typ | Zachowanie | Zmysły | Atak | Wentylacja |
-| --- | --- | --- | --- | --- |
-| Łowca | reżyser prowadzi go w okolicę graczy | wzrok 6/14 m, słuch ×1 | 35 HP i odchodzi | tak |
-| Strażnik | pilnuje rewiru wokół gniazda; goni gracza także poza rewir (do 35 m od gniazda), a gdy go zgubi, wraca do gniazda; co 3–4 min przenosi gniazdo (zostawia krew) | świetny wzrok 9/16 m, słaby słuch ×0,6 | 50 HP | nie |
-| Rzeźnik | chodzi losowo | ślepy, słuch ×1,8 | egzekucja: natychmiastowa śmierć, krew na ścianie | nie |
-| Porywacz | reżyser prowadzi go w okolicę graczy, najszybszy (4,2 m/s) | wzrok 7/15 m, słuch ×1,1 | porywa żywcem do gniazda | tak |
-| Obserwator | stoi i się rozgląda | wzrok 10/20 m | krzyk ściąga inne potwory, bliskiego atakuje | nie |
+| Typ | Zachowanie | Zmysły | Atak | Wentylacja | Jak przeżyć |
+| --- | --- | --- | --- | --- | --- |
+| Łowca | reżyser prowadzi go w okolicę graczy | wzrok 6/14 m, słuch ×1 | 35 HP i odchodzi | tak | nie uciekaj biegiem, zerwij kontakt i się schowaj |
+| Strażnik | pilnuje rewiru wokół gniazda; goni gracza także poza rewir (do 35 m od gniazda), a gdy go zgubi, wraca do gniazda; co 3–4 min przenosi gniazdo (zostawia krew) | świetny wzrok 9/16 m, słaby słuch ×0,6 | 50 HP | nie | omijaj gniazdo (krew), zgubiony odpuszcza |
+| Rzeźnik | chodzi losowo | ślepy, słuch ×1,8 | egzekucja: natychmiastowa śmierć, krew na ścianie | nie | cisza: stój albo skradaj się |
+| Porywacz | reżyser prowadzi go w okolicę graczy, najszybszy (4,2 m/s) | wzrok 7/15 m, słuch ×1,1 | porywa żywcem do gniazda | tak | trzymajcie się razem: gracza, przy którym ktoś stoi (5 m), tylko śledzi z ok. 7 m |
+| Obserwator | stoi i się rozgląda | wzrok 10/20 m | krzyk ściąga inne potwory, bliskiego atakuje | nie | nie wchodź w jego światło: widzi tylko w stożku reflektora (70°), za to w nim do 20 m także po ciemku |
 
 Kolejność pojawiania się: Łowca na start, potem co etap Strażnik, Rzeźnik, Porywacz, Obserwator (maks. 4 naraz). Typ potwora to plik danych (`monster/profiles/*.tres`), więc nowy potwór to głównie nowe liczby, a nie nowy kod.
 

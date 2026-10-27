@@ -29,3 +29,4 @@ feed_damage_per_second = 7
 can_use_vents = true
 presence_sound = ExtResource("presence")
 presence_range = 14.0
+avoids_groups = true

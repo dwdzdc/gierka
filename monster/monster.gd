@@ -210,10 +210,27 @@ func _apply_profile(new_profile: MonsterProfile) -> void:
 	$Shape.scale = Vector3.ONE * shape_scale
 	$Shape.position.y *= shape_scale
 	eye_height = 1.8 * profile.height_scale
+	if profile.searchlight and not has_node(^"Searchlight"):
+		_add_searchlight()
 	if profile.presence_sound:
 		_breath_player.stream = profile.presence_sound
 		_breath_player.max_distance = profile.presence_range
 		_breath_player.unit_size = profile.presence_range / 5.0
+
+
+## Stożek światła z oczu: to, co oświetla, potwór widzi. Sam wygląd (synchronizuje się obrót).
+func _add_searchlight() -> void:
+	var light := SpotLight3D.new()
+	light.name = "Searchlight"
+	light.position = Vector3.UP * eye_height
+	light.rotation.x = deg_to_rad(-12.0)  # lekko w dół, żeby plama leżała na podłodze
+	light.light_color = profile.eye_color.lerp(Color.WHITE, 0.6)
+	light.light_energy = 6.0
+	light.spot_range = sight_range_flashlight
+	light.spot_angle = profile.sight_angle_deg / 2.0
+	light.spot_angle_attenuation = 0.4
+	light.shadow_enabled = true  # ściany przecinają stożek: widać, gdzie jest bezpiecznie
+	add_child(light)
 
 
 func is_watcher() -> bool:
@@ -611,6 +628,8 @@ func _hunt(delta: float) -> float:
 	if profile.behavior == MonsterProfile.Behavior.GUARD and global_position.distance_to(home) > profile.leash:
 		return _return_home()
 	agent.target_position = last_seen_position
+	if sensed and profile.avoids_groups and _has_company(sensed):
+		return _stalk(sensed)
 	if sensed and global_position.distance_to(sensed.global_position) <= attack_range:
 		_enter(State.ATTACK)
 		return 0.0
@@ -621,6 +640,39 @@ func _hunt(delta: float) -> float:
 	if now < _burst_until:
 		return maxf(profile.burst_speed, hunt_speed)
 	return hunt_speed
+
+
+## Czy przy graczu stoi ktoś, kto może go odbić (żywy, nie powalony, nie w szafce).
+func _has_company(player: Player) -> bool:
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	for node in get_tree().get_nodes_in_group(&"players"):
+		var other := node as Player
+		if other == player or game_state == null:
+			continue
+		var peer := other.get_multiplayer_authority()
+		if game_state.life(peer) == GameState.Life.OK and not game_state.is_hidden(peer) \
+				and other.global_position.distance_to(player.global_position) <= profile.group_radius:
+			return true
+	return false
+
+
+## Grupa: idzie za graczem w odstępie (tuż poza zasięgiem ratunku) i czeka, aż ktoś odejdzie.
+const STALK_DISTANCE := 7.0
+var _stalking := false  # w tej klatce skrada się: patrzy na ofiarę, nie w kierunku kroku
+
+
+func _stalk(prey: Player) -> float:
+	var away := (global_position - prey.global_position) * Vector3(1, 0, 1)
+	var distance := away.length()
+	_stalking = true
+	face(-away, get_physics_process_delta_time())
+	if distance > STALK_DISTANCE + 1.0:
+		agent.target_position = prey.global_position
+		return investigate_speed
+	if distance < STALK_DISTANCE - 1.0:
+		agent.target_position = global_position + away.normalized() * 2.0  # cofa się, nie odwracając
+		return patrol_speed
+	return 0.0
 
 
 func _start_burst() -> void:
@@ -967,7 +1019,7 @@ func notice_time(player: Player, distance: float) -> float:
 
 ## Zasięg wzroku na tego gracza: daleko, gdy świeci latarką albo stoi w oświetlonym pokoju.
 func sight_range(player: Player) -> float:
-	var visible_far: bool = player.flashlight.visible or not _in_dark_room(player.global_position)
+	var visible_far: bool = profile.searchlight or player.flashlight.visible or not _in_dark_room(player.global_position)
 	var result := (sight_range_flashlight if visible_far else sight_range_dark) * sense_boost
 	if player.crouching:
 		result *= Player.CROUCH_SIGHT_FACTOR
@@ -1061,8 +1113,9 @@ func _steer(speed: float, delta: float) -> void:
 		direction = direction.normalized()
 	velocity.x = direction.x * speed
 	velocity.z = direction.z * speed
-	if direction != Vector3.ZERO:
+	if direction != Vector3.ZERO and not _stalking:
 		face(direction, delta)
+	_stalking = false
 
 
 ## Zabezpieczenie: jeśli chcemy iść, a od 1.5 s stoimy w miejscu, porzuć cel.

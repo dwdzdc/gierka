@@ -67,6 +67,15 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 ## Z jakiej odległości słychać pętlę (m). Wzrok łowcy to 14 m: usłyszeć trzeba wcześniej.
 @export var presence_range := 16.0
 
+@export_group("Zasada przeżycia (47g.7)")
+## Reflektor: potwór widzi tylko w stożku światła (kąt = `sight_angle_deg`), za to w nim zawsze
+## z daleka, także w ciemnym pokoju. Zasada: nie wchodź w jego światło.
+@export var searchlight := false
+## Nie atakuje gracza, przy którym stoi ktoś żywy (do `group_radius`), tylko idzie za nim
+## w odstępie i czeka, aż zostanie sam. Zasada: trzymajcie się razem.
+@export var avoids_groups := false
+@export var group_radius := 5.0
+
 @export_group("Ruch")
 @export var can_use_vents := false
 

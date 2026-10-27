@@ -3,6 +3,7 @@ extends SceneTree
 #  -- --case=butcher   ślepy rzeźnik: nie widzi gracza przed sobą, słyszy kroki, zabija od razu
 #  -- --case=guard     strażnik: goni gracza poza rewir, a gdy go zgubi, wraca do gniazda
 #  -- --case=watcher   obserwator: nie rusza się, krzyczy (hałas w miejscu gracza)
+#  -- --case=searchlight  obserwator widzi tylko w stożku reflektora (47g.7), za to także po ciemku
 #  -- --case=director  etapy: nowe potwory i ostrzejsze zmysły; wskaźnik zagrożenia odsyła łowcę
 #  -- --case=nest      strażnik przenosi gniazdo do innego pokoju
 
@@ -52,7 +53,7 @@ func _physics_process(_d: float) -> bool:
 			director._relocate[m] = 1.0
 			log.append("gniazdo przed: %s" % m.home.snapped(Vector3.ONE))
 			return false
-		m = director.spawn(case, main.rooms[2])  # magazyn
+		m = director.spawn("watcher" if case == "searchlight" else case, main.rooms[2])  # magazyn
 		m.global_position = Vector3(37.8, 0.05, 0)
 		m.home = m.global_position
 		m.rotation.y = PI / 2  # patrzy na -X
@@ -68,6 +69,20 @@ func _physics_process(_d: float) -> bool:
 	if f == 2:
 		return false
 	match case:
+		"searchlight":
+			if f == 10:
+				m.set_physics_process(false)
+				main.rooms[2].dark = true
+				p.flashlight.visible = false
+				p.global_position = Vector3(25.8, 0.05, 0)  # 12 m na wprost, po ciemku
+			if f == 20:
+				_say("%s  reflektor: %s" % ["OK " if m.has_node("Searchlight") else "ZLE", m.has_node("Searchlight")])
+				_say("%s  12 m na wprost po ciemku: widzi=%s" % ["OK " if m.can_see(p) else "ZLE", m.can_see(p)])
+				p.global_position = Vector3(34.8, 0.05, 3.5)  # 4,6 m, 49° w bok (poza stożkiem 70°)
+			if f == 30:
+				_say("%s  z boku poza stożkiem: widzi=%s" % ["OK " if not m.can_see(p) else "ZLE", m.can_see(p)])
+				print("\n".join(log))
+				return true
 		"butcher":
 			if f == 120:
 				_say("po 2 s ciszy: stan %s (ślepy, gracz stoi przed nim)" % m.State.keys()[m.state])
