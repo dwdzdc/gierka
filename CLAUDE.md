@@ -2,7 +2,7 @@
 
 Co-op survival horror ze stałymi kamerami, Godot 4.7 (GDScript), host-klient po ENet.
 
-- **Roadmapa i decyzje: `progress.md`** – jedyne źródło prawdy. Każdy nowy pomysł użytkownika trafia tam od razu, z uwagą krytyczną, gdy kłóci się z czymś zaplanowanym lub zrobionym. Luźny pomysł („może…”, „fajnie by było…”) = wpis na listę, kod dopiero po „dawaj”/„zrób”.
+- **Roadmapa i decyzje: `progress.md`** – jedyne źródło prawdy. Każdy nowy pomysł użytkownika trafia tam od razu, z uwagą krytyczną, gdy kłóci się z czymś zaplanowanym lub zrobionym. Luźny pomysł albo zgłoszenie braku („może…”, „fajnie by było…”, „brakuje…”, „powinien być jakiś…”, także w środku zgłaszania błędu z playtestu) = TYLKO wpis na listę (z krytyką), bez kodu. Kod dopiero po „dawaj”/„zrób”. W razie wątpliwości: zapisz i zapytaj.
 - Uruchamianie, sterowanie, lista testów: `README.md`.
 - **Spec gry dla gracza: `docs/spec.md`** – aktualizuj, gdy zmienia się mechanika.
 
