@@ -166,6 +166,7 @@ Dźwięk to główne źródło poszlak: gdy potwór się zbliża, ambient cichni
 - **Poziom zagrożenia** jest celowo rozmyty i opóźniony, żeby serce nie działało jak radar. Pościg i dudnienie w szybie nad głową liczą się mocniej.
 - **Poszlaki potworów:** ciężkie kroki (do 16 m), warczenie na start pościgu, świst zamachu, metaliczne dudnienie w wentylacji. Każdy typ ma własny dźwięk, słyszalny, zanim wejdzie w kadr: Łowca klekocze jak owad (16 m), Rzeźnik wlecze coś po betonie i brzęczy łańcuchem (18 m), Strażnik nisko mruczy (12 m), Obserwator cienko piszczy i szepcze (14 m), Porywacz węszy (14 m). Wiesz, co jest blisko, ale nie dokładnie gdzie.
 - **Akcent przy wykryciu:** gdy potwór do 20 m od ciebie zaczyna pościg (ciebie albo kolegę obok), gra ostre uderzenie muzyczne i podskakuje serce; najwyżej raz na 15 s.
+- **Zakłócenie obrazu:** gdy potwór jest do 8 m od ciebie i widać go w twoim ujęciu, obraz się rwie (pasy, rozjazd kolorów, szum); im bliżej, tym mocniej.
 - **Fałszywe alarmy:** co 12–28 s host puszcza wszystkim w tym samym miejscu skrzypnięcie, łomot, metaliczny stuk albo kroki brzmiące jak potwór, 6–20 m od któregoś gracza. Bliski alarm też podbija serce.
 - **Nowy potwór** na następnym etapie: ryk z daleka i napis w HUD.
 - Dźwięki to darmowe paczki Kenney (CC0) plus wygenerowane placeholdery (oddech, warczenie, dźwięki typów potworów, akcent wykrycia, serce, ambient).

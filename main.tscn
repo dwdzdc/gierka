@@ -1,4 +1,4 @@
-[gd_scene load_steps=23 format=3]
+[gd_scene load_steps=24 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
@@ -16,6 +16,7 @@
 [ext_resource type="Script" path="res://game/fake_alarms.gd" id="18"]
 [ext_resource type="Script" path="res://game/debug_menu.gd" id="19"]
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/stinger.wav" id="stinger"]
+[ext_resource type="Script" path="res://fx/monster_glitch.gd" id="glitch"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -122,6 +123,7 @@ script = ExtResource("6")
 
 [node name="Retro" type="ColorRect" parent="PostProcess"]
 material = SubResource("post")
+script = ExtResource("glitch")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

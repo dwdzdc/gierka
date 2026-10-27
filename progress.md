@@ -432,7 +432,9 @@ przydzielić rewir do pilnowania.
   - Uwaga (konflikt): spec obiecuje „widoczny zamach, można odskoczyć” (47c, `monster_states_test --scenario=dodge`) i 47c8 celowo daje okno po ciosie. Doskok nie może zabić uniku, tylko ucieczkę prosto w tył; test dodge musi dalej przechodzić. Stroić razem z 47g (zryw + kondycja): przy zbyt skutecznym doskoku każdy kontakt z bliska = trafienie
   - Zrobione 25.10: na początku zamachu potwór od razu staje przodem do celu, potem sunie w tym kierunku z 90% prędkości pościgu (stop 0,8 m przed celem) i obraca się 10× wolniej niż zwykle; gdy gracz przejdzie przez niego na plecy (potwory i gracze się nie zderzają), obraca się normalnie. Cios to pas przed potworem (zasięg 2 m × szerokość 1,8 m) zamiast stożka 70°, bo stożek z doskokiem łapał też unik bokiem. Wynik (`monster_states_test`, łowca): marsz w tył = trafiony, bieg w tył = pudło, krok w bok = pudło, odskok (dodge) = pudło. Rzeźnik dalej zabija gracza, który na niego wchodzi. Do strojenia w playteście razem z 47g
   - Przy okazji: `monster_types_test --case=nest` bywa niedeterministyczny (strażnik czasem zauważa gracza w hali i idzie za nim, zamiast do nowego gniazda); było tak też przed 47h
-- [ ] 48. Shader glitcha
+- [x] 48. Shader glitcha
+  - Zrobione 27.10 (razem z odpowiednikiem „nie patrz na potwora” z Amnesii, 47g): uniform `glitch` w `fx/retro_post.gdshader` (rwanie poziomych pasów, rozjazd RGB, bloki szumu; zmienia się skokowo 14×/s). `fx/monster_glitch.gd` liczy lokalnie: potwór do 8 m od postaci, w kadrze bieżącej kamery i niezasłonięty ścianą (raycast z kamery); siła 1 − odległość/8, narasta szybko, opada wolniej; w szybie wentylacji nie działa. Test `glitch_test`
+  - Uwaga: to też poszlaka (glitch = potwór blisko, nawet gdy w ciemności go nie widać). Pasuje do horroru, ale razem z sercem i dźwiękiem obecności może być za dużo podpowiedzi; jeśli tak, liczyć tylko, gdy potwór jest oświetlony
 - [ ] 49. Drugi setting
 
 ## Faza 9: wykończenie
