@@ -135,6 +135,100 @@ def door_splinter() -> np.ndarray:
     return signal / np.max(np.abs(signal))
 
 
+# --- 47g.6: rozpoznawalny dźwięk każdego typu potwora (pętle) i akcent przy wykryciu ---
+# Osobny generator losowy: dźwięki wyżej nie zmieniają się po dopisaniu nowych.
+rng2 = np.random.default_rng(47)
+
+
+def clicks(n: int, times, freq: float, decay: float) -> np.ndarray:
+    """Suche kliknięcia (krótki ton z szybkim zanikiem) w podanych chwilach (s)."""
+    out = np.zeros(n)
+    k = np.arange(int(0.05 * RATE))
+    click = np.sin(2 * np.pi * freq * k / RATE) * np.exp(-k / (decay * RATE))
+    for t0 in times:
+        s0 = int(t0 * RATE)
+        end = min(n, s0 + len(k))
+        out[s0:end] += click[: end - s0]
+    return out
+
+
+def hunter_presence() -> np.ndarray:
+    """Łowca, 4 s: serie szybkiego klekotu (jak cykanie owada) i ciche syczenie między nimi."""
+    seconds = 4.0
+    n = int(seconds * RATE)
+    times = []
+    for start in (0.3, 1.9, 2.6):
+        count = int(rng2.integers(6, 11))
+        times += list(start + np.cumsum(rng2.uniform(0.035, 0.07, count)))
+    out = clicks(n, times, 1800, 0.004) + 0.6 * clicks(n, [t + 0.012 for t in times], 900, 0.006)
+    hiss = band_noise(seconds, 2500, 6000) * (0.08 + 0.08 * np.sin(2 * np.pi * np.arange(n) / n))
+    return out + hiss
+
+
+def butcher_presence() -> np.ndarray:
+    """Rzeźnik, 4 s: wlecze coś ciężkiego po betonie (zgrzyt) i co krok brzęk łańcucha."""
+    seconds = 4.0
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    drag = band_noise(seconds, 200, 1800) * (0.35 + 0.25 * np.abs(np.sin(np.pi * t / 2.0)))
+    out = drag * (1 + 0.4 * np.sin(2 * np.pi * 11 * t))
+    k = np.arange(int(0.3 * RATE))
+    for t0 in (0.5, 2.5):
+        s0 = int(t0 * RATE)
+        clank = sum(np.sin(2 * np.pi * f * k / RATE) for f in (520, 1230, 2110)) * np.exp(-k / (0.06 * RATE))
+        out[s0:s0 + len(k)] += 0.5 * clank
+    fade = np.minimum(1, np.minimum(t, seconds - t) / 0.2)  # bez trzasku na styku pętli
+    return out * fade
+
+
+def guard_presence() -> np.ndarray:
+    """Strażnik, 4 s: niskie, ciągłe mruczenie (jak pies przy misce), pulsuje dwa razy."""
+    seconds = 4.0
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    phase = 2 * np.pi * np.cumsum(44 + 3 * np.sin(2 * np.pi * 0.5 * t)) / RATE
+    saw = 2 * ((phase / (2 * np.pi)) % 1) - 1
+    pulse = 0.4 + 0.6 * np.sin(np.pi * t / 2.0) ** 2
+    return (0.6 * saw + 0.4 * band_noise(seconds, 60, 300)) * pulse * (1 + 0.5 * np.sin(2 * np.pi * 17 * t))
+
+
+def watcher_presence() -> np.ndarray:
+    """Obserwator, 6 s: cienki, rozstrojony pisk (dwa bliskie tony dają dudnienie) i szept."""
+    seconds = 6.0
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    tone = np.sin(2 * np.pi * 1320 * t) + np.sin(2 * np.pi * 1320.5 * t) + 0.5 * np.sin(2 * np.pi * 1977 * t)
+    whisper = band_noise(seconds, 1500, 5000) * (0.5 + 0.5 * np.sin(2 * np.pi * t / 3.0)) ** 3
+    return 0.15 * tone * (0.6 + 0.4 * np.sin(2 * np.pi * t / 6.0)) + 0.5 * whisper
+
+
+def abductor_presence() -> np.ndarray:
+    """Porywacz, 4 s: mokre węszenie: pary krótkich wciągnięć powietrza nosem."""
+    seconds = 4.0
+    n = int(seconds * RATE)
+    out = np.zeros(n)
+    for t0 in (0.2, 0.42, 0.64, 2.1, 2.32):
+        length = int(0.16 * RATE)
+        s0 = int(t0 * RATE)
+        sniff = band_noise(0.16, 700, 3500) * envelope(length, 0.2, 0.6)
+        out[s0:s0 + length] += sniff * (1 + 0.6 * np.sin(2 * np.pi * 60 * np.arange(length) / RATE))
+    return out
+
+
+def stinger() -> np.ndarray:
+    """Akcent przy wykryciu, 2,5 s: ostre uderzenie klastra rozstrojonych pił i szum, długi zanik."""
+    seconds = 2.5
+    n = int(seconds * RATE)
+    t = np.arange(n) / RATE
+    out = np.zeros(n)
+    for f in (110, 116.5, 155.6, 164.8, 233, 246.9):
+        phase = 2 * np.pi * f * t * (1 + 0.004 * np.sin(2 * np.pi * 5 * t))
+        out += 2 * ((phase / (2 * np.pi)) % 1) - 1
+    out = out / 6 * np.exp(-t * 1.4)
+    hit = band_noise(seconds, 80, 4000) * np.exp(-t * 9)
+    return out + 0.8 * hit
+
+
 if __name__ == "__main__":
     save("ambient_drone.wav", ambient_drone(), 0.5)
     save("heartbeat.wav", heartbeat(), 0.9)
@@ -143,3 +237,9 @@ if __name__ == "__main__":
     save("monster_growl.wav", growl(), 0.8)
     save("door_thud.wav", door_thud() / np.max(np.abs(door_thud())), 0.95)
     save("door_splinter.wav", door_splinter(), 0.95)
+    save("presence_hunter.wav", hunter_presence() / np.max(np.abs(hunter_presence())), 0.8)
+    save("presence_butcher.wav", butcher_presence() / np.max(np.abs(butcher_presence())), 0.8)
+    save("presence_guard.wav", guard_presence() / np.max(np.abs(guard_presence())), 0.8)
+    save("presence_watcher.wav", watcher_presence() / np.max(np.abs(watcher_presence())), 0.7)
+    save("presence_abductor.wav", abductor_presence() / np.max(np.abs(abductor_presence())), 0.8)
+    save("stinger.wav", stinger() / np.max(np.abs(stinger())), 0.9)

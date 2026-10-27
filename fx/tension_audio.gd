@@ -11,10 +11,16 @@ const HUNT_RADIUS := 25.0  # goniący potwór niepokoi z dalszej odległości
 const VENT_RADIUS := 12.0  # coś w szybie nad głową
 const RISE_PER_SECOND := 0.7
 const FALL_PER_SECOND := 0.2
+## Akcent muzyczny (47g.6): potwór w tej odległości zaczyna pościg. Nie mówi, czy goni ciebie,
+## czy kolegę obok, ani skąd idzie; przerwa, żeby pętla zgubił–znalazł nie grała co chwilę.
+const STINGER_RADIUS := 20.0
+const STINGER_COOLDOWN := 15.0
 
 var threat := 0.0  # 0..1, wygładzone
 var _spike := 0.0  # chwilowy skok po fałszywym alarmie albo trafieniu
 var _time := 0.0
+var _last_states := {}  # potwór -> stan z poprzedniej klatki
+var _stinger_ready_at := -INF
 
 
 func _ready() -> void:
@@ -39,6 +45,7 @@ func _process(delta: float) -> void:
 	if target:
 		for node in get_tree().get_nodes_in_group(&"monsters"):
 			raw = maxf(raw, _danger_from(node as Monster, target.global_position))
+			_check_stinger(node as Monster, target.global_position)
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 		var me := multiplayer.get_unique_id()
 		if game_state and game_state.is_alive(me) and game_state.hp(me) < 40:
@@ -50,6 +57,19 @@ func _process(delta: float) -> void:
 	var rate := RISE_PER_SECOND if raw > threat else FALL_PER_SECOND
 	threat = move_toward(threat, raw, rate * delta)
 	_apply(threat)
+
+
+## Stan potwora jest replikowany, więc to działa u każdego gracza bez dodatkowego RPC.
+func _check_stinger(monster: Monster, position: Vector3) -> void:
+	var previous: int = _last_states.get(monster, monster.state)
+	_last_states[monster] = monster.state
+	if monster.state != Monster.State.HUNT or previous == Monster.State.HUNT or previous == Monster.State.ATTACK:
+		return
+	if _time < _stinger_ready_at or monster.global_position.distance_to(position) > STINGER_RADIUS:
+		return
+	_stinger_ready_at = _time + STINGER_COOLDOWN
+	$Stinger.play()
+	spike(0.3)
 
 
 func _danger_from(monster: Monster, position: Vector3) -> float:

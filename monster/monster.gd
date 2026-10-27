@@ -169,7 +169,7 @@ func _ready() -> void:
 	# Stan jest replikowany, więc setter (i sygnał) odpala się też u klientów: efekty są lokalne.
 	state_changed.connect(_on_state_visual)
 	_last_position = global_position
-	# Oddech w pętli. Słychać go tylko z bliska (max_distance w scenie): to główna poszlaka.
+	# Pętla obecności (oddech albo dźwięk typu, 47g.6): główna poszlaka, zanim potwór wejdzie w kadr.
 	_breath_player.finished.connect(_breath_player.play)
 	_breath_player.play(randf() * 3.0)
 	if multiplayer.is_server():
@@ -210,6 +210,10 @@ func _apply_profile(new_profile: MonsterProfile) -> void:
 	$Shape.scale = Vector3.ONE * shape_scale
 	$Shape.position.y *= shape_scale
 	eye_height = 1.8 * profile.height_scale
+	if profile.presence_sound:
+		_breath_player.stream = profile.presence_sound
+		_breath_player.max_distance = profile.presence_range
+		_breath_player.unit_size = profile.presence_range / 5.0
 
 
 func is_watcher() -> bool:

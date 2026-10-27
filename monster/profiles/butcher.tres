@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="MonsterProfile" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="MonsterProfile" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://monster/monster_profile.gd" id="1"]
+[ext_resource type="AudioStream" path="res://assets/sfx/generated/presence_butcher.wav" id="presence"]
 
 [resource]
 script = ExtResource("1")
@@ -25,3 +26,5 @@ attack_windup = 0.9
 carry_damage_per_second = 3
 feed_damage_per_second = 6
 can_use_vents = false
+presence_sound = ExtResource("presence")
+presence_range = 18.0

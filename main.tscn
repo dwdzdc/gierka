@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
@@ -15,6 +15,7 @@
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/panic_breath.wav" id="17"]
 [ext_resource type="Script" path="res://game/fake_alarms.gd" id="18"]
 [ext_resource type="Script" path="res://game/debug_menu.gd" id="19"]
+[ext_resource type="AudioStream" path="res://assets/sfx/generated/stinger.wav" id="stinger"]
 
 [sub_resource type="Environment" id="env"]
 background_mode = 1
@@ -96,6 +97,10 @@ stream = ExtResource("16")
 
 [node name="Breath" type="AudioStreamPlayer" parent="TensionAudio"]
 stream = ExtResource("17")
+
+[node name="Stinger" type="AudioStreamPlayer" parent="TensionAudio"]
+stream = ExtResource("stinger")
+volume_db = -4.0
 
 [node name="FakeAlarms" type="Node" parent="."]
 script = ExtResource("18")

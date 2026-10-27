@@ -60,6 +60,13 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 @export var slowed_time := 4.0
 @export var slowed_factor := 0.6
 
+@export_group("Dźwięk")
+## Rozpoznawalna pętla typu (47g.6): słychać ją, zanim potwór pojawi się w kadrze, więc gracz
+## wie, CO jest blisko, ale nie dokładnie gdzie. Bez niej zostaje wspólny oddech.
+@export var presence_sound: AudioStream
+## Z jakiej odległości słychać pętlę (m). Wzrok łowcy to 14 m: usłyszeć trzeba wcześniej.
+@export var presence_range := 16.0
+
 @export_group("Ruch")
 @export var can_use_vents := false
 
