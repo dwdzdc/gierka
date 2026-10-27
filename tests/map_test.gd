@@ -89,6 +89,21 @@ func _physics_process(_d: float) -> bool:
 					print("   urwane przejście: %s.%s (%s) -> %s.%s (%s) w %s" % [connection.a.get_parent().get_parent().name, connection.a.name, sides[0], connection.b.get_parent().get_parent().name, connection.b.name, sides[1], connection.a.global_position.snapped(Vector3.ONE * 0.1)])
 		if overlaps > 0 or not unreachable.is_empty():
 			problems += 1
+		# Winda (34b): jest, poza halą (gdy jest inne miejsce) i da się do niej dojść.
+		var exit_pos: Vector3 = main.game_state.exit_position
+		var exit_room := "-"
+		var exit_ok := exit_pos.is_finite()
+		if exit_ok:
+			for r in rooms:
+				if r.get_exit():
+					exit_room = r.name
+			var exit_target: Vector3 = NavigationServer3D.map_get_closest_point(map, exit_pos)
+			var exit_path: PackedVector3Array = NavigationServer3D.map_get_path(map, start, exit_target, true)
+			exit_ok = exit_target.distance_to(exit_pos) < 1.0 and not exit_path.is_empty() and exit_path[-1].distance_to(exit_target) < 0.5
+			exit_ok = exit_ok and (exit_room != "Hall" or rooms.size() == 1)
+		print("   winda: %s (%s)" % [exit_room, "OK" if exit_ok else "ZLE"])
+		if not exit_ok:
+			problems += 1
 		if count >= 12 and main.map_loops == 0:
 			problems += 1
 			print("ZLE seed %d: brak pętli" % seeds[idx])

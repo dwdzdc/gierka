@@ -16,10 +16,10 @@ Drużyna schodzi do opuszczonego kompleksu, zbiera monety i próbuje wyjść win
 Runda trwa, dopóki ktokolwiek jest na mapie: kończy się, gdy każdy gracz zginął albo wyszedł. Nie ma limitu czasu, jest za to rosnąca trudność.
 
 1. Host wybiera liczbę pokoi (3–60), mapa składa się z seeda. Wszyscy startują w hali.
-2. Gracze rozchodzą się po kompleksie i zbierają monety: kupki na podłodze i meblach oraz skrzynie do przeszukania. Dalej od hali łup jest cenniejszy.
+2. Gracze rozchodzą się po kompleksie i zbierają monety: kupki na podłodze i meblach oraz skrzynie do przeszukania. Wartość łupu jest losowa, niezależna od miejsca.
 3. W najdalszym pokoju budzi się pierwszy potwór (Łowca). Co etap (3 min + 15 s na pokój, czyli ok. 5 min przy 8 pokojach) dochodzi kolejny, maks. 4, a wszystkie mają ostrzejsze zmysły (+10% na etap).
 4. Ranni krwawią i zostawiają ślad, po którym idą koledzy i potwory. Powalonego można podnieść, porwanego odbić.
-5. Kto chce, wraca do hali i wychodzi windą (trzymaj E). Wyniesione monety są bezpieczne. Wydostany albo martwy gracz ogląda kamery kolegów.
+5. Gdzieś na mapie jest winda: stalowe drzwi w zielonej futrynie, w losowym miejscu (blisko albo daleko, czasem za zakluczonymi drzwiami albo w ciemnym pokoju). Kto ją znajdzie, może od razu wyjść (trzymaj E); reszta drużyny nie wie, gdzie jest, dopóki ktoś im nie powie. Wyniesione monety są bezpieczne. Wydostany albo martwy gracz ogląda kamery kolegów.
 6. Gdy nikogo nie ma na mapie: ekran podsumowania z wynikiem rundy i sumą sesji. Host wciska R i startuje nowa runda na nowej mapie.
 
 ## Monety i punktacja
@@ -75,7 +75,7 @@ Mapa składa się z modułów doklejanych drzwiami do drzwi, deterministycznie z
 
 | Pokój | Rozmiar | Wyjścia | Co w środku |
 | --- | --- | --- | --- |
-| Hala (start) | 16 × 12 m | 2 + winda | spawn, winda wyjścia, 3 szafki, stół z prześwitem |
+| Hala (start) | 16 × 12 m | 2 | spawn, 3 szafki, stół z prześwitem (winda jest gdzie indziej) |
 | Korytarz | 16 × 4 m | 2 | szafka, beczki, rury |
 | Korytarz L / T / X | 8 × 8, 12 × 8, 12 × 12 m | 2 / 3 / 4 | prawdziwe korytarze szerokości 4 m z ramionami |
 | Łączniki | 4–16 × 4 m, narożnik 4 × 4 m | 2 | gołe korytarze, którymi generator domyka pętle |
@@ -154,7 +154,7 @@ Kryjówka ratuje tylko wtedy, gdy potwór nie widział, jak się chowasz: inacze
 Drzwi stoją w ok. 65% przejść; zamknięte zatrzymują potwora na chwilę, ale w pościgu dają tylko ok. sekundy przewagi.
 
 - **Gracz:** E otwiera i zamyka (słychać z 5 m). Uciekając, stuknij E do 1,5 s po przebiegnięciu przez otwarte drzwi: zatrzaśniesz je za sobą bez odwracania się (słychać z 9 m). W drzwiach jest kratka: stań przodem do zamkniętych drzwi, a po 0,6 s zobaczysz, co jest po drugiej stronie.
-- **Zakluczone:** losowo od 0 do 10% drzwi, nigdy przy hali. Kluczy jest tyle, ile zakluczonych drzwi, i leżą tam, gdzie da się dojść bez nich. Dowolny klucz otwiera dowolne drzwi i się zużywa.
+- **Zakluczone:** losowo od 0 do 10% drzwi, nigdy przy hali. Kluczy jest tyle, ile zakluczonych drzwi, i leżą tam, gdzie da się dojść bez nich, więc winda za zakluczonymi drzwiami jest zawsze osiągalna. Dowolny klucz otwiera dowolne drzwi i się zużywa.
 - **Potwór otwiera powoli** (3,5 s, słychać szarpanie klamki), gdy tylko przechodzi. **Wyważa szybko** (1,8 s: „BUM… BUM… BUM… TRZASK”, łomoty co 0,6 s potwory słyszą z 12 m, a gracze z sąsiednich pokoi; skrzydło drga, kamera się trzęsie, gdy jesteś blisko; na końcu trzask drzazg z 16 m i drzwi zostają wyłamane), gdy goni, idzie po krwi albo sprawdza hałas. Patrol zakluczonych drzwi nie rusza.
 - **Przez kratkę** potwór widzi tylko z bliska (do 2,6 m) i patrząc prosto na drzwi. Zamknięte drzwi tłumią hałas o połowę.
 

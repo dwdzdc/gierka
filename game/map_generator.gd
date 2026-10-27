@@ -6,7 +6,7 @@ extends RefCounted
 ## Algorytm: start od pokoju startowego. W pętli: losowe wolne przejście, losowy typ pokoju
 ## (według wag), losowe przejście nowego pokoju; obracamy nowy pokój tak, żeby oba przejścia
 ## stykały się czołami, i sprawdzamy, czy nie wchodzi w już postawione pokoje.
-## Na końcu niewykorzystane przejścia są zamurowywane.
+## Na końcu w jednym z wolnych przejść staje winda (wyjście), resztę zamurowujemy.
 
 const START_ROOM := "res://rooms/hall.tscn"
 ## Typy pokoi i ich wagi losowania. Więcej przejść = większa szansa na rozgałęzienia.
@@ -262,6 +262,7 @@ func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
 	_dead.clear()
 	_connect_loops()
 	_close_loops(maxi(1, room_count / ROOMS_PER_LOOP) - closed_loops)
+	_place_elevator()
 	for open in _open:
 		_cap(open)
 	_open.clear()
@@ -313,7 +314,7 @@ func _plan_doors() -> void:
 		if _rng.randf() < DOOR_CHANCE:
 			var state := Door.State.OPEN if _rng.randf() < DOOR_START_OPEN_CHANCE else Door.State.CLOSED
 			door_plan.append({"a": connection.a, "b": connection.b, "state": state})
-	# Zakluczone: nigdy w hali (start i winda), i tak, żeby zostało gdzie położyć klucze.
+	# Zakluczone: nigdy w hali (start), i tak, żeby zostało gdzie położyć klucze.
 	var lockable: Array[Dictionary] = door_plan.filter(func(d: Dictionary) -> bool:
 		return _room_of(d.a) != rooms[0] and _room_of(d.b) != rooms[0])
 	_shuffle(lockable)
@@ -617,6 +618,7 @@ func build_chain(parent: Node3D, chain: Array) -> Array[Room]:
 		var open := _take_open(previous, link[1])
 		var room := _instantiate(link[0])
 		_place(room, room.get_node("Doorways/" + link[2]), open)
+	_place_elevator()
 	for open in _open:
 		_cap(open)
 	_open.clear()
@@ -683,6 +685,35 @@ func _aligned_transform(door: Marker3D, open: Dictionary) -> Transform3D:
 		result.basis[axis] = result.basis[axis].round()
 	result.origin = result.origin.snapped(Vector3.ONE * 0.001)
 	return result
+
+
+# --- Winda (34b) ----------------------------------------------------------------------
+
+## Wyjście z mapy: winda w losowym wolnym przejściu poza halą (zamiast zaślepki). Gdzie
+## wypadnie, tam jest: daleko albo blisko, za zakluczonymi drzwiami, w ciemnym pokoju.
+## Znalezienie jej to cel rundy. Hala tylko wtedy, gdy poza nią nie zostało wolne przejście.
+var exit: Marker3D
+
+
+func _place_elevator() -> void:
+	exit = null
+	var candidates: Array[Dictionary] = _open.filter(func(o: Dictionary) -> bool: return o.room != rooms[0])
+	if candidates.is_empty():
+		candidates = _open.duplicate()
+	if candidates.is_empty():
+		push_error("Brak wolnego przejścia na windę")
+		return
+	# Najpierw pokój, potem jego przejście: losując same przejścia, winda prawie zawsze lądowała
+	# w skrzyżowaniu korytarzy (najwięcej wolnych przejść).
+	var by_room := {}
+	for open in candidates:
+		if not by_room.has(open.room):
+			by_room[open.room] = []
+		by_room[open.room].append(open)
+	var room_doors: Array = by_room.values()[_rng.randi_range(0, by_room.size() - 1)]
+	var chosen: Dictionary = room_doors[_rng.randi_range(0, room_doors.size() - 1)]
+	_open.erase(chosen)
+	exit = chosen.room.add_elevator(chosen.door)
 
 
 func _cap(open: Dictionary) -> void:

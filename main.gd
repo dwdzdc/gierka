@@ -181,7 +181,7 @@ func _build_map(seed_value: int, count: int) -> void:
 		rooms = generator.build_chain(room_parent, map_layout)
 	map_connections = generator.connections
 	map_loops = generator.loops + generator.closed_loops
-	game_state.exit_position = rooms[0].get_exit().global_position
+	game_state.exit_position = generator.exit.global_position if generator.exit else Vector3.INF
 	_place_doors(generator)
 	# NavMesh potrzebny tylko hostowi (AI potwora). Na dachach i regałach powstają
 	# "wyspy" NavMeshu; potwór losuje punkty tylko na poziomie podłogi (Monster.random_floor_point).
@@ -317,12 +317,12 @@ func _spawn_transform(index: int) -> Transform3D:
 
 
 ## Łup: na znacznikach LootSpawns (część w pojemnikach do przeszukania, część na meblach)
-## i w losowych miejscach pokoi. Dalej od hali = cenniejsze (chciwość ma kosztować ryzyko).
+## i w losowych miejscach pokoi. Wartość losowa, niezależna od odległości od hali (34b: wyjście
+## jest gdzie indziej, więc „dalej = cenniej” nie ma już sensu).
 func _spawn_loot() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = map_seed
 	var map := navigation.get_navigation_map()
-	var start := rooms[0].global_position
 	for room in rooms.slice(1):
 		var spots: Array[Vector3] = []
 		for marker in room.get_loot_spawns():
@@ -339,7 +339,7 @@ func _spawn_loot() -> void:
 			var point := NavigationServer3D.map_get_closest_point(map, floor_spot)
 			if point.distance_to(floor_spot) > 1.5:
 				continue
-			var value := roundi(rng.randi_range(8, 25) * (1.0 + point.distance_to(start) / 40.0))
+			var value := rng.randi_range(13, 40)  # średnio tyle, ile dawało dawne 8–25 × mnożnik odległości
 			if rng.randf() < CONTAINER_CHANCE:
 				_spawn_container(rng, point, value * 2)
 				continue
@@ -383,11 +383,18 @@ func _spawn_keys(rng: RandomNumberGenerator, map: RID) -> void:
 			var spot := room.to_global(local)
 			var point := NavigationServer3D.map_get_closest_point(map, spot)
 			if point.distance_to(spot) > 1.5:
+				if attempt == 9:
+					# Winda może stać za zakluczonymi drzwiami (34b): klucza nie może zabraknąć.
+					_spawn_key(NavigationServer3D.map_get_closest_point(map, room.global_position))
 				continue
-			var key: KeyPickup = KEY_SCENE.instantiate()
-			key.position = point
-			loot.add_child(key, true)
+			_spawn_key(point)
 			break
+
+
+func _spawn_key(point: Vector3) -> void:
+	var key: KeyPickup = KEY_SCENE.instantiate()
+	key.position = point
+	loot.add_child(key, true)
 
 
 ## Pojemnik: zwykle monety (więcej niż w kupce, bo trzeba poświęcić czas i hałasować),
