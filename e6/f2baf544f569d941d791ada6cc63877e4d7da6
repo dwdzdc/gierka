@@ -1,0 +1,34 @@
+tests/monster_types_test.gd
+  s_e8a5e88c51e83a::t_cbbd2fbb82194e 6,56,72-85
+progress.md
+  ai_agent 423-425
+monster/monster_profile.gd
+  s_e8a5e88c51e83a::t_ce659ce917d12d 70-78
+monster/profiles/abductor.tres
+  s_e8a5e88c51e83a::t_bd5e6bfc8e76d4 32
+tests/abduct_test.gd
+  s_e8a5e88c51e83a::t_bd5e6bfc8e76d4 4-5,15,19,45-49
+monster/monster.gd
+  s_e8a5e88c51e83a::t_ce659ce917d12d 213-214,221-235,631-632,645-660,662-666,668-677,1022
+  s_e8a5e88c51e83a::t_263a4436f9c05a 661,667,1116,1118
+docs/spec.md
+  ai_agent 118-124
+monster/profiles/watcher.tres
+  s_e8a5e88c51e83a::t_bd5e6bfc8e76d4 20,31
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "e6f2baf544f569d941d791ada6cc63877e4d7da6",
+  "prompts": {},
+  "sessions": {
+    "s_e8a5e88c51e83a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "007bec83-4e90-445b-a436-5a99d1977aa0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
