@@ -25,7 +25,9 @@ func _process(_d: float) -> bool:
 		Input.parse_input_event(ev)
 	if f == 14:
 		print("menu widoczne: %s, przycisków: %d" % [menu.visible, menu._items.get_child_count()])
-		root.get_texture().get_image().save_png("/private/tmp/claude-501/-Users-dawiddziedzic-projects/51f8fdd0-2fdc-4b96-876c-08a1cdfd68b0/scratchpad/debug_menu.png")
+		var image := root.get_texture().get_image()
+		if image:  # bez --headless: zrzut menu do katalogu tymczasowego
+			image.save_png(OS.get_temp_dir().path_join("debug_menu.png"))
 		menu._spawn_near("butcher")
 		var b = main.get_node("Monsters").get_children().filter(func(m): return m.profile_id == "butcher")
 		print("rzeźnik w pokoju: %s" % main._room_name_at(b[0].global_position))

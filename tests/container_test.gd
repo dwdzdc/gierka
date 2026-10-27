@@ -24,12 +24,16 @@ func _check(cond: bool, what: String) -> void:
 func _physics_process(_d: float) -> bool:
 	f += 1
 	if f == 2:
+		main.map_seed = 3  # łup losuje się z seeda; przy losowym (_ready) czasem nie było żadnej skrzyni
 		main._on_connected()
 		main.get_node("Monsters").get_child(0).set_physics_process(false)
 		p = main.get_node("Players/1")
 		gs = main.get_node("GameState")
 	if f == 10:
 		var containers = main.loot.get_children().filter(func(n): return n.is_in_group(&"loot_containers"))
+		if containers.is_empty():  # ten seed nie dał skrzyni na krótkiej mapie testowej: stawiamy jedną
+			main._spawn_container(RandomNumberGenerator.new(), Vector3(16, 0.05, 1.0), 40)
+			containers = main.loot.get_children().filter(func(n): return n.is_in_group(&"loot_containers"))
 		var piles = main.loot.get_children().filter(func(n): return n.scene_file_path.ends_with("coin_pile.tscn"))
 		var raised = piles.filter(func(n): return n.global_position.y > 0.4)
 		print("pojemniki %d, kupki %d (na meblach %d)" % [containers.size(), piles.size(), raised.size()])

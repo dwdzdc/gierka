@@ -56,13 +56,15 @@ func _physics_process(_d: float) -> bool:
 		var direction := Vector3(0, 0, 1) if scenario == "sidestep" else Vector3(-1, 0, 0)
 		p.global_position += direction * speed / 60.0
 	var gs = main.get_node("GameState")
-	if frames == 2 and scenario in ["walk_away", "run_away", "sidestep"]:
+	if frames == 2 and scenario in ["walk_away", "run_away", "sidestep", "dodge"]:
 		gs.player_hit.connect(func(_id, amount): log.append("TRAFIONY %d" % amount))
 	if scenario == "escape" and frames % 300 == 0:
 		log.append("t=%d od miejsca zgubienia %.1f m" % [frames / 60, m.global_position.distance_to(Vector3(33.8, 0, 0))])
 	if scenario == "death" and frames % 60 == 0 and frames <= 60 * 12:
 		log.append("t=%d hp=%d alive=%s pos=%s" % [frames / 60, gs.hp(1), gs.is_alive(1), p.global_position.snapped(Vector3.ONE)])
-	if scenario in ["walk_away", "run_away", "sidestep"] and frames == 60 * 2:
+	# Odskok jest jeden (przy pierwszym zamachu), więc jak przy krokach liczy się tylko pierwszy cios:
+	# dawniej test trwał 20 s i kończył się hp=0 od kolejnych ciosów w stojącego gracza.
+	if scenario in ["walk_away", "run_away", "sidestep", "dodge"] and frames == 60 * 2:
 		print("[%s] %s" % [scenario, ", ".join(log)])
 		return true
 	if frames == 60 * (45 if scenario == "escape" else 20):
