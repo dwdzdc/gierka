@@ -430,3 +430,8 @@ przydzielić rewir do pilnowania.
 - [ ] 51. Assety: modele, dźwięki, animacje (Mixamo)
 - [ ] 52. Profilowanie na słabym sprzęcie
 - [ ] 53. Buildy, Steamworks, zamknięte playtesty
+- [ ] 53a. Pomysł (27.10): małe CI na GitHub Actions budujące grę pod Windows, macOS i Linux, do pobrania z GitHuba bez instalowania Godota. Plan: `export_presets.cfg` w repo (teraz go nie ma) z trzema presetami; workflow na push taga `v*` eksportuje headless Godotem 4.7 z szablonami eksportu i wrzuca paczki do **GitHub Release** (Windows `.exe` w zipie, macOS `.app` w zipie, Linux binarka w `.tar.gz`). Szacunek: pół dnia do dnia
+  - Uwaga: „artefakty” z Actions to nie to: wygasają (domyślnie 90 dni), do pobrania tylko dla zalogowanych z dostępem do repo, zawsze w zipie. Do rozdawania znajomym służą Releases (stały link, bez logowania przy publicznym repo). Przy prywatnym repo znajomi i tak muszą mieć dostęp
+  - Uwaga: prawdziwe instalatory (MSI, DMG, AppImage) to osobna robota bez zysku na tym etapie; Godot eksportuje samodzielną aplikację, rozpakuj i graj wystarczy
+  - Uwaga (macOS): build niepodpisany i bez notaryzacji (wymaga Apple Developer, 99 USD/rok) Gatekeeper oznaczy jako „uszkodzony”; obejście: `xattr -cr Gierka.app` albo PPM → Otwórz. Windows SmartScreen też ostrzeże. Dla playtestów ze znajomymi do przeżycia, przed 53 (Steam) do rozwiązania
+  - Uwaga: eksport może ujawnić rzeczy, które w edytorze działają: pliki ładowane po ścieżce (`load()` ze sklejonego stringa) nie trafią do paczki, jeśli nie są w filtrze eksportu; do sprawdzenia przy pierwszym buildzie
