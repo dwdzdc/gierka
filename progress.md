@@ -71,6 +71,7 @@ Szkielet potwierdzony 24.10:
 - [x] 13. Zaślepki niepołączonych drzwi, hala jako strefa startowa (PlayerSpawns), potwór startuje w najdalszym płaskim pokoju
 - [x] 14. Nawigacja wypiekana w runtime dla wygenerowanej mapy (2 klatki po złożeniu)
 - [~] 15. Modyfikacje z seeda: loot (losowy, host), światła (20% pokoi ciemnych, w jasnych 20% lamp migocze). Zablokowanych przejść brak: zablokowanie zwykłego połączenia mogłoby odciąć część mapy, ma sens dopiero przy pętlach (16h)
+  - Uwaga (27.10, konflikt z 16g/16h): pętle już są, ale gruz można postawić tylko na krawędzi pętli (inaczej odcina część mapy), a pętla jest jedna na 10 pokoi. Każdy gruz kasuje więc pętlę, czyli drogę ucieczki, którą 16h celowo dokłada. Nie robię. Sensowna alternatywa (do decyzji): gruz z prześwitem, przez który przejdzie tylko kucający gracz (potwór musi obejść albo wybrać szyb), czyli skrót dla graczy zamiast ślepego zaułka
 
 ### Po playteście generatora (23.10)
 
