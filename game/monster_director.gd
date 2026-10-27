@@ -18,10 +18,13 @@ signal new_threat(stage: int, name: String)
 const MONSTER_SCENE := preload("res://monster/monster.tscn")
 ## Kolejność pojawiania się typów (pierwszy startuje z rundą).
 const SPAWN_ORDER := ["hunter", "guard", "butcher", "abductor", "watcher"]
-const GOAL_INTERVAL := 12.0  # co ile sekund reżyser wydaje polecenia łowcom
+const GOAL_INTERVAL := 12.0  # co ile sekund reżyser odświeża polecenie potworowi przy graczach
+const GOAL_CHECK := 3.0  # co ile sekund reżyser sprawdza, czy ktoś nie zabłądził daleko
+const FAR_DISTANCE := 25.0  # potwór i jego cel tak daleko od graczy = nowe polecenie od razu
+const GOAL_RANGE := Vector2(6.0, 16.0)  # pokój docelowy w tej odległości od gracza
 const NEAR_DISTANCE := 12.0  # "blisko graczy" dla wskaźnika zagrożenia
 const MENACE_LIMIT := 30.0  # po przekroczeniu łowca jest odsyłany daleko
-const MENACE_COOLDOWN := 35.0  # tyle sekund łowca nie jest przybliżany po odesłaniu
+const MENACE_COOLDOWN := 20.0  # tyle sekund łowca nie jest przybliżany po odesłaniu
 const SENSE_BOOST_PER_STAGE := 0.1
 const VENT_MIN_DISTANCE := 20.0  # dalsze przerzuty potworów z wentylacją idą szybami
 ## Strażnik co jakiś czas przenosi gniazdo (rzadko, żeby rewir był nadal przewidywalny).
@@ -40,6 +43,7 @@ var monsters_parent: Node3D
 
 var _stage_timer := 0.0
 var _goal_timer := 0.0
+var _since_goal := {}  # Monster -> sekundy od ostatniego polecenia
 var _menace := {}  # Monster -> float
 var _cooldown := {}  # Monster -> sekundy do końca "oddechu"
 var _relocate := {}  # strażnik -> sekundy do przeniesienia gniazda
@@ -81,7 +85,8 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 	hiding_escapes = 0
 	floor_escapes = 0
 	_stage_timer = 0.0
-	_goal_timer = GOAL_INTERVAL
+	_goal_timer = GOAL_CHECK
+	_since_goal.clear()
 	_menace.clear()
 	_cooldown.clear()
 	_relocate.clear()
@@ -144,9 +149,11 @@ func _physics_process(delta: float) -> void:
 		_update_guard_nest(monster, delta)
 	_goal_timer -= delta
 	if _goal_timer <= 0.0:
-		_goal_timer = GOAL_INTERVAL
+		_goal_timer = GOAL_CHECK
 		for monster in monsters():
-			_give_goal(monster)
+			_since_goal[monster] = _since_goal.get(monster, 0.0) + GOAL_CHECK
+			if _since_goal[monster] >= GOAL_INTERVAL or _wandered_off(monster):
+				_give_goal(monster)
 
 
 ## Nowy etap: wszystkie potwory ostrzejsze, a jeśli jest miejsce, dochodzi nowy.
@@ -167,9 +174,9 @@ func _announce(new_stage: int, name: String) -> void:
 	new_threat.emit(new_stage, name)
 
 
-## Wskaźnik zagrożenia łowcy: rośnie przy graczach (szybciej, gdy kogoś widzi), opada z dala.
+## Wskaźnik zagrożenia potworów kierowanych przez reżysera: rośnie przy graczach (szybciej, gdy kogoś widzi), opada z dala.
 func _update_menace(monster: Monster, delta: float) -> void:
-	if monster.profile.behavior != MonsterProfile.Behavior.HUNTER:
+	if monster.profile.behavior not in [MonsterProfile.Behavior.HUNTER, MonsterProfile.Behavior.PATROLLER]:
 		return
 	if _cooldown.get(monster, 0.0) > 0.0:
 		_cooldown[monster] -= delta
@@ -216,18 +223,29 @@ func _mark_nest(position: Vector3) -> void:
 			trail.add_drop(position + Vector3(randf_range(-1.5, 1.5), 0.0, randf_range(-1.5, 1.5)), 1.8)
 
 
-## Łowca w patrolu dostaje okolicę graczy (pokój obok, nie dokładną pozycję).
+## Potwór zabłądził: sam jest daleko od graczy i idzie w miejsce też daleko od nich.
+func _wandered_off(monster: Monster) -> bool:
+	if not monster._vent_plan.is_empty():
+		return false  # idzie do szybu, który i tak wyprowadzi go przy graczach
+	return _distance_to_nearest_player(monster.global_position) > FAR_DISTANCE \
+			and _distance_to_nearest_player(monster.agent.target_position) > FAR_DISTANCE
+
+
+## Łowca, Porywacz i Rzeźnik w patrolu dostają okolicę graczy (pokój obok, nie dokładną
+## pozycję). Strażnik pilnuje rewiru, a Obserwator czeka w zasadzce, więc ich to nie dotyczy.
 func _give_goal(monster: Monster) -> void:
-	if monster.profile.behavior != MonsterProfile.Behavior.HUNTER:
+	if monster.profile.behavior not in [MonsterProfile.Behavior.HUNTER, MonsterProfile.Behavior.PATROLLER]:
 		return
 	if monster.state != Monster.State.PATROL or _cooldown.get(monster, 0.0) > 0.0:
 		return
 	var target := _random_alive_player()
 	if target == null:
 		return
-	var room := _room_near(target.global_position, 8.0, 22.0)
-	if room:
-		_send(monster, room)
+	var room := _room_near(target.global_position, GOAL_RANGE.x, GOAL_RANGE.y)
+	if room == null:
+		room = _nearest_room(target.global_position)
+	_since_goal[monster] = 0.0
+	_send(monster, room)
 
 
 ## Wysyła potwora do pokoju: daleko i z wentylacją = szybem (niewidoczny, słychać go nad głową),
@@ -263,6 +281,14 @@ func _room_near(point: Vector3, min_distance: float, max_distance: float) -> Roo
 	if candidates.is_empty():
 		return null
 	return candidates[randi() % candidates.size()]
+
+
+func _nearest_room(point: Vector3) -> Room:
+	var best: Room = rooms[0]
+	for room in rooms:
+		if room.global_position.distance_to(point) < best.global_position.distance_to(point):
+			best = room
+	return best
 
 
 func _alive_players() -> Array[Node3D]:

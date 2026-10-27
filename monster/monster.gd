@@ -103,6 +103,12 @@ var attack_reach: float
 
 ## Ustawiane przez reżysera (tylko host).
 var director_goal := Vector3.INF  # dokąd iść w patrolu; INF = brak polecenia
+## Po dojściu do celu reżysera potwór krąży jeszcze chwilę w tej okolicy, zamiast
+## od razu losować punkt na drugim końcu mapy.
+const ROAM_RADIUS := 8.0
+const ROAM_POINTS := 3
+var _roam_center := Vector3.INF
+var _roam_left := 0
 var home := Vector3.ZERO  # gniazdo / środek rewiru
 var sense_boost := 1.0  # narastająca trudność: mnożnik zasięgu zmysłów
 
@@ -503,7 +509,12 @@ func _next_patrol_point() -> Vector3:
 	if director_goal != Vector3.INF:
 		var goal := director_goal
 		director_goal = Vector3.INF
+		_roam_center = goal
+		_roam_left = ROAM_POINTS
 		return goal
+	if _roam_left > 0:
+		_roam_left -= 1
+		return random_floor_point_near(_roam_center, ROAM_RADIUS)
 	if profile.behavior == MonsterProfile.Behavior.GUARD:
 		return random_floor_point_near(home, profile.territory_radius)
 	return random_floor_point()
