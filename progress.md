@@ -25,7 +25,9 @@ Było ustalone 24.10 (zrobione 25.10):
 5. 15p dźwięki wyważania drzwi → 6. 15t zamykanie drzwi za sobą w biegu → 7. 15s limity wystąpień typów pokoi →
 8. 15u nowe unikalne typy pokoi → 9. 15v warianty pokoi (drobiazgi opcjonalne, potem warianty układu).
 Potem: 33b łup w pojemnikach i 41c bateria (zrobione 25.10), 36c sklep, 37 MVP.
-Nowe z playtestu 25.10: 15x dźwięk wyważania drzwi (zrobione 25.10), 47g potwory za słabe (1–4 zrobione 25.10; 5–7 i reżyser 47f otwarte), 34b winda losowo na mapie (szkielet do potwierdzenia). Otwierane kraty w lochach: odłożone (24.10).
+Nowe z playtestu 25.10: 15x dźwięk wyważania drzwi (zrobione 25.10), 47g potwory za słabe (1–4 zrobione 25.10; 6–7 zrobione 27.10, 5 odrzucone), 34b winda losowo na mapie (zrobione 27.10).
+
+Zrobione 27.10 (sesja ~1 h): 15y, 34b, 47g.6, 47g.7, 47f nauka pięter, 48 glitch, porządki w testach. Następnie: playtest tego wszystkiego (25.10 + 27.10), potem 36c sklep (szkielet do potwierdzenia), 37 MVP. Otwierane kraty w lochach: odłożone (24.10).
 
 Szkielet potwierdzony 24.10:
 - Siatka 2 m w kontrakcie pokoju: wymiary i pozycje przejść w wielokrotnościach 2 m
@@ -356,7 +358,7 @@ Ustalenia (23.10):
 - [ ] 43. Podawanie przedmiotów, role w ekwipunku
 - [ ] 44. Wleczenie ciał przez potwora + ślad
 - [ ] 45. Punktacja co-op vs solo
-- [ ] 46. Spectator przez kamery żyjących graczy
+- [x] 46. Spectator przez kamery żyjących graczy (było już zrobione przy pętli rundy: `main._update_spectating`, martwy albo wydostany gracz ogląda kamery żyjących; status poprawiony 27.10)
 - [ ] 47. Kolejne typy potworów (patrz niżej)
 
 ### Potwory: abstrakcja
@@ -397,7 +399,7 @@ przydzielić rewir do pilnowania.
 - [ ] 47d. Atak: wręcz (jest), zdalny (pocisk albo efekt na odległość)
 - [x] 47e. Atak: porwanie gracza żywcem (jak smoker, jockey i charger w Left 4 Dead 2). Potwór chwyta gracza i zabiera go do swojego gniazda na uboczu (np. najdalszy pokój albo ślepy zaułek). Porwany powoli traci życie już w czasie porwania, a w gnieździe jest powoli zjadany. Koledzy mogą go jeszcze odbić, ale to ciężki moment. Wleczenie zostawia ślad krwi (powiązane z 44)
   - Zrobione: „Porywacz” (profil abductor). Niesie do gniazda −3 HP/s, w gnieździe −7 HP/s, porwany nie ma powalenia. Odbicie: kolega trzyma E przy porwanym 1,5 s, potwór puszcza ofiarę i ucieka na ~11 s
-- [ ] 47f. Typ „Łowca” (wzorowany na Alien: Isolation). Dwie warstwy AI:
+- [~] 47f. Typ „Łowca” (wzorowany na Alien: Isolation). Dwie warstwy AI:
   - **Reżyser** (host, osobny węzeł): zawsze wie, gdzie są gracze, ale nie podaje potworowi ich pozycji. Co jakiś czas tylko kieruje go w okolicę graczy (pokój obok, piętro), a resztę potwór musi znaleźć sam, zmysłami.
   - **Wskaźnik zagrożenia**: rośnie, gdy potwór jest blisko graczy, długo przy nich i może ich szybko dosięgnąć. Po przekroczeniu progu reżyser odsyła potwora daleko (oddech dla graczy), potem znów go przybliża. W co-opie liczony dla grupy, nie dla jednego gracza.
   - **Odblokowywane zachowania**: część zachowań startuje wyłączona i włącza się, gdy gracze często uciekają tą samą metodą (np. po kilku udanych ukryciach w szafkach zaczyna je sprawdzać; po ucieczkach na inne piętro zaczyna tam zaglądać). Daje wrażenie, że potwór się uczy.
@@ -405,7 +407,7 @@ przydzielić rewir do pilnowania.
   - Źródła: [Game Developer: The Perfect Organism – The AI of Alien: Isolation](https://www.gamedeveloper.com/design/the-perfect-organism-the-ai-of-alien-isolation), [Game Developer: Revisiting the AI of Alien: Isolation](https://www.gamedeveloper.com/design/revisiting-the-ai-of-alien-isolation)
   - Stan 27.10: reżyser (polecenia co 12 s, odsyłanie), wskaźnik zagrożenia i nauka szafek były już zrobione. Doszła nauka pięter: potwór gubi gracza, który zmienił piętro (> 2,5 m różnicy) → `MonsterDirector.floor_escapes` +1; szansa, że przeszuka okolicę gracza na jego piętrze (do 9 m od niego) zamiast miejsca zgubienia: 0, 25, 50, 75% (maks.). Test `floor_learning_test` (rampa: pierwsza ucieczka się udaje, potem potwór wchodzi na górę i znajduje gracza)
   - Uwaga: „okolica gracza na jego piętrze” to wiedza reżysera (potwór nie widział, dokąd gracz poszedł). Celowo, jak w Alien: Isolation, ale przy 75% może wyglądać jak oszustwo; stroić w playteście. Zostaje otwarte: inne „nauki” (np. bieg w kółko już jest anty-kitingiem 47g.3, zatrzaskiwanie drzwi 15t)
-- [ ] 47g. Potwory za słabe (playtest 25.10: łowcę łatwo zgubić, np. biegając wokół fontanny w atrium). Diagnoza z liczb: łowca w pościgu 3,8 m/s, gracz biega 4,6 m/s bez limitu (nie ma wytrzymałości), więc ucieczka zawsze się udaje; pętla wokół przeszkody to klasyczny „kiting”, bo potwór idzie za graczem po NavMesh i nigdy nie skraca drogi.
+- [~] 47g. Potwory za słabe (playtest 25.10: łowcę łatwo zgubić, np. biegając wokół fontanny w atrium). Diagnoza z liczb: łowca w pościgu 3,8 m/s, gracz biega 4,6 m/s bez limitu (nie ma wytrzymałości), więc ucieczka zawsze się udaje; pętla wokół przeszkody to klasyczny „kiting”, bo potwór idzie za graczem po NavMesh i nigdy nie skraca drogi.
   - Co robi Alien: Isolation: (1) obcy jest szybszy od biegnącego gracza i zabija od jednego ciosu, więc bieg to ostateczność, a podstawą jest chowanie się; (2) słyszy każdy hałas i od razu idzie prosto na jego źródło; (3) po zgubieniu gracza nie odpuszcza, tylko długo przeszukuje okolicę (zagląda do szafek, pod biurka); (4) reżyser trzyma go blisko graczy, a wskaźnik zagrożenia daje oddech (47f); (5) odblokowywane zachowania: „uczy się” ulubionych sposobów ucieczki; (6) losowość ruchów, nie da się wyuczyć schematu
   - Co robi R.E.P.O.: każdy potwór ma jeden wyraźny „haczyk” i jedną zasadę przeżycia (Huntsman słyszy wszystko, także głos, i strzela z daleka: rozwiązanie to cisza; Robe skrada się, przyspiesza i wpada w szał, gdy patrzysz mu w maskę, pamięta, gdzie się schowałeś, i przeszukuje stoły, łóżka, szafki), a gracz zwykle niesie ciężki łup, który go spowalnia, więc ucieczka ma koszt
   - Co robi Amnesia: The Dark Descent (dopisane 25.10: „jak cię zauważyły, to już było przejebane”): w pościgu potwór jest zwykle szybszy od gracza, więc wybiegać się nie da; ucieczka to zerwać kontakt wzrokowy (drzwi, zakręt, beczka między wami) i schować się, a potwór po kilku sekundach bez kontaktu odpuszcza i znika. Strach robi też to, że nie wolno na niego patrzeć (patrzenie zjada poczytalność: zniekształcenia obrazu), więc nigdy nie wiesz dokładnie, gdzie jest, a muzyka pościgu gra, dopóki cię goni
@@ -419,6 +421,7 @@ przydzielić rewir do pilnowania.
     4. Pamięć i przeszukiwanie: po zgubieniu gracza 20–40 s szukania wokół ostatniej pozycji (szafki, nisze, za meblami), a nie powrót do patrolu; reżyser podsuwa pokój obok (47f)
        - Zrobione 25.10: po zgubieniu żywego gracza (z pościgu albo po ciosie) potwór 20–35 s chodzi po losowych punktach do 9 m od miejsca zgubienia, przy każdym rozgląda się 1,5 s i z szansą co najmniej 35% zagląda do pobliskiej szafki; potem patrol. Strażnik bez zmian (wraca do gniazda). Reżyser (47f) jeszcze nie. Test `monster_states_test --scenario=escape`
     5. Ładunek spowalnia: niesione łupy (33b) obniżają bieg (np. −10% na sztukę ponad pierwszą), a upuszczenie robi hałas; ucieczka = wybór między łupem a życiem
+       - Odrzucone na razie (27.10): monety to licznik, nie przedmioty w rękach, więc nie ma czego nieść ani upuszczać. Wróci, jeśli łup stanie się fizyczny (np. ciężkie przedmioty jak w LC/R.E.P.O.)
     6. Zapowiedź obecności zamiast zaskoczenia: wyraźny, rozpoznawalny dźwięk każdego typu (kroki, oddech, sapanie) słyszalny zanim go zobaczysz, plus „stinger” muzyczny przy wykryciu. Strach bierze się z czekania, nie tylko z pościgu
        - Zrobione 27.10: w profilu `presence_sound` + `presence_range`; pętla zastępuje wspólny oddech (słyszalny tylko z 7 m). Wygenerowane (`tools/gen_sfx.py`, osobny RNG, stare próbki bez zmian): łowca klekot owada 16 m, rzeźnik zgrzyt wleczenia + łańcuch 18 m (ślepy, więc ma być go słychać), strażnik niskie mruczenie 12 m, obserwator rozstrojony pisk + szept 14 m, porywacz węszenie 14 m. Akcent (`TensionAudio`, lokalnie): potwór do 20 m zaczyna pościg → uderzenie klastra + skok serca, cooldown 15 s. Test `tension_test` (35 m: cisza, 6 m: gra)
        - Uwaga: akcent mówi „ktoś obok został zauważony”, nawet gdy potwora nie widać. To trochę przeciw „niepewności” (pętla 10a/serce celowo rozmyte), ale nie podaje kierunku ani odległości. Jeśli w playteście za dużo zdradza: tylko dla celu pościgu (wymaga synchronizacji celu) albo tylko gdy potwór jest w kadrze. Placeholdery z numpy: do playtestu, czy typy da się rozróżnić z zamkniętymi oczami; jeśli nie, szukać CC0
