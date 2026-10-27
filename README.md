@@ -104,6 +104,7 @@ godot --headless --path . -s tests/monster_states_test.gd -- --scenario=walk_awa
 godot --headless --path . -s tests/door_test.gd               # drzwi: gracz, klucz, potwór otwiera/wyważa, kratka
 godot --headless --path . -s tests/library_test.gd            # biblioteka: antresolę da się obejść dookoła
 godot --headless --path . -s tests/lamps_test.gd              # zgaszone pokoje nie świecą, oprawy migoczą z żarówkami
+godot --headless --path . -s tests/hiding_test.gd -- --case=blocked  # też unseen, seen, table; blocked = zajęte wyjście z szafki
 godot --headless --path . -s tools/coverage_map.gd            # mapy pokrycia kamer -> docs/coverage/*.png
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host

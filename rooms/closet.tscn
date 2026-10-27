@@ -109,7 +109,7 @@ material = ExtResource("9")
 metadata/chance = 0.6
 
 [node name="Part0" type="CSGBox3D" parent="Geometry/Opt_5"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.6057, 0.3, 2.8229)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6514, 0.3, 3.2571)
 size = Vector3(1, 0.6, 0.7)
 material = ExtResource("7")
 

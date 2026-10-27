@@ -127,6 +127,51 @@ def check_grid(name, sx, sz, doors):
                 assert abs(diff - round(diff)) < 1e-6, f"{name}: przejścia poza siatką {GRID} m: {a} vs {b}"
 
 
+LOCKER_CLEAR = 0.5  # pół boku kwadratu przed szafką, który musi zostać wolny (15y)
+LOCKER_ERRORS = []
+
+
+def solid_xz_bounds(sd):
+    """Obrys bryły w XZ i zakres Y: (x0, x1, z0, z1, y0, y1). Prostokąt opisany, więc z zapasem."""
+    kind = sd[0]
+    if kind == "box":
+        (x, y, z), (w, hh, d) = sd[1], sd[2]
+        a = math.radians(sd[4]) if len(sd) > 4 else 0.0
+        ex = abs(math.cos(a)) * w / 2 + abs(math.sin(a)) * d / 2
+        ez = abs(math.sin(a)) * w / 2 + abs(math.cos(a)) * d / 2
+        return (x - ex, x + ex, z - ez, z + ez, y - hh / 2, y + hh / 2)
+    if kind == "cyl":
+        (x, y, z), r, hh = sd[1], sd[2], sd[3]
+        return (x - r, x + r, z - r, z + r, y - hh / 2, y + hh / 2)
+    if kind == "prism":
+        xs, ys = [p[0] for p in sd[1]], [p[1] for p in sd[1]]
+        return (min(xs), max(xs), sd[2], sd[3], min(ys), max(ys))
+    if kind == "vprism":
+        xs, zs = [p[0] for p in sd[1]], [p[1] for p in sd[1]]
+        return (min(xs), max(xs), min(zs), max(zs), sd[2], sd[3])
+    if kind == "bars":
+        (x0, y0, z0), (x1, y1, z1) = sd[1], sd[2]
+        return (min(x0, x1) - 0.05, max(x0, x1) + 0.05, min(z0, z1) - 0.05, max(z0, z1) + 0.05, min(y0, y1), max(y0, y1))
+    raise ValueError(kind)
+
+
+def check_lockers(name, solids, lockers):
+    """15y: gracz wychodzi z szafki w punkt `Front` (1 m przed nią, props/locker.tscn). Bryła, która
+    tam stoi (także opcjonalna `Opt_`), zamyka go w meblu. Sprawdzamy po przeskalowaniu do siatki."""
+    flat = []
+    for sd in solids:
+        flat.extend(sd[2] if sd[0] == "optional" else [sd])
+    for pos, yaw in lockers:
+        a = math.radians(yaw)
+        fx, fz = pos[0] + math.sin(a), pos[2] + math.cos(a)  # lokalne +Z szafki w świecie (patrz tf)
+        for sd in flat:
+            x0, x1, z0, z1, y0, y1 = solid_xz_bounds(sd)
+            if y1 < 0.3 or y0 > 1.9:  # próg albo coś pod sufitem: nie blokuje
+                continue
+            if (x0 < fx + LOCKER_CLEAR and x1 > fx - LOCKER_CLEAR and z0 < fz + LOCKER_CLEAR and z1 > fz - LOCKER_CLEAR):
+                LOCKER_ERRORS.append(f"{name}: bryła {sd[0]} {sd[1]} stoi przed szafką {pos} (wyjście {fx:.2f}, {fz:.2f})")
+
+
 def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=(), outer=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
@@ -169,6 +214,7 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
     if exit_point:
         exit_point = (at(exit_point[0]),) + tuple(exit_point[1:])
     lockers = [(at(pos), yaw) for pos, yaw in lockers]
+    check_lockers(name, solids, lockers)
     if vent:
         vent = (vent[0] * kx, vent[1] * kz)
     nodes, subs = [], []
@@ -383,7 +429,7 @@ build(
     "Hall", 16, 12, 5.0,
     doors=[("East", "E", 0, 0), ("South", "S", -4, 0)],
     solids=[
-        ("box", (-4, 0.45, -3.5), (2.4, 0.9, 1.2), "wood"),     # stół
+        ("box", (-4, 0.45, -3.4), (2.4, 0.9, 1.0), "wood"),     # stół (płytszy: wyjście z szafek, 15y)
         ("box", (5.5, 0.6, 4.2), (1.2, 1.2, 1.2), "wood"),      # skrzynie
         ("box", (4.2, 0.45, 4.6), (0.9, 0.9, 0.9), "wood"),
         ("box", (-7.6, 1.0, -3), (0.6, 2.0, 3), "metal"),       # szafki pod zachodnią ścianą
@@ -408,7 +454,7 @@ build(
         ("East", (-1, 8, -6, 6), (-7.6, 4.6, -5.6), (4, 0.6, 2), 0.0, 0),
     ],
     lights=[((-4, 4.5, 0), WARM, 1.1, 10.0, False), ((4, 4.5, 0), WARM, 1.0, 10.0, True)],
-    loot=[("Loot0", (-4, 0.95, -3.5))],
+    loot=[("Loot0", (-4, 0.95, -3.4))],
     ambient=[("Ambient0", (-7, 1, 5))],
     spawns=[("Spawn0", (-5, 0.05, 1.5), -90), ("Spawn1", (-5, 0.05, 0), -90),
             ("Spawn2", (-6.2, 0.05, 1.5), -90), ("Spawn3", (-6.2, 0.05, 0), -90),
@@ -531,7 +577,7 @@ build(
         ("box", (0.5, 1.0, -3.2), (2.0, 2.0, 0.6), "metal"),
         ("box", (3.2, 1.0, 0.2), (0.6, 2.0, 2.4), "metal"),     # regał przy wschodniej ścianie
         optional(0.6, ("cyl", (-2.6, 0.6, -2.6), 0.4, 1.2, "rust")),
-        optional(0.6, ("box", (-2.4, 0.3, 2.6), (1.0, 0.6, 0.7), "wood")),
+        optional(0.6, ("box", (0.6, 0.3, 3.0), (1.0, 0.6, 0.7), "wood")),  # nie przed szafką (15y)
     ],
     zones=[("All", (-3.5, 3.5, -3.5, 3.5), (3.2, 3.6, 3.2), (-2, 0.6, -1), 0.2, 0)],
     lights=[((0.5, 3.6, 0), WARM, 0.6, 6.0, True)],
@@ -1031,3 +1077,8 @@ build(
     ambient=[("Ambient0", (-5, 1, -6)), ("Ambient1", (4.5, 3, 0))],
     vent=(0, 0),
 )
+
+
+# 15y: dopiero na końcu, żeby zobaczyć wszystkie kolizje naraz (pliki są już zapisane, ale
+# niepoprawne pokoje trzeba poprawić przed commitem).
+assert not LOCKER_ERRORS, "\n".join(LOCKER_ERRORS)

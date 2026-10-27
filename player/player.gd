@@ -244,7 +244,7 @@ func _update_hiding() -> bool:
 				director.hold_camera(spot.peek_camera())
 		else:
 			if _hidden_spot:
-				global_transform = _hidden_spot.front_transform()
+				global_transform = _free_exit(_hidden_spot)
 			if director:
 				director.release_hold()
 		_hidden_spot = spot
@@ -255,6 +255,31 @@ func _update_hiding() -> bool:
 	if Input.is_action_just_pressed("interact"):
 		game_state.request_unhide.rpc_id(1)
 	return true
+
+
+## Wyjście z szafki: zwykle punkt przed drzwiami. Gdy coś tam stoi (mebel, drugi gracz, rekwizyt
+## dołożony w runtime), szukamy najbliższego wolnego miejsca dookoła, żeby nigdy nie utknąć (15y).
+func _free_exit(spot: HidingSpot) -> Transform3D:
+	var front := spot.front_transform()
+	if _fits_at(front):
+		return front
+	for radius in [0.5, 0.9, 1.3, 1.7]:
+		for i in 12:
+			var angle := TAU * i / 12.0
+			var candidate := front
+			candidate.origin += Vector3(sin(angle), 0.0, cos(angle)) * radius
+			if _fits_at(candidate):
+				return candidate
+	return front
+
+
+func _fits_at(at: Transform3D) -> bool:
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = $Shape.shape
+	query.transform = at * $Shape.transform
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
 
 func _nearest_free_hiding_spot() -> HidingSpot:
