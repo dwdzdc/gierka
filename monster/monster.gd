@@ -556,6 +556,28 @@ func _lose_prey() -> void:
 	if is_instance_valid(_prey) and game_state and game_state.is_up(_prey.get_multiplayer_authority()):
 		_search_center = last_seen_position
 		_search_until = Time.get_ticks_msec() / 1000.0 + randf_range(search_time.x, search_time.y)
+		_learn_floor_escape(_prey)
+
+
+## 47f, „nauka”: gracz zgubił potwora, zmieniając piętro. Pierwsze takie ucieczki się udają; im
+## częściej się zdarzają, tym częściej potwór przeszukuje piętro gracza (wejdzie po schodach),
+## a nie miejsce, gdzie go stracił. Piętro to wiedza reżysera, nie zmysłów (jak w Alien: Isolation).
+const FLOOR_GAP := 2.5
+
+
+func _learn_floor_escape(prey: Player) -> void:
+	if absf(prey.global_position.y - global_position.y) < FLOOR_GAP:
+		return
+	var director := get_tree().get_first_node_in_group(&"monster_director") as MonsterDirector
+	if director == null:
+		return
+	var chance := director.floor_check_chance()
+	director.floor_escapes += 1
+	if randf() < chance:
+		# Okolica gracza na jego piętrze (do `search_radius`), nie jego dokładna pozycja: nad miejscem
+		# zgubienia zwykle nie ma piętra, więc tam NavMesh dałby punkt na dole.
+		_search_center = random_floor_point_near(prey.global_position, search_radius)
+		agent.target_position = _search_center
 
 
 func _searching() -> bool:

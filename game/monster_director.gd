@@ -50,6 +50,10 @@ var hiding_escapes := 0
 const HIDING_CHECK_BASE := 0.1
 const HIDING_CHECK_PER_ESCAPE := 0.15
 const HIDING_CHECK_MAX := 0.7
+## Druga „nauka”: ucieczki na inne piętro (schody, rampa). Pierwsza zawsze się udaje.
+var floor_escapes := 0
+const FLOOR_CHECK_PER_ESCAPE := 0.25
+const FLOOR_CHECK_MAX := 0.75
 
 
 func _ready() -> void:
@@ -75,6 +79,7 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 	monsters_parent = parent
 	stage = 0
 	hiding_escapes = 0
+	floor_escapes = 0
 	_stage_timer = 0.0
 	_goal_timer = GOAL_INTERVAL
 	_menace.clear()
@@ -82,6 +87,10 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 	_relocate.clear()
 	_active = true
 	spawn(SPAWN_ORDER[0], _farthest_room_from_players())
+
+
+func floor_check_chance() -> float:
+	return minf(FLOOR_CHECK_PER_ESCAPE * floor_escapes, FLOOR_CHECK_MAX)
 
 
 func hiding_check_chance() -> float:

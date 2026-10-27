@@ -112,6 +112,7 @@ Każdy potwór ma dwie warstwy AI, wzorowane na Alien: Isolation: **reżyser** z
 - **Zryw.** Łowca i Porywacz przez pierwsze 3 s pościgu biegną szybciej od ciebie (4,9 i 4,8 m/s, odnawia się po 10 s), potem zwalniają. Zauważenie z bliska jest groźne, ratunek to zerwać kontakt i się schować.
 - **Bieganie w kółko nie działa.** Potwór pamięta twoją trasę; gdy krążysz wokół fontanny, regału albo pętli korytarzy, wychodzi ci naprzeciw drugą stroną i tam czeka.
 - **Przeszukiwanie.** Gdy cię zgubi, przez 20–35 s chodzi po okolicy (do 9 m od miejsca, gdzie cię stracił), rozgląda się i często zagląda do szafek; dopiero potem wraca do patrolu. Strażnik od razu wraca do gniazda.
+- **Potwory się uczą.** Im częściej uciekacie, chowając się w szafkach, tym częściej do nich zaglądają. Ucieczka na inne piętro (schody, rampa) za pierwszym razem zawsze działa; potem coraz częściej (do 75%) potwór szuka cię na twoim piętrze, a nie tam, gdzie cię stracił.
 - **Zmysły:** wzrok w stożku 120°: gracza w zgaszonym pokoju bez latarki widzi z 6 m, w oświetlonym pokoju albo z latarką z 14 m; z bliska zauważa od razu, dalej potrzebuje chwili (do 0,8 s); patrzy na głowę, tors i nogi, więc skrzynia zasłania tylko część; słuch zależny od hałasu (chód 4 m, bieg 10 m, kucanie 1,4 m); z bliska poluje na słuch; czuje krew do 90 s wstecz.
 - **Wentylacja:** kratki w suficie każdego pokoju. Łowca i Porywacz widocznie wspinają się do kratki i przemieszczają się szybami niewidoczni, słychać metaliczne dudnienie nad głową, zeskakują z kratki w innym pokoju.
 
