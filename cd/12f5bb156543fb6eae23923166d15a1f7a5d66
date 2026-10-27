@@ -1,0 +1,51 @@
+main.tscn
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1,18,101-103
+assets/sfx/generated/presence_butcher.wav.import
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1-24
+assets/sfx/generated/presence_abductor.wav.import
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1-24
+monster/monster_profile.gd
+  s_e8a5e88c51e83a::t_c93510b21c4284 63-69
+tools/gen_sfx.py
+  s_e8a5e88c51e83a::t_6aec998c4f22bc 138-231,240-245
+assets/sfx/generated/stinger.wav.import
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1-24
+monster/profiles/guard.tres
+  s_e8a5e88c51e83a::t_c93510b21c4284 1,4,29-30
+monster/profiles/watcher.tres
+  s_e8a5e88c51e83a::t_c93510b21c4284 1,4,29-30
+monster/monster.gd
+  s_e8a5e88c51e83a::t_c93510b21c4284 172,213-216
+monster/profiles/hunter.tres
+  s_e8a5e88c51e83a::t_c93510b21c4284 1,4,30-31
+tests/tension_test.gd
+  s_e8a5e88c51e83a::t_522591de33c9a1 26-30,37-38
+assets/sfx/generated/presence_hunter.wav.import
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1-24
+assets/sfx/generated/presence_watcher.wav.import
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1-24
+monster/profiles/butcher.tres
+  s_e8a5e88c51e83a::t_c93510b21c4284 1,4,29-30
+monster/profiles/abductor.tres
+  s_e8a5e88c51e83a::t_c93510b21c4284 1,4,30-31
+fx/tension_audio.gd
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 14-17,22-23,48,60-72
+assets/sfx/generated/presence_guard.wav.import
+  s_e8a5e88c51e83a::t_29183eb9aeb73a 1-24
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "cd12f5bb156543fb6eae23923166d15a1f7a5d66",
+  "prompts": {},
+  "sessions": {
+    "s_e8a5e88c51e83a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "007bec83-4e90-445b-a436-5a99d1977aa0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
