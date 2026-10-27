@@ -1,0 +1,26 @@
+tests/container_test.gd
+  s_e8a5e88c51e83a::t_bf87fdc0e2cf30 34-36
+  s_e8a5e88c51e83a::t_2d5ec3fd74320e 27
+progress.md
+  ai_agent 309,425
+tests/debug_menu_test.gd
+  s_e8a5e88c51e83a::t_fc16fb19a175d5 28-30
+tests/monster_states_test.gd
+  s_e8a5e88c51e83a::t_fc16fb19a175d5 59,65-67
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "b0bd3615000a4f3d5b842c6040cf9c325e6460d1",
+  "prompts": {},
+  "sessions": {
+    "s_e8a5e88c51e83a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "007bec83-4e90-445b-a436-5a99d1977aa0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
