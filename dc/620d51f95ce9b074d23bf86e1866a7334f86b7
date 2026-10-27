@@ -1,0 +1,35 @@
+rooms/closet.tscn
+  s_e8a5e88c51e83a::t_2b479154712ec9 112
+rooms/hall.tscn
+  s_e8a5e88c51e83a::t_2b479154712ec9 89-90,300
+player/player.gd
+  s_e8a5e88c51e83a::t_ed5771912fcdd4 247,260-282
+tools/gen_rooms.py
+  s_e8a5e88c51e83a::t_0d2ec1e568f9a3 1080-1084
+  s_e8a5e88c51e83a::t_2b479154712ec9 432,457,580
+  s_e8a5e88c51e83a::t_98d4d06734e8f0 130,132-170,173-174
+  s_e8a5e88c51e83a::t_6c6ae62277d1a0 217
+  s_e8a5e88c51e83a::t_e543ccf1114709 131,171-172
+tests/hiding_test.gd
+  s_e8a5e88c51e83a::t_5c4c331d719c9f 5,56-62,64,67-69,72-75,77,79,84
+  s_e8a5e88c51e83a::t_2db7e8a2c4d086 65-66,70-71
+  s_e8a5e88c51e83a::t_4889658bea8dd8 85-90
+  s_e8a5e88c51e83a::t_25f2517feaf3ff 80-82
+  s_e8a5e88c51e83a::t_4617555b76bbd9 63,76,78,83
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "dc620d51f95ce9b074d23bf86e1866a7334f86b7",
+  "prompts": {},
+  "sessions": {
+    "s_e8a5e88c51e83a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "007bec83-4e90-445b-a436-5a99d1977aa0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
