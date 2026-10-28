@@ -1,0 +1,35 @@
+monster/monster.gd
+  s_ab28709870e7ea::t_9b8c7ab2e9bc4c 888-889,1020,1085-1090,1093
+  s_ab28709870e7ea::t_755cf2bd2429be 804-806,812-820
+progress.md
+  s_ab28709870e7ea::t_5c927bb4597442 469-473
+tests/monster_states_test.gd
+  s_ab28709870e7ea::t_525737b668197f 50-51
+monster/monster_profile.gd
+  s_ab28709870e7ea::t_9b8c7ab2e9bc4c 55-57
+monster/profiles/hunter.tres
+  s_ab28709870e7ea::t_9b8c7ab2e9bc4c 27
+tests/no_finish_test.gd
+  s_ab28709870e7ea::t_525737b668197f 3-4
+  s_ab28709870e7ea::t_1c8cbef7746340 1-2,5-45
+game/blood_trail.gd
+  s_ab28709870e7ea::t_755cf2bd2429be 79-81,84-85
+docs/spec.md
+  s_ab28709870e7ea::t_cb61e824cfbbdd 138
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "6a157b7d60cadfbb3b31b93f6728a83a614f6558",
+  "prompts": {},
+  "sessions": {
+    "s_ab28709870e7ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fb38fd6d-332e-4576-9aa7-7b93285e95ed",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
