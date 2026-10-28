@@ -801,12 +801,23 @@ func _track() -> float:
 	return investigate_speed
 
 
+const DOWNED_BLOOD_IGNORE := 2.0
+
+
 func _smell_blood() -> Dictionary:
 	var trail: BloodTrail = get_tree().get_first_node_in_group(&"blood_trail")
 	if trail == null:
 		return {}
 	var newer_than := maxf(_track_time, trail.now() - blood_memory)
-	return trail.freshest_near(global_position, smell_radius * sense_boost, newer_than)
+	# Powalony co chwilę dokłada kałużę: potwór, który nie dobija, wracałby po niej do ciała
+	# i pilnował go. Krew przy powalonych go więc nie interesuje.
+	var avoid: Array[Vector3] = []
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	if not profile.finishes_downed and game_state:
+		for node in get_tree().get_nodes_in_group(&"players"):
+			if game_state.is_downed(node.get_multiplayer_authority()):
+				avoid.append(node.global_position)
+	return trail.freshest_near(global_position, smell_radius * sense_boost, newer_than, avoid, DOWNED_BLOOD_IGNORE)
 
 
 func _follow_drop(drop: Dictionary) -> void:
@@ -874,6 +885,8 @@ func _on_attack_land() -> void:
 		return
 	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 	var peer_id := _prey.get_multiplayer_authority()
+	if not _is_target(game_state, peer_id):
+		return  # padł w trakcie zamachu (krwawienie, inny potwór), a ten potwór nie dobija
 	match profile.attack_style:
 		MonsterProfile.AttackStyle.ABDUCT:
 			game_state.abduct(peer_id, name, profile.carry_damage_per_second)
@@ -1004,7 +1017,7 @@ func sensed_prey() -> Player:
 	if is_instance_valid(heard_player) and Time.get_ticks_msec() / 1000.0 - _heard_player_time <= HEAR_MEMORY:
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 		var peer_id := heard_player.get_multiplayer_authority()
-		if game_state == null or (game_state.is_alive(peer_id) and not game_state.is_hidden(peer_id)):
+		if game_state == null or (_is_target(game_state, peer_id) and not game_state.is_hidden(peer_id)):
 			last_seen_position = heard_player.global_position
 			return heard_player
 	return null
@@ -1069,9 +1082,15 @@ func _in_dark_room(point: Vector3) -> bool:
 	return false
 
 
+## Na kogo potwór poluje: sprawnego zawsze, powalonego tylko, jeśli dobija (profil).
+func _is_target(game_state: GameState, peer_id: int) -> bool:
+	var player_life := game_state.life(peer_id)
+	return player_life == GameState.Life.OK or (player_life == GameState.Life.DOWNED and profile.finishes_downed)
+
+
 func can_see(player: Player) -> bool:
 	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
-	if game_state and game_state.life(player.get_multiplayer_authority()) not in [GameState.Life.OK, GameState.Life.DOWNED]:
+	if game_state and not _is_target(game_state, player.get_multiplayer_authority()):
 		return false
 	if game_state and game_state.is_hidden(player.get_multiplayer_authority()):
 		return false

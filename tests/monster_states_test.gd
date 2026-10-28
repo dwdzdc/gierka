@@ -47,6 +47,8 @@ func _physics_process(_d: float) -> bool:
 			"death":
 				p.global_position = Vector3(33.8, 0.05, 0)
 				m.attack_damage = 100
+				m.profile = m.profile.duplicate()
+				m.profile.finishes_downed = true  # Łowca nie dobija (54), a scenariusz sprawdza śmierć
 	if scenario == "escape" and frames == 40:
 		p.global_position = Vector3(-4, 0.05, -3)  # zniknął z pola widzenia
 	if scenario == "dodge" and m != null and m.state == m.State.ATTACK and p.global_position.x > 30.0:

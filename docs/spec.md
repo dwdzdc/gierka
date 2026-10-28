@@ -135,7 +135,7 @@ Zero HP nie oznacza śmierci, tylko powalenie: masz 30 s, żeby kolega cię podn
 - **Kondycja:** bieg starcza na ok. 6 s, odnawia się wolniej (po 1 s odpoczynku). Po wyczerpaniu łapiesz zadyszkę: tylko marsz, aż wróci 40%, i głośne dyszenie, które słychać z 12 m, a potwory słyszą z 5 m. W HUD „kondycja N%”.
 - **Bateria latarki:** 4,5 min świecenia, zużywa się tylko przy włączonej. Poniżej 20% latarka przygasa i rwie się, pusta gaśnie. Baterie leżą na mapie (jedna na 4 pokoje, +50%); z pełną baterią jej nie podniesiesz, zostaje dla kolegi. W HUD „bateria N%”.
 - **Bandaże:** 2 na start. H (trzymaj 2 s) opatruje ciebie, E przy krwawiącym koledze opatruje jego twoim bandażem.
-- **Powalenie:** leżysz, nie ruszasz się, 30 s do wykrwawienia. Kolega trzyma przy tobie E przez 3 s i wstajesz z 30 HP. Potwór może powalonego dobić.
+- **Powalenie:** leżysz, nie ruszasz się, 30 s do wykrwawienia. Kolega trzyma przy tobie E przez 3 s i wstajesz z 30 HP. Potwór może powalonego dobić, ale nie Łowca: powalony kończy jego pościg, Łowca go nie widzi i nie idzie po jego kałuży, tylko szuka reszty.
 - **Ślady krwi:** krwawiący zostawia krople co 0,7 m, powalony kałużę. Widać je z każdej kamery, zostają do końca rundy, a potwory nimi idą.
 - **Porwanie:** Porywacz niesie cię żywcem do gniazda (-3 HP/s), tam zjada (-7 HP/s). Porwany nie ma powalenia. Kolega trzyma przy tobie E 1,5 s, potwór cię puszcza i ucieka na ok. 11 s.
 - **Egzekucja:** Rzeźnik zabija od razu, bez powalenia i bez szansy na ratunek.

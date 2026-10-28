@@ -76,10 +76,13 @@ func add_splatter(position: Vector3) -> void:
 			break
 
 
-## Najświeższa kropla w promieniu `radius`, nowsza niż `newer_than`. Pusty słownik, gdy brak.
-func freshest_near(position: Vector3, radius: float, newer_than := -INF) -> Dictionary:
+## Najświeższa kropla w promieniu `radius`, nowsza niż `newer_than`, poza kołami `avoid_radius`
+## wokół punktów `avoid`. Pusty słownik, gdy brak.
+func freshest_near(position: Vector3, radius: float, newer_than := -INF, avoid: Array[Vector3] = [], avoid_radius := 0.0) -> Dictionary:
 	var best := {}
 	for drop in drops:
+		if avoid.any(func(point: Vector3) -> bool: return point.distance_to(drop.position) <= avoid_radius):
+			continue
 		if drop.time > newer_than and drop.position.distance_to(position) <= radius:
 			if best.is_empty() or drop.time > best.time:
 				best = drop

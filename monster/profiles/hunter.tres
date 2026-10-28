@@ -24,6 +24,7 @@ smell_radius = 5.0
 attack_style = 3
 attack_damage = 35
 attack_windup = 0.6
+finishes_downed = false
 carry_damage_per_second = 3
 feed_damage_per_second = 6
 can_use_vents = true

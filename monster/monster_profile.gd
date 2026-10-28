@@ -52,6 +52,9 @@ const DIRECTORY := "res://monster/profiles/%s.tres"
 @export var attack_windup := 0.6
 @export var attack_range := 1.4
 @export var attack_reach := 2.0
+## Czy widzi, słyszy i atakuje powalonych (dobija). Łowca nie: powalony kończy pościg,
+## a potwór idzie szukać reszty, więc kolega ma czas podnieść leżącego.
+@export var finishes_downed := true
 ## Porywanie: ile HP na sekundę traci porwany w drodze i w gnieździe.
 @export var carry_damage_per_second := 3
 @export var feed_damage_per_second := 6
