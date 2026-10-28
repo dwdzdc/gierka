@@ -17,7 +17,10 @@ signal new_threat(stage: int, name: String)
 
 const MONSTER_SCENE := preload("res://monster/monster.tscn")
 ## Kolejność pojawiania się typów (pierwszy startuje z rundą).
-const SPAWN_ORDER := ["hunter", "guard", "butcher", "abductor", "watcher"]
+## Pierwszy potwór rundy to zawsze Łowca, kolejne losowo bez powtórzeń (36d): pozostałe typy
+## tasowane na początku rundy, więc co rundę inny skład, a żaden typ nie trafia się dwa razy.
+const FIRST_MONSTER := "hunter"
+const MONSTER_TYPES := ["hunter", "guard", "butcher", "abductor", "watcher"]
 const GOAL_INTERVAL := 12.0  # co ile sekund reżyser odświeża polecenie potworowi przy graczach
 const GOAL_CHECK := 3.0  # co ile sekund reżyser sprawdza, czy ktoś nie zabłądził daleko
 const FAR_DISTANCE := 25.0  # potwór i jego cel tak daleko od graczy = nowe polecenie od razu
@@ -48,6 +51,7 @@ var _menace := {}  # Monster -> float
 var _cooldown := {}  # Monster -> sekundy do końca "oddechu"
 var _relocate := {}  # strażnik -> sekundy do przeniesienia gniazda
 var _active := false
+var _spawn_queue: Array[String] = []  # kolejne typy potworów w tej rundzie
 ## "Nauka" (Alien: Isolation): ile razy gracze uciekli potworom, chowając się w szafce.
 ## Im więcej, tym częściej potwory zaglądają do szafek przy przeszukiwaniu.
 var hiding_escapes := 0
@@ -93,7 +97,9 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 	_cooldown.clear()
 	_relocate.clear()
 	_active = true
-	spawn(SPAWN_ORDER[0], _farthest_room_from_players())
+	_spawn_queue.assign(MONSTER_TYPES.filter(func(id: String) -> bool: return id != FIRST_MONSTER))
+	_spawn_queue.shuffle()  # tylko host: potwory i tak przychodzą do klientów przez sieć
+	spawn(FIRST_MONSTER, _farthest_room_from_players())
 
 
 func floor_check_chance() -> float:
@@ -202,7 +208,10 @@ func _next_stage() -> void:
 		monster.sense_boost = 1.0 + SENSE_BOOST_PER_STAGE * stage
 	var name := ""
 	if monsters().size() < max_monsters:
-		var profile_id: String = SPAWN_ORDER[stage % SPAWN_ORDER.size()]
+		if _spawn_queue.is_empty():  # wszystkie typy już były (potwory giną albo maks. > 5)
+			_spawn_queue.assign(MONSTER_TYPES)
+			_spawn_queue.shuffle()
+		var profile_id: String = _spawn_queue.pop_front()
 		var monster := spawn(profile_id, _farthest_room_from_players())
 		name = monster.profile.display_name
 	_announce.rpc(stage, name)

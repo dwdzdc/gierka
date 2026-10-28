@@ -68,7 +68,7 @@ func _rebuild() -> void:
 ## Lista narzędzi: {"name", "run"}; pusty słownik = separator.
 func _build_actions() -> Array[Dictionary]:
 	var actions: Array[Dictionary] = []
-	for profile_id in MonsterDirector.SPAWN_ORDER:
+	for profile_id in MonsterDirector.MONSTER_TYPES:
 		var profile := MonsterProfile.load_by_id(profile_id)
 		actions.append({"name": "Spawn: %s (pokój obok)" % profile.display_name, "run": _spawn_near.bind(profile_id)})
 	actions.append({})

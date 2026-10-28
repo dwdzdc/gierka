@@ -124,7 +124,7 @@ Każdy potwór ma dwie warstwy AI, wzorowane na Alien: Isolation: **reżyser** z
 | Porywacz | reżyser prowadzi go w okolicę graczy, najszybszy (4,2 m/s) | wzrok 7/15 m, słuch ×1,1 | porywa żywcem do gniazda | tak | trzymajcie się razem: gracza, przy którym ktoś stoi (5 m), tylko śledzi z ok. 7 m |
 | Obserwator | stoi i się rozgląda | wzrok 10/20 m | krzyk ściąga inne potwory, bliskiego atakuje | nie | nie wchodź w jego światło: widzi tylko w stożku reflektora (70°), za to w nim do 20 m także po ciemku |
 
-Kolejność pojawiania się: Łowca na start, potem co etap Strażnik, Rzeźnik, Porywacz, Obserwator (maks. 4 naraz). Typ potwora to plik danych (`monster/profiles/*.tres`), więc nowy potwór to głównie nowe liczby, a nie nowy kod.
+Kolejność pojawiania się: Łowca na start, potem co etap losowy z pozostałych, bez powtórzeń (maks. 4 naraz, więc co rundę jednego typu brakuje). Typ potwora to plik danych (`monster/profiles/*.tres`), więc nowy potwór to głównie nowe liczby, a nie nowy kod.
 
 ## Przetrwanie
 
