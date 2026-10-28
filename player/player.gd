@@ -57,6 +57,8 @@ const COINS_FOR_DOUBLE_NOISE := 300.0
 const EXTRACT_TIME := 2.0
 const STAND_HEIGHT := 1.7
 const CROUCH_HEIGHT := 1.0
+## Blat najwyżej tyle nad stopami kucającego = gracz jest pod stołem (stoły mają 1,1 m prześwitu).
+const COVER_HEIGHT := 1.3
 ## Kucanie: wolniej, kroki słychać z ~1/3 odległości, potwór widzi z ~60% zasięgu.
 const CROUCH_SPEED := 1.1
 const CROUCH_NOISE_FACTOR := 0.35
@@ -289,6 +291,16 @@ func _nearest_free_hiding_spot() -> HidingSpot:
 			if best == null or spot.global_position.distance_to(global_position) < best.global_position.distance_to(global_position):
 				best = spot
 	return best
+
+
+## Pod stołem (55): kuca, a tuż nad głową jest blat (albo prycza, półka). Potwór takiego gracza
+## nie widzi ani nie rozpoznaje po dźwięku, dopóki nie zajrzy pod spód (`Monster.check_under`).
+func under_cover() -> bool:
+	if not crouching or not is_inside_tree():
+		return false
+	var from := global_position + Vector3.UP * 0.5
+	var query := PhysicsRayQueryParameters3D.create(from, global_position + Vector3.UP * COVER_HEIGHT, 1)
+	return not get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
 
 ## Kucanie trzyma się klawiszem. Wstać można tylko, gdy nad głową jest miejsce (np. pod stołem nie).

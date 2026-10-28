@@ -146,6 +146,7 @@ Kryjówka ratuje tylko wtedy, gdy potwór nie widział, jak się chowasz: inacze
 
 - **Szafki** (8 sztuk w 5 typach pokoi): E 0,5 s, skrzypnięcie drzwi słychać z 5 m. W środku kamera z wnętrza szafki z widokiem przez szpary.
 - **Stoły z prześwitem** (1,1 m pod blatem): w kucki mieścisz się pod spodem, potwór nie. Na stojąco nie wstaniesz. Stoły to też wyspy, wokół których można krążyć przed pościgiem.
+- **Pod stołem jesteś niewidoczny** (także pod pryczą czy niską półką): potwór nie widzi cię i nie rozpoznaje po dźwięku, dopóki nie zajrzy pod spód. Zaglądanie widać: podchodzi i schyla się na ok. 1,3 s, widzi wtedy do 1,8 m od miejsca, w które patrzy. Zagląda na pewno, jeśli widział, jak się tam chowasz, a przy przeszukiwaniu okolicy czasem (ta sama szansa co przy szafkach). Znalezionego atakuje.
 - **Kucanie:** prędkość 1,1 m/s, kroki słychać z 35% odległości, potwór widzi cię z 60% zasięgu.
 - **Skok:** ok. 1 m, lądowanie słychać z 7 m.
 - **Potwory się uczą:** każda udana ucieczka do szafki podnosi szansę, że przy przeszukiwaniu zajrzą do szafek w pobliżu (10% + 15% za ucieczkę, maks. 70%).

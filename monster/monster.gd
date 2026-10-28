@@ -20,9 +20,11 @@ extends CharacterBody3D
 ##   VENT        – przemieszcza się szybem wentylacyjnym: niewidoczny, słychać dudnienie nad głową
 ##   VENT_CLIMB  – widocznie wspina się pod kratkę i wciska do szybu (potem VENT)
 ##   RECOVER     – po ciosie stoi i dochodzi do siebie (styl HIT_AND_RECOVER); trafiony ma okno na reakcję
+##   PEEK_UNDER  – podchodzi do stołu i schyla się, żeby zajrzeć pod spód (tylko tak znajduje
+##                 gracza pod stołem); widział, jak gracz tam wchodzi, albo przeszukuje okolicę
 
 # Nowe stany dopisujemy na końcu: wartość enum leci przez sieć jako liczba.
-enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT, VENT_CLIMB, RECOVER }
+enum State { PATROL, INVESTIGATE, HUNT, ATTACK, RETREAT, TRACK, CARRY, FEED, VENT, VENT_CLIMB, RECOVER, PEEK_UNDER }
 
 signal state_changed(new_state: State)
 signal heard(position: Vector3)
@@ -38,6 +40,12 @@ const HEAR_HUNT_DISTANCE := 7.0
 ## wrócił na LOOP_MATCH_DISTANCE do punktu sprzed co najmniej LOOP_MIN_AGE s.
 const TRAIL_STEP := 0.25
 const SEARCH_HIDING_CHECK := 0.35
+## Zaglądanie pod stół (55): ile trwa schylenie i jak daleko od zaglądanego miejsca widzi gracza.
+const PEEK_TIME := 1.3
+const PEEK_FIND_RADIUS := 1.8
+const PEEK_BEND := deg_to_rad(65.0)
+## Znalezionego pod stołem widzi z tylu metrów bez patrzenia przez blat.
+const FOUND_UNDER_SIGHT := 4.0
 ## Doskok w zamachu (47h): ułamek prędkości pościgu, obrót wolniejszy niż zwykle, stop tuż przed celem.
 const LUNGE_SPEED_FACTOR := 0.9
 const LUNGE_TURN_FACTOR := 0.1
@@ -143,6 +151,10 @@ var _prey: Player  # cel polowania/ataku
 var _victim: Player  # porwany (CARRY/FEED)
 # Przejście wentylacją: {"entry": Vector3, "exit": Vector3} (kratki), czas w szybie.
 var _check_spot: HidingSpot  # szafka do sprawdzenia (INVESTIGATE)
+var _peek_point := Vector3.INF  # miejsce pod stołem do sprawdzenia (PEEK_UNDER)
+var _found_under: Player  # tego zajrzał pod stół i widzi, dopóki gracz spod niego nie wyjdzie
+var _bend := 0.0  # schylenie przy zaglądaniu (wygląd, u każdego peera ze stanu)
+var _part_rest := {}  # część ciała -> transform bez schylenia
 var _checked_this_search := false
 var _vent_plan := {}
 var _vent_progress := 0.0
@@ -210,6 +222,7 @@ func _apply_profile(new_profile: MonsterProfile) -> void:
 	for part in [$Body, $EyeL, $EyeR]:
 		part.scale = Vector3.ONE * profile.height_scale
 		part.position.y *= profile.height_scale
+		_part_rest[part] = part.transform
 	# Kolizja rośnie najwyżej do wysokości drzwi: wyższy potwór (strażnik) inaczej nie mieści się
 	# w przejściu i utyka w progu własnego pokoju. Wygląd może być wyższy (pochyla się w drzwiach).
 	var shape_scale := minf(profile.height_scale, MAX_COLLISION_HEIGHT / BASE_HEIGHT)
@@ -269,6 +282,7 @@ func _on_state_visual(new_state: State) -> void:
 
 
 func _process(delta: float) -> void:
+	_update_bend(delta)
 	if state in [State.VENT, State.VENT_CLIMB]:
 		# Dudnienie w szybie: nieregularne, metaliczne, słychać je przez sufit.
 		_vent_bang_timer -= delta
@@ -333,7 +347,7 @@ func _think(delta: float) -> float:
 	# Przejścia wspólne: zobaczenie gracza przerywa patrol, sprawdzanie i tropienie,
 	# a hałas przerywa patrol albo przekierowuje sprawdzanie.
 	var sensed := sensed_prey()
-	if sensed and state in [State.PATROL, State.INVESTIGATE, State.TRACK]:
+	if sensed and state in [State.PATROL, State.INVESTIGATE, State.TRACK, State.PEEK_UNDER]:
 		_prey = sensed
 		_enter(State.HUNT)
 		_start_burst()
@@ -362,6 +376,8 @@ func _think(delta: float) -> float:
 			return _retreat()
 		State.RECOVER:
 			return _recover(delta)
+		State.PEEK_UNDER:
+			return _peek_under(delta)
 		State.TRACK:
 			return _track()
 		State.CARRY:
@@ -547,6 +563,10 @@ func _investigate(delta: float) -> float:
 		if spot and director and randf() < director.hiding_check_chance():
 			check_hiding_spot(spot)
 			return investigate_speed
+		var cover := _nearest_cover(director, 6.0)
+		if cover.is_finite() and randf() < director.hiding_check_chance():
+			check_under(cover)
+			return investigate_speed
 	_timer += delta
 	rotate_y(1.5 * delta)
 	var searching := _searching()
@@ -632,6 +652,66 @@ func _open_hiding_spot() -> void:
 	_state_time = attack_windup * 0.5  # zaskoczony gracz ma mniej czasu na reakcję
 
 
+## Idź pod stół i zajrzyj pod spód (55). Tylko tak potwór znajduje gracza pod stołem.
+func check_under(point: Vector3) -> void:
+	seen_player = null
+	heard_player = null
+	_enter(State.PEEK_UNDER)
+	_peek_point = point
+	agent.target_position = NavigationServer3D.map_get_closest_point(agent.get_navigation_map(), point)
+
+
+func _peek_under(delta: float) -> float:
+	var flat := (_peek_point - global_position) * Vector3(1, 0, 1)
+	if not agent.is_navigation_finished() and flat.length() > 1.0 and _state_time < 8.0:
+		return investigate_speed
+	face(flat, delta * 4.0)
+	_timer += delta
+	if _timer < PEEK_TIME:
+		return 0.0
+	for node in get_tree().get_nodes_in_group(&"players"):
+		var player := node as Player
+		var to_player := (player.global_position - _peek_point) * Vector3(1, 0, 1)
+		if player.under_cover() and to_player.length() <= PEEK_FIND_RADIUS:
+			var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+			if game_state == null or _is_target(game_state, player.get_multiplayer_authority()):
+				_found_under = player
+				_prey = player
+				last_seen_position = player.global_position
+				_enter(State.HUNT)
+				return 0.0
+	# Pusto: dalej przeszukuje okolicę, ale pod ten sam stół od razu nie zagląda.
+	_enter(State.INVESTIGATE)
+	_checked_this_search = true
+	return 0.0
+
+
+## Najbliższe miejsce pod stołem w zasięgu (albo INF). Potwór nie wie, czy ktoś tam jest.
+func _nearest_cover(director: MonsterDirector, max_distance: float) -> Vector3:
+	var best := Vector3.INF
+	if director == null:
+		return best
+	for point in director.cover_points():
+		if absf(point.y - global_position.y) < 1.0 and point.distance_to(global_position) <= max_distance \
+				and (not best.is_finite() or point.distance_to(global_position) < best.distance_to(global_position)):
+			best = point
+	return best
+
+
+## Schylanie przy zaglądaniu pod stół: ciało i oczy pochylają się w biodrach. Liczone ze stanu,
+## więc klienci widzą to samo co host.
+func _update_bend(delta: float) -> void:
+	var target := PEEK_BEND if state == State.PEEK_UNDER and _smoothed_speed < 0.4 else 0.0
+	if is_equal_approx(_bend, target):
+		return
+	_bend = move_toward(_bend, target, delta * 2.5)
+	var hip := Vector3.UP * 0.9 * (profile.height_scale if profile else 1.0)
+	var bend := Transform3D(Basis(Vector3.RIGHT, -_bend), Vector3.ZERO)
+	var pivot := Transform3D(Basis(), hip) * bend * Transform3D(Basis(), -hip)
+	for part in _part_rest:
+		part.transform = pivot * _part_rest[part]
+
+
 func _nearest_hiding_spot(max_distance: float) -> HidingSpot:
 	var best: HidingSpot = null
 	for node in get_tree().get_nodes_in_group(&"hiding_spots"):
@@ -649,6 +729,11 @@ func _hunt(delta: float) -> float:
 		_timer = 0.0
 	else:
 		_timer += delta
+		# Zniknął z oczu, bo wczołgał się pod stół: potwór to widział, więc tam zajrzy.
+		if _timer <= 0.5 and is_instance_valid(_prey) and _prey != _found_under and _prey.under_cover() \
+				and _prey.global_position.distance_to(global_position) <= sight_range_flashlight:
+			check_under(_prey.global_position)
+			return investigate_speed
 		if _timer >= lose_sight_time:
 			if profile.behavior == MonsterProfile.Behavior.GUARD:
 				# Strażnik nie szuka zgubionego gracza: wraca pilnować gniazda.
@@ -1017,7 +1102,8 @@ func sensed_prey() -> Player:
 	if is_instance_valid(heard_player) and Time.get_ticks_msec() / 1000.0 - _heard_player_time <= HEAR_MEMORY:
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 		var peer_id := heard_player.get_multiplayer_authority()
-		if game_state == null or (_is_target(game_state, peer_id) and not game_state.is_hidden(peer_id)):
+		if (game_state == null or (_is_target(game_state, peer_id) and not game_state.is_hidden(peer_id))) \
+				and (not heard_player.under_cover() or heard_player == _found_under):
 			last_seen_position = heard_player.global_position
 			return heard_player
 	return null
@@ -1094,6 +1180,14 @@ func can_see(player: Player) -> bool:
 		return false
 	if game_state and game_state.is_hidden(player.get_multiplayer_authority()):
 		return false
+	if player.under_cover():
+		if player != _found_under:
+			return false
+		# Zajrzał pod spód i patrzy prosto na niego: blat zasłania promienie z wysokości oczu.
+		if player.global_position.distance_to(global_position) <= FOUND_UNDER_SIGHT:
+			return true
+	elif player == _found_under:
+		_found_under = null  # wyszedł spod stołu; pod następnym trzeba go znowu znaleźć
 	var eye := global_position + Vector3.UP * eye_height
 	var to_target := player.global_position + Vector3.UP * 1.0 - eye
 	if to_target.length() > sight_range(player):

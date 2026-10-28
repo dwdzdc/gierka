@@ -56,6 +56,8 @@ const HIDING_CHECK_PER_ESCAPE := 0.15
 const HIDING_CHECK_MAX := 0.7
 ## Druga „nauka”: ucieczki na inne piętro (schody, rampa). Pierwsza zawsze się udaje.
 var floor_escapes := 0
+var _cover_points: Array[Vector3] = []
+var _cover_points_rooms: Array[Room] = []
 const FLOOR_CHECK_PER_ESCAPE := 0.25
 const FLOOR_CHECK_MAX := 0.75
 
@@ -96,6 +98,43 @@ func start_round(round_rooms: Array[Room], parent: Node3D) -> void:
 
 func floor_check_chance() -> float:
 	return minf(FLOOR_CHECK_PER_ESCAPE * floor_escapes, FLOOR_CHECK_MAX)
+
+
+## Miejsca pod stołami, pryczami i niskimi półkami, gdzie zmieści się kucający gracz (55).
+## Potwór przy przeszukiwaniu wybiera najbliższe, nie wiedząc, czy ktoś tam jest (jak szafki).
+## Liczone raz na mapę, przy pierwszym użyciu: siatka co 0,75 m po podłodze każdego pokoju.
+func cover_points() -> Array[Vector3]:
+	if _cover_points_rooms == rooms:
+		return _cover_points
+	_cover_points_rooms = rooms.duplicate()
+	_cover_points.clear()
+	var space := get_viewport().find_world_3d().direct_space_state
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = 0.3
+	capsule.height = 0.9
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = capsule
+	query.collision_mask = 9
+	for room in rooms:
+		if not is_instance_valid(room):
+			continue
+		var box: AABB = room.global_transform * room.bounds
+		var x := box.position.x + 0.5
+		while x < box.end.x - 0.5:
+			var z := box.position.z + 0.5
+			while z < box.end.z - 0.5:
+				var top := Vector3(x, room.global_position.y + 0.5, z)
+				var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN, 1))
+				if not ground.is_empty():
+					var feet: Vector3 = ground.position
+					var roof := space.intersect_ray(PhysicsRayQueryParameters3D.create(feet + Vector3.UP * 0.5, feet + Vector3.UP * 1.3, 1))
+					if not roof.is_empty():
+						query.transform = Transform3D(Basis(), feet + Vector3.UP * 0.5)
+						if space.intersect_shape(query, 1).is_empty():
+							_cover_points.append(feet)
+				z += 0.75
+			x += 0.75
+	return _cover_points
 
 
 func hiding_check_chance() -> float:
