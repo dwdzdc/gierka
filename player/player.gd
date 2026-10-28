@@ -39,11 +39,10 @@ var crouching := false:
 
 @onready var _footstep_player: AudioStreamPlayer3D = $Footsteps
 
-enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE, HIDE, DOOR, SEARCH }
-const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE", Help.HIDE: "CHOWANIE", Help.DOOR: "DRZWI", Help.SEARCH: "PRZESZUKIWANIE"}
+enum Help { NONE, REVIVE, BANDAGE, EXTRACT, RESCUE, HIDE, DOOR }
+const HELP_NAMES := {Help.NONE: "", Help.REVIVE: "PODNOSZENIE", Help.BANDAGE: "BANDAŻ", Help.EXTRACT: "WYJŚCIE", Help.RESCUE: "ODBIJANIE", Help.HIDE: "CHOWANIE", Help.DOOR: "DRZWI"}
 const HIDE_TIME := 0.5
 const DOOR_TIME := 0.25
-const SEARCH_TIME := 1.5
 const UNLOCK_TIME := 1.0
 ## Podgląd przez kratkę: stań przy zamkniętych drzwiach przodem do nich i nie ruszaj się.
 const PEEK_DISTANCE := 1.4
@@ -84,7 +83,6 @@ var help_progress := 0.0
 ## Podpowiedź do HUD-a (u właściciela), np. "E - otwórz".
 var hint := ""
 var door_target: Door
-var search_target: LootContainer
 var _interact_consumed := false  # E trzeba puścić po otwarciu drzwi, inaczej zaraz by je zamknął
 var _peek_door: Door
 var _peek_timer := 0.0
@@ -375,11 +373,6 @@ func _update_help(delta: float) -> bool:
 				if hide_target:
 					target = self
 					kind = Help.HIDE
-			if target == null and not _interact_consumed:
-				search_target = _nearest_container()
-				if search_target:
-					target = self
-					kind = Help.SEARCH
 			# Uciekając, ma się drzwi za plecami: stuknięcie E zatrzaskuje te, przez które właśnie
 			# przeszliśmy. Tylko gdy E nie ma innego celu (kolega, szafka, wyjście są ważniejsze).
 			if target == null and Input.is_action_just_pressed("interact") and _slam_target():
@@ -404,7 +397,7 @@ func _update_help(delta: float) -> bool:
 	if help_target == null:
 		return false
 	var door_time := UNLOCK_TIME if kind == Help.DOOR and door_target.state == Door.State.LOCKED else DOOR_TIME
-	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME, Help.HIDE: HIDE_TIME, Help.DOOR: door_time, Help.SEARCH: SEARCH_TIME}[kind]
+	var duration: float = {Help.REVIVE: revive_time, Help.BANDAGE: bandage_time, Help.EXTRACT: EXTRACT_TIME, Help.RESCUE: RESCUE_TIME, Help.HIDE: HIDE_TIME, Help.DOOR: door_time}[kind]
 	help_progress += delta / duration
 	if help_progress >= 1.0:
 		help_progress = 0.0
@@ -423,22 +416,7 @@ func _update_help(delta: float) -> bool:
 			Help.DOOR:
 				game_state.request_door.rpc_id(1, door_target.name, false)
 				_interact_consumed = true
-			Help.SEARCH:
-				game_state.request_search.rpc_id(1, str(search_target.get_path()))
-				_interact_consumed = true
 	return true
-
-
-## Nieprzeszukany pojemnik w zasięgu, przed postacią.
-func _nearest_container() -> LootContainer:
-	var best: LootContainer = null
-	for node in get_tree().get_nodes_in_group(&"loot_containers"):
-		var container := node as LootContainer
-		if not container.can_search_from(global_position) or not _facing(container.global_position, FACING_ANGLE * 1.6):
-			continue
-		if best == null or container.global_position.distance_to(global_position) < best.global_position.distance_to(global_position):
-			best = container
-	return best
 
 
 ## Drzwi, którymi można teraz coś zrobić: blisko i mniej więcej przed postacią.
@@ -488,9 +466,6 @@ func _facing(point: Vector3, max_angle: float) -> bool:
 
 func _update_hint(game_state: GameState) -> void:
 	hint = ""
-	if _nearest_container():
-		hint = "E - przeszukaj (hałasuje)"
-		return
 	var door := _usable_door()
 	if door == null:
 		if _slam_target():

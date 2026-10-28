@@ -101,7 +101,7 @@ godot --headless --path . -s tests/kite_test.gd [-- --off|--no-burst]  # łowca 
 godot --headless --path . -s tests/floor_learning_test.gd    # potwór uczy się, że uciekacie na inne piętro
 godot --headless --path . -s tests/glitch_test.gd           # zakłócenie obrazu, gdy potwór blisko w kadrze
 godot --headless --path . -s tests/battery_test.gd            # bateria latarki: zużycie, migotanie, gaśnięcie, znajdźka
-godot --headless --path . -s tests/container_test.gd          # skrzynie: przeszukanie E, zawartość, hałas
+godot --headless --path . -s tests/loot_reach_test.gd        # łup dostępny: nie w meblu, nie na środku, da się zebrać (3 seedy, 20 pokoi)
 godot --headless --path . -s tests/monster_states_test.gd -- --scenario=walk_away  # też run_away, sidestep, dodge, escape, attack, noise, death
 godot --headless --path . -s tests/door_test.gd               # drzwi: gracz, klucz, potwór otwiera/wyważa, kratka
 godot --headless --path . -s tests/library_test.gd            # biblioteka: antresolę da się obejść dookoła

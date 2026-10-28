@@ -9,7 +9,6 @@ extends Node
 signal changed
 signal player_hit(peer_id: int, amount: int)
 signal coins_picked(peer_id: int, position: Vector3)
-signal container_searched(content: int, amount: int)
 ## Koniec rundy: wyniki dla wszystkich (u każdego peera).
 signal round_finished(results: Array)
 ## Tylko u hosta.
@@ -42,8 +41,6 @@ const REVIVE_HP := 30
 ## Bateria latarki (41c), w sekundach świecenia. Bateria do znalezienia doładowuje ułamek pełnej.
 const BATTERY_MAX := 270
 const BATTERY_PICKUP := 135
-## Przeszukanie pojemnika słychać z tylu metrów.
-const SEARCH_NOISE_RADIUS := 6.0
 const START_BANDAGES := 2
 ## Jak blisko trzeba stać, żeby pomóc koledze / wyjść (host to sprawdza).
 const HELP_DISTANCE := 2.0
@@ -576,33 +573,6 @@ func request_extract() -> void:
 	_broadcast()
 	player_extracted.emit(peer_id)
 	_check_round_end()
-
-
-## Gracz przeszukał pojemnik (E, trzymane). Host daje zawartość; przeszukiwanie hałasuje.
-@rpc("any_peer", "call_local", "reliable")
-func request_search(container_path: String) -> void:
-	if not multiplayer.is_server():
-		return
-	var peer_id := _caller()
-	var body := _player_node(peer_id)
-	var container := get_node_or_null(NodePath(container_path)) as LootContainer
-	if body == null or container == null or not is_up(peer_id) or not container.can_search_from(body.global_position):
-		return
-	container.opened = true
-	NoiseBus.emit_noise(container.global_position, SEARCH_NOISE_RADIUS, body)
-	match container.content:
-		LootContainer.Content.COINS:
-			add_coins(peer_id, container.value, container.global_position)
-		LootContainer.Content.BATTERY:
-			players[peer_id].battery = mini(battery(peer_id) + BATTERY_PICKUP, BATTERY_MAX)
-			_broadcast()
-	_notify_search.rpc_id(peer_id, container.content, container.value)
-
-
-## Tylko u szukającego: co znalazł (do komunikatu w HUD).
-@rpc("authority", "call_local", "reliable")
-func _notify_search(content: int, amount: int) -> void:
-	container_searched.emit(content, amount)
 
 
 ## Gracz otwiera/zamyka drzwi (E). Zakluczone otwiera kluczem (zużywa go).
