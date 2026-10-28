@@ -1,0 +1,35 @@
+progress.md
+  s_ab28709870e7ea::t_2244db7b2d3480 471,474-475
+game/monster_director.gd
+  s_ab28709870e7ea::t_ce67ee13f168a8 59-60,103-110,112-137
+  s_ab28709870e7ea::t_ffe9c1b8cb14f0 111
+player/player.gd
+  s_ab28709870e7ea::t_ce67ee13f168a8 60-61,296-303
+monster/monster.gd
+  s_ab28709870e7ea::t_25bab6b101bf03 47-48,733,1186-1188
+  s_ab28709870e7ea::t_5105096376eec4 1183-1185,1189-1190
+  s_ab28709870e7ea::t_ffe9c1b8cb14f0 23-24,27,43-46,154-157,225,285,350,379-380,566-569,655-714,732,734-736,1105-1106
+docs/spec.md
+  s_ab28709870e7ea::t_2244db7b2d3480 149
+README.md
+  s_ab28709870e7ea::t_9be2195e984f04 105-106
+tests/table_peek_test.gd
+  s_ab28709870e7ea::t_0ae72248a29caf 51-54
+  s_ab28709870e7ea::t_0bee87672479bb 1-50,55-81
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "52b8b395740b3e539e46409d6fd8c63ceae6060d",
+  "prompts": {},
+  "sessions": {
+    "s_ab28709870e7ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fb38fd6d-332e-4576-9aa7-7b93285e95ed",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
