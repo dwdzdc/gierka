@@ -1,0 +1,21 @@
+tests/loot_reach_test.gd.uid
+  s_ab28709870e7ea::t_5105096376eec4 1
+tests/no_finish_test.gd.uid
+  s_ab28709870e7ea::t_5105096376eec4 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "aa8818a0ff4898a414d82c5d1820f7ef57b7dc38",
+  "prompts": {},
+  "sessions": {
+    "s_ab28709870e7ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fb38fd6d-332e-4576-9aa7-7b93285e95ed",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
