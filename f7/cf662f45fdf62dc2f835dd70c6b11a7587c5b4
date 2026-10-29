@@ -1,0 +1,51 @@
+progress.md
+  s_235f462554c5ac::t_9a8dd934810a8f 430
+tests/director_goal_test.gd.uid
+  s_ab28709870e7ea::t_5105096376eec4 1
+README.md
+  s_235f462554c5ac::t_9a8dd934810a8f 104-105
+tests/glitch_test.gd.uid
+  s_ab28709870e7ea::t_5105096376eec4 1
+tests/unstick_test.gd.uid
+  s_ab28709870e7ea::t_5105096376eec4 1
+tests/unstick_test.gd
+  s_e8a5e88c51e83a::t_2e136a7f5d275b 1-4,6-38,40-46
+  s_e8a5e88c51e83a::t_6887ac010e3a5d 5
+  s_e8a5e88c51e83a::t_2f72a92dd01463 39
+monster/monster.gd
+  s_e8a5e88c51e83a::t_2f72a92dd01463 152-153,324-329,1304
+  s_ab28709870e7ea::t_9b8c7ab2e9bc4c 1323-1324
+  s_e8a5e88c51e83a::t_aae30072ad028e 148-151,1287-1290,1292-1294,1299-1303,1305-1322
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "f7cf662f45fdf62dc2f835dd70c6b11a7587c5b4",
+  "prompts": {},
+  "sessions": {
+    "s_235f462554c5ac": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "f7f07e60-1bd7-41d8-885f-3e5bcc6fbcd8",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    },
+    "s_ab28709870e7ea": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "fb38fd6d-332e-4576-9aa7-7b93285e95ed",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    },
+    "s_e8a5e88c51e83a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "007bec83-4e90-445b-a436-5a99d1977aa0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
