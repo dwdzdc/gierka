@@ -347,6 +347,9 @@ Ustalenia (23.10):
 - [x] Statystyki pod przytrzymanym Tab: sekcje Gracze (tabela), Runda, Sieć, Sterowanie; debug (ujęcie, stany potworów) tylko po F1. Uwaga: stany potworów graczom zdradzałyby za dużo, więc są tylko w debugu
 - [x] Konflikt klawiszy: Tab przełączał podgląd kolegi po śmierci, teraz robi to Spacja (martwy i tak nie skacze)
 - [x] Debug potworów (Tab + F1): tabela typ / stan / dystans / pokój / wzrok / słuch / zagrożenie / cel reżysera oraz dane reżysera (etap, czas do następnego potwora, szansa sprawdzania szafek, gniazdo strażnika). Część danych tylko u hosta. Na prośbę użytkownika debug domyślnie włączony (F1 chowa)
+- [ ] Raport do zgłoszenia błędu (pomysł 29.10): jednym klawiszem (np. F2 albo przycisk w menu testowym) kopiuje do schowka (`DisplayServer.clipboard_set`) blok tekstu do wklejenia w zgłoszenie: wersja (commit), host/klient, seed i liczba pokoi, numer rundy i etap reżysera, pokój gracza (nazwa + indeks w generatorze) i pozycja, ostatnio odwiedzone pokoje, stan gracza (HP, krwawienie, kryjówka), potwory (typ, stan, pokój, dystans), aktywna kamera; plus komunikat „skopiowano” w statusie
+  - Uwaga: seed i liczba pokoi są już pod Tab (sekcja Runda), ale do przepisywania ręcznie, a pokoju gracza tam nie ma; raport zbiera to, czego dziś brakowało przy ustalaniu „w którym pokoju to było” (np. przy 15v). Dane potworów hosta u klienta niepełne, więc raport mówi, czyj jest
+  - Uwaga: sam seed nie wystarczy do odtworzenia, jeśli mapa zależy od czegoś spoza niego (liczba pokoi, mapa stała w testach); raport musi mieć komplet do `-- --seed=`. Pomysł na potem: ten sam tekst + zrzut ekranu zapisywany do `user://reports/`
 
 ## Światło, latarka, krwawienie (pomysły 23.10, do zrobienia)
 
