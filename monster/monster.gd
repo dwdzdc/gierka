@@ -145,6 +145,12 @@ var _door_breaking := false
 var _rattle_timer := 0.0
 var _notice := {}  # Player -> ile sekund z rzędu go widzi (stopniowe zauważanie)
 var _stuck_time := 0.0
+## Ile razy z rzędu utknął (po 1,5 s bez ruchu). Po UNSTICK_STRIKES albo gdy siedzi
+## w ścianie, przenosi się na najbliższe wolne miejsce przy NavMeshu.
+var _stuck_strikes := 0
+const UNSTICK_STRIKES := 3
+const MAX_FALL_SECONDS := 1.5
+var _fall_time := 0.0
 var _state_time := 0.0  # ile sekund trwa bieżący stan
 var _timer := 0.0  # licznik do dyspozycji bieżącego stanu
 var _prey: Player  # cel polowania/ataku
@@ -315,6 +321,12 @@ func _physics_process(delta: float) -> void:
 		return
 	if not is_on_floor():
 		velocity.y -= _gravity * delta
+		# Potwory nie skaczą, a zeskok z szybu trwa < 1 s: dłuższy lot = wypadł przez ścianę pod mapę.
+		_fall_time += delta
+		if _fall_time > MAX_FALL_SECONDS:
+			_unstick()
+	else:
+		_fall_time = 0.0
 	_update_sight(delta)
 	_state_time += delta
 	var speed := _handle_doors(_think(delta), delta)
@@ -1272,9 +1284,42 @@ func _check_stuck(speed: float, before: Vector3, delta: float) -> void:
 		_stuck_time += delta
 		if _stuck_time > 1.5:
 			_stuck_time = 0.0
+			_stuck_strikes += 1
+			if state not in [State.VENT, State.VENT_CLIMB] \
+					and (_stuck_strikes >= UNSTICK_STRIKES or not _fits_at(global_transform)):
+				_unstick()
 			agent.target_position = global_position
+	elif moved.length() > speed * delta * 0.5:
+		_stuck_time = 0.0
+		_stuck_strikes = 0
 	else:
 		_stuck_time = 0.0
+
+
+## Awaryjne odblokowanie: najbliższy punkt NavMesha, a jeśli tam też ciasno, pierścienie
+## wokół niego. Bez tego potwór wciśnięty w ścianę (np. po zryw-ataku w narożniku) stoi
+## do końca rundy, a reżyser na próżno daje mu cele.
+func _unstick() -> void:
+	_stuck_strikes = 0
+	_fall_time = 0.0
+	var base := NavigationServer3D.map_get_closest_point(agent.get_navigation_map(), global_position)
+	for radius in [0.0, 0.5, 1.0, 1.5, 2.0]:
+		for i in (1 if radius == 0.0 else 12):
+			var candidate := Transform3D(global_transform.basis, base + Vector3.UP * 0.05 \
+					+ Vector3(sin(TAU * i / 12.0), 0.0, cos(TAU * i / 12.0)) * radius)
+			if _fits_at(candidate):
+				global_transform = candidate
+				velocity = Vector3.ZERO
+				return
+
+
+func _fits_at(at: Transform3D) -> bool:
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = $Shape.shape
+	query.transform = at * $Shape.transform
+	query.collision_mask = collision_mask
+	query.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
 
 func face(direction: Vector3, delta: float) -> void:

@@ -101,6 +101,8 @@ godot --headless --path . -s tests/map_test.gd -- --rooms=20  # generator: koliz
 godot --headless --path . -s tests/camera_rules_test.gd       # każde przejście widoczne z kamery swojej strefy
 godot --headless --path . -s tests/stamina_test.gd            # bieg: zadyszka po ~6 s, dyszenie = hałas, regeneracja
 godot --headless --path . -s tests/kite_test.gd [-- --off|--no-burst]  # łowca vs bieg w kółko wokół fontanny
+godot --headless --path . -s tests/director_goal_test.gd     # daleki potwór szybko dostaje cel przy graczu i krąży w okolicy
+godot --headless --path . -s tests/unstick_test.gd           # potwór wciśnięty w ścianę/stół sam się wydostaje
 godot --headless --path . -s tests/floor_learning_test.gd    # potwór uczy się, że uciekacie na inne piętro
 godot --headless --path . -s tests/glitch_test.gd           # zakłócenie obrazu, gdy potwór blisko w kadrze
 godot --headless --path . -s tests/battery_test.gd            # bateria latarki: zużycie, migotanie, gaśnięcie, znajdźka
