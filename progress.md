@@ -260,6 +260,7 @@ chowasz; kucanie = ciszej i trudniej cię zauważyć; zamiast ślepych kątów p
 ## Faza 3: sieć
 
 - [x] 16. Menu host/join po IP (ENet), port 7777, do 4 graczy
+  - 29.10: pole Dołącz przyjmuje `adres:port` (IPv6: `[adres]:port`), bo tunel playit.gg (testy ze znajomymi bez publicznego IP; `ssh -R` odpada, przenosi tylko TCP, a ENet to UDP) daje losowy port. Test `address_test`
 - [~] 17. Spawn graczy i synchronizacja pozycji, obrotu i latarki. Animacji jeszcze nie ma (brak modelu)
 - [x] 18. Kamera tylko dla lokalnego gracza
 - [x] 19. Host rozsyła seed i liczbę pokoi, klient składa identyczną mapę i dopiero wtedy dostaje postać. Liczba pokoi ustawiana w menu hosta (3–30)

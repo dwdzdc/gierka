@@ -39,6 +39,26 @@ func join(address: String, port := DEFAULT_PORT) -> Error:
 	return OK
 
 
+## Adres z pola "Dołącz" -> [host, port]. Port opcjonalny ("host:port"), bo tunele typu
+## playit.gg dają losowy port zamiast 7777. Goły IPv6 ma kilka dwukropków, więc port
+## tylko w nawiasach: "[::1]:7777".
+static func parse_address(text: String) -> Array:
+	text = text.strip_edges()
+	var port := DEFAULT_PORT
+	if text.begins_with("["):
+		var end := text.find("]")
+		if end != -1:
+			var rest := text.substr(end + 1)
+			if rest.begins_with(":") and rest.substr(1).is_valid_int():
+				port = rest.substr(1).to_int()
+			return [text.substr(1, end - 1), port]
+	elif text.count(":") == 1:
+		var colon := text.find(":")
+		if text.substr(colon + 1).is_valid_int():
+			return [text.left(colon), text.substr(colon + 1).to_int()]
+	return [text, port]
+
+
 ## Adresy IPv4 tego komputera w sieci lokalnej: to podajesz koledze do "Dołącz".
 func local_addresses() -> PackedStringArray:
 	var result := PackedStringArray()

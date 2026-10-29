@@ -10,7 +10,7 @@ extends Node3D
 ## już na mapie (każdy zginął albo wyszedł). Potem podsumowanie i host startuje następną.
 ##
 ## Start z terminala bez menu:  godot --path . -- --host [--rooms=10] [--seed=1234]
-##                              godot --path . -- --join=192.168.1.20
+##                              godot --path . -- --join=192.168.1.20[:7777]
 
 signal navigation_ready
 
@@ -151,7 +151,8 @@ func _on_host_pressed() -> void:
 
 
 func _on_join_pressed() -> void:
-	var err := Net.join(address_input.text.strip_edges())
+	var target := Net.parse_address(address_input.text)
+	var err := Net.join(target[0], target[1])
 	status_label.text = "Łączenie z %s..." % address_input.text if err == OK else "Zły adres"
 
 

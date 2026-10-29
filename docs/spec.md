@@ -178,7 +178,7 @@ Gra jest w Godot 4.7 (GDScript), multiplayer host–klient po ENet dla 2–5 gra
 
 - **Host decyduje:** potwory i ich AI, HP, krwawienie, monety, punktacja, kryjówki, rundy. Klient tylko prosi (np. o bandaż) i dostaje stan.
 - **Klient decyduje:** ruch własnej postaci, kamera, HUD, dźwięk napięcia.
-- **Łączenie:** po IP w tej samej sieci albo przez Tailscale; port 7777/UDP. Steam lobby planowane na później.
+- **Łączenie:** po IP w tej samej sieci, przez Tailscale albo tunel (np. playit.gg; w polu Dołącz wtedy `adres:port`); domyślnie port 7777/UDP. Steam lobby planowane na później.
 - **Sprzęt:** 60 FPS na MacBooku M1 nawet na mapie z 60 pokojami; działa też na Linuksie (po pullu: `godot --headless --path gierka --import`).
 - **Testy:** ok. 30 automatycznych testów headless (kamery, potwory, sieć, generator, kryjówki, porwanie) plus mapy pokrycia kamer w `docs/coverage/`.
 

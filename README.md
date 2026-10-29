@@ -71,13 +71,16 @@ i klika **Dołącz**. Port 7777/UDP, do 5 graczy.
 - Ta sama sieć lokalna: IP z HUD hosta (`192.168.x.x`).
 - Przez internet: [Tailscale](https://tailscale.com) u wszystkich i IP hosta `100.x.x.x`,
   albo przekierowanie portu 7777/UDP na routerze hosta.
+- Bez publicznego IP i bez instalowania czegokolwiek u gości: [playit.gg](https://playit.gg)
+  u hosta (`playit`, w panelu tunel UDP na `127.0.0.1:7777`). Goście wpisują w **Dołącz**
+  adres z portem, który da playit, np. `cos.at.ply.gg:12345` (bez portu = 7777).
 - Firewall hosta musi przepuszczać 7777/UDP (Linux z ufw: `sudo ufw allow 7777/udp`).
 
 Bez menu, z terminala:
 
 ```sh
 godot --path . -- --host --rooms=12 --seed=1234   # liczba pokoi i seed mapy opcjonalnie
-godot --path . -- --join=192.168.1.23
+godot --path . -- --join=192.168.1.23        # albo adres:port
 ```
 
 ## Sterowanie
@@ -114,4 +117,5 @@ godot --headless --path . -s tools/coverage_map.gd            # mapy pokrycia ka
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
+godot --headless --path . -s tests/address_test.gd           # pole Dołącz: adres z opcjonalnym portem
 ```
