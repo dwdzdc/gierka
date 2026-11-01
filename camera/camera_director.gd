@@ -23,6 +23,9 @@ signal camera_changed(zone: CameraZone)
 const _TARGET_POINTS: Array[float] = [1.5, 0.7]  # wysokości (głowa, biodra), z których liczy się "widać postać"
 const _CONE_DISTANCES: Array[float] = [1.0, 2.5, 4.0]
 const _CONE_ANGLES: Array[float] = [-0.5, 0.0, 0.5]  # rad, ok. ±30°
+## Kucająca postać jest niższa, więc punkty widoczności też.
+const CROUCH_POINT_SCALE := 0.55
+const CONE_EYE_HEIGHT := 1.2  # wysokość oczu postaci do stożka widzenia
 
 var target: Node3D
 var current_zone: CameraZone
@@ -124,7 +127,7 @@ func _desired_zone() -> CameraZone:
 
 ## Widać postać, jeśli jest w kadrze i przynajmniej jeden jej punkt nie jest zasłonięty.
 func is_target_visible(camera: Camera3D) -> bool:
-	var scale := 0.55 if target is Player and target.crouching else 1.0  # kucająca postać jest niższa
+	var scale := CROUCH_POINT_SCALE if target is Player and target.crouching else 1.0  # kucająca postać jest niższa
 	for height in _TARGET_POINTS:
 		var point := target.global_position + Vector3.UP * height * scale
 		if camera.is_position_in_frustum(point) and _line_clear(camera.global_position, point):
@@ -134,7 +137,7 @@ func is_target_visible(camera: Camera3D) -> bool:
 
 ## Ile punktów ze stożka przed postacią widać z danej kamery (0–9).
 func cone_score(camera: Camera3D) -> int:
-	var eye := target.global_position + Vector3.UP * 1.2
+	var eye := target.global_position + Vector3.UP * CONE_EYE_HEIGHT
 	var forward := -target.global_transform.basis.z
 	var score := 0
 	for angle in _CONE_ANGLES:

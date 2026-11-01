@@ -14,6 +14,9 @@ extends Camera3D
 @export_range(0.0, 1.0) var follow := 0.0
 @export var follow_smoothing := 4.0
 
+const DEFAULT_SHAKE := 0.15  # typowy wstrząs (np. trafienie)
+const SHAKE_FADE := 0.5  # jednostek na sekundę: wstrząs wygasa
+
 var follow_target: Node3D
 var _shake := 0.0
 
@@ -30,14 +33,14 @@ func activate(target: Node3D) -> void:
 
 
 ## Krótki wstrząs obrazu (np. po trafieniu). Przesuwa tylko obraz, nie pozycję kamery.
-func shake(strength := 0.15) -> void:
+func shake(strength := DEFAULT_SHAKE) -> void:
 	_shake = maxf(_shake, strength)
 
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint() or not current:
 		return
-	_shake = move_toward(_shake, 0.0, delta * 0.5)
+	_shake = move_toward(_shake, 0.0, delta * SHAKE_FADE)
 	h_offset = randf_range(-_shake, _shake)
 	v_offset = randf_range(-_shake, _shake)
 	if follow <= 0.0 or follow_target == null:
