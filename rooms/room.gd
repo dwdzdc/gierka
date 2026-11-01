@@ -22,6 +22,29 @@ const EXIT_MATERIAL := preload("res://rooms/materials/exit.tres")
 const ELEVATOR_MATERIAL := preload("res://rooms/materials/metal.tres")
 const SKYLIGHT_MATERIAL := preload("res://rooms/materials/skylight.tres")
 
+## Zamurowanie przejścia: ścianka minimalnie większa od otworu, żeby nie było szpary.
+const CAP_MARGIN := 0.02
+## Futryna i winda stoją tuż przed wewnętrzną powierzchnią ściany (+Z markera).
+const FRAME_DEPTH := 0.05
+const FRAME_POST := 0.2
+const FRAME_THICKNESS := 0.1
+const FRAME_LAMP_OFFSET := 0.15
+const FRAME_LAMP_SIZE := Vector3(0.5, 0.12, 0.16)
+## Winda: listwy, szpara między skrzydłami, belka i znak.
+const ELEVATOR_SLIT := 0.06
+const ELEVATOR_SLIT_SIZE := Vector3(0.03, DOOR_SIZE.y, 0.02)
+const ELEVATOR_POST_OFFSET := 0.1
+const ELEVATOR_POST_Y := 1.45
+const ELEVATOR_POST_SIZE := Vector3(0.15, 2.9, 0.15)
+const ELEVATOR_HEADER_Y := 2.85
+const ELEVATOR_HEADER_WIDTH := 0.35
+const ELEVATOR_HEADER_SIZE := 0.15
+const ELEVATOR_DETAIL := 0.03  # listwy i belka lekko przed płaszczyzną drzwi
+const ELEVATOR_SIGN_OFFSET := 0.01
+const ELEVATOR_SIGN_Y := 3.15
+const ELEVATOR_SIGN_SIZE := Vector3(1.0, 0.3, 0.1)
+const EXIT_MARKER_DISTANCE := 0.8  # znacznik wyjścia przed drzwiami windy
+
 ## Bryła pokoju razem ze ścianami (lokalnie). Generator nie pozwala, żeby bryły się przecinały.
 @export var bounds := AABB()
 ## Zgaszony pokój (losuje generator). Potwory widzą w nim gracza bez latarki tylko z bliska.
@@ -56,7 +79,7 @@ func get_exit() -> Marker3D:
 func cap_doorway(doorway: Marker3D) -> void:
 	var cap := CSGBox3D.new()
 	cap.name = "Cap_" + doorway.name
-	cap.size = Vector3(DOOR_SIZE.x + 0.02, DOOR_SIZE.y + 0.02, WALL_THICKNESS)
+	cap.size = Vector3(DOOR_SIZE.x + CAP_MARGIN, DOOR_SIZE.y + CAP_MARGIN, WALL_THICKNESS)
 	cap.material = CAP_MATERIAL
 	# Środek otworu: pół grubości ściany do środka (+Z markera) i pół wysokości drzwi w górę.
 	var local := doorway.transform
@@ -72,19 +95,19 @@ func add_elevator(doorway: Marker3D) -> Marker3D:
 	look.name = "Elevator_" + doorway.name
 	look.transform = doorway.transform
 	add_child(look)
-	var face := WALL_THICKNESS + 0.05  # tuż przed wewnętrzną powierzchnią ściany (+Z markera)
-	_frame_box(look, Vector3(0, DOOR_SIZE.y / 2.0, face), Vector3(DOOR_SIZE.x, DOOR_SIZE.y, 0.1), ELEVATOR_MATERIAL)
-	_frame_box(look, Vector3(0, DOOR_SIZE.y / 2.0, face + 0.06), Vector3(0.03, DOOR_SIZE.y, 0.02), EXIT_MATERIAL)  # szpara między skrzydłami
+	var face := WALL_THICKNESS + FRAME_DEPTH  # tuż przed wewnętrzną powierzchnią ściany (+Z markera)
+	_frame_box(look, Vector3(0, DOOR_SIZE.y / 2.0, face), Vector3(DOOR_SIZE.x, DOOR_SIZE.y, FRAME_THICKNESS), ELEVATOR_MATERIAL)
+	_frame_box(look, Vector3(0, DOOR_SIZE.y / 2.0, face + ELEVATOR_SLIT), ELEVATOR_SLIT_SIZE, EXIT_MATERIAL)  # szpara między skrzydłami
 	for side in [-1.0, 1.0]:
-		_frame_box(look, Vector3(side * (DOOR_SIZE.x / 2.0 + 0.1), 1.45, face + 0.03), Vector3(0.15, 2.9, 0.15), EXIT_MATERIAL)
-	_frame_box(look, Vector3(0, 2.85, face + 0.03), Vector3(DOOR_SIZE.x + 0.35, 0.15, 0.15), EXIT_MATERIAL)
-	_frame_box(look, Vector3(0, 3.15, face + 0.01), Vector3(1.0, 0.3, 0.1), EXIT_MATERIAL).name = "Sign"
+		_frame_box(look, Vector3(side * (DOOR_SIZE.x / 2.0 + ELEVATOR_POST_OFFSET), ELEVATOR_POST_Y, face + ELEVATOR_DETAIL), ELEVATOR_POST_SIZE, EXIT_MATERIAL)
+	_frame_box(look, Vector3(0, ELEVATOR_HEADER_Y, face + ELEVATOR_DETAIL), Vector3(DOOR_SIZE.x + ELEVATOR_HEADER_WIDTH, ELEVATOR_HEADER_SIZE, ELEVATOR_HEADER_SIZE), EXIT_MATERIAL)
+	_frame_box(look, Vector3(0, ELEVATOR_SIGN_Y, face + ELEVATOR_SIGN_OFFSET), ELEVATOR_SIGN_SIZE, EXIT_MATERIAL).name = "Sign"
 	var holder := Node3D.new()
 	holder.name = "ExitPoint"
 	add_child(holder)
 	var marker := Marker3D.new()
 	marker.name = "Exit"
-	marker.transform = Transform3D(doorway.transform.basis, doorway.position + doorway.transform.basis.z * (WALL_THICKNESS + 0.8))
+	marker.transform = Transform3D(doorway.transform.basis, doorway.position + doorway.transform.basis.z * (WALL_THICKNESS + EXIT_MARKER_DISTANCE))
 	holder.add_child(marker)
 	return marker
 
@@ -96,13 +119,13 @@ func add_door_frame(doorway: Marker3D) -> void:
 	frame.name = "Frame_" + doorway.name
 	frame.transform = doorway.transform
 	add_child(frame)
-	var depth := WALL_THICKNESS + 0.05  # tuż przed wewnętrzną powierzchnią ściany (+Z markera)
-	var post := 0.2
+	var depth := WALL_THICKNESS + FRAME_DEPTH  # tuż przed wewnętrzną powierzchnią ściany (+Z markera)
+	var post := FRAME_POST
 	var jamb_height := DOOR_SIZE.y + post
 	for side in [-1.0, 1.0]:
-		_frame_box(frame, Vector3(side * (DOOR_SIZE.x / 2.0 + post / 2.0), jamb_height / 2.0, depth), Vector3(post, jamb_height, 0.1), FRAME_MATERIAL)
-	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post / 2.0, depth), Vector3(DOOR_SIZE.x + 2.0 * post, post, 0.1), FRAME_MATERIAL)
-	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post + 0.15, depth + 0.03), Vector3(0.5, 0.12, 0.16), LAMP_MATERIAL).name = "Lamp"
+		_frame_box(frame, Vector3(side * (DOOR_SIZE.x / 2.0 + post / 2.0), jamb_height / 2.0, depth), Vector3(post, jamb_height, FRAME_THICKNESS), FRAME_MATERIAL)
+	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post / 2.0, depth), Vector3(DOOR_SIZE.x + 2.0 * post, post, FRAME_THICKNESS), FRAME_MATERIAL)
+	_frame_box(frame, Vector3(0, DOOR_SIZE.y + post + FRAME_LAMP_OFFSET, depth + ELEVATOR_DETAIL), FRAME_LAMP_SIZE, LAMP_MATERIAL).name = "Lamp"
 
 
 ## Zgaszony pokój: oprawy lamp, lampki nad drzwiami po tej stronie i świetlik zostają na
