@@ -34,6 +34,28 @@ const VENT_MIN_DISTANCE := 20.0  # dalsze przerzuty potworów z wentylacją idą
 const GUARD_RELOCATE_SECONDS := Vector2(180.0, 240.0)
 const GUARD_NEST_DISTANCE := Vector2(12.0, 40.0)  # jak daleko od starego gniazda
 const GUARD_NEST_SAFE_DISTANCE := 15.0  # nowe gniazdo nie przy graczach
+## Skanowanie miejsc pod stołami (55): siatka po podłodze pokoju.
+const COVER_CAPSULE_RADIUS := 0.3
+const COVER_CAPSULE_HEIGHT := 0.9  # kucający gracz
+const COVER_GRID := 0.75
+const COVER_MARGIN := 0.5  # nie skanujemy tuż przy ścianie
+const COVER_ROOF_FROM := 0.5  # promień od pasa w górę: jest blat/półka?
+const COVER_ROOF_TO := 1.3
+const COVER_RAY_DEPTH := 1.0
+const COVER_MASK := 9  # świat + kraty
+## Schowanie się w szafce liczy się jako ucieczka, gdy potwór był w pościgu bliżej niż to.
+const CHASE_HIDING_DISTANCE := 15.0
+const SPAWN_LIFT := 0.05  # potwór startuje tuż nad podłogą pokoju
+## Wskaźnik zagrożenia: tempo narastania przy graczach, gdy widzi / nie widzi, i spadku z dala.
+const MENACE_RATE_SEEN := 2.0
+const MENACE_RATE_NEAR := 1.0
+const MENACE_RATE_FAR := -0.5
+## Piętro: pokoje wyższe niż to to rampy i schody (dwa poziomy).
+const ROOM_MAX_HEIGHT := 8.0
+## Ślad po przenosinach gniazda strażnika: krople krwi wokół nowego miejsca.
+const NEST_DROPS := 4
+const NEST_DROP_SPREAD := 1.5
+const NEST_DROP_AMOUNT := 1.8
 
 ## Czas etapu: bazowo + na każdy pokój (większa mapa = więcej czasu na eksplorację).
 var stage_base_seconds := 180.0
@@ -116,30 +138,31 @@ func cover_points() -> Array[Vector3]:
 	_cover_points.clear()
 	var space := get_viewport().find_world_3d().direct_space_state
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.3
-	capsule.height = 0.9
+	capsule.radius = COVER_CAPSULE_RADIUS
+	capsule.height = COVER_CAPSULE_HEIGHT
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = capsule
-	query.collision_mask = 9
+	query.collision_mask = COVER_MASK
 	for room in rooms:
 		if not is_instance_valid(room):
 			continue
 		var box: AABB = room.global_transform * room.bounds
-		var x := box.position.x + 0.5
-		while x < box.end.x - 0.5:
-			var z := box.position.z + 0.5
-			while z < box.end.z - 0.5:
-				var top := Vector3(x, room.global_position.y + 0.5, z)
-				var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN, 1))
+		var x := box.position.x + COVER_MARGIN
+		while x < box.end.x - COVER_MARGIN:
+			var z := box.position.z + COVER_MARGIN
+			while z < box.end.z - COVER_MARGIN:
+				var top := Vector3(x, room.global_position.y + COVER_ROOF_FROM, z)
+				var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(top, top + Vector3.DOWN, COVER_RAY_DEPTH))
 				if not ground.is_empty():
 					var feet: Vector3 = ground.position
-					var roof := space.intersect_ray(PhysicsRayQueryParameters3D.create(feet + Vector3.UP * 0.5, feet + Vector3.UP * 1.3, 1))
+					var roof := space.intersect_ray(PhysicsRayQueryParameters3D.create(
+						feet + Vector3.UP * COVER_ROOF_FROM, feet + Vector3.UP * COVER_ROOF_TO, COVER_RAY_DEPTH))
 					if not roof.is_empty():
-						query.transform = Transform3D(Basis(), feet + Vector3.UP * 0.5)
+						query.transform = Transform3D(Basis(), feet + Vector3.UP * COVER_ROOF_FROM)
 						if space.intersect_shape(query, 1).is_empty():
 							_cover_points.append(feet)
-				z += 0.75
-			x += 0.75
+				z += COVER_GRID
+			x += COVER_GRID
 	return _cover_points
 
 
@@ -161,7 +184,7 @@ func on_player_hid(peer_id: int, spot_path: String) -> void:
 		if sensed and sensed.get_multiplayer_authority() == peer_id:
 			monster.check_hiding_spot(spot)
 			witnessed = true
-		elif monster.state in [Monster.State.HUNT, Monster.State.INVESTIGATE] and monster.global_position.distance_to(spot.global_position) < 15.0:
+		elif monster.state in [Monster.State.HUNT, Monster.State.INVESTIGATE] and monster.global_position.distance_to(spot.global_position) < CHASE_HIDING_DISTANCE:
 			chased = true
 	if chased and not witnessed:
 		hiding_escapes += 1
@@ -174,7 +197,7 @@ func stop() -> void:
 func spawn(profile_id: String, room: Room) -> Monster:
 	var monster: Monster = MONSTER_SCENE.instantiate()
 	monster.profile_id = profile_id
-	monster.transform = Transform3D(Basis(), room.global_position + Vector3.UP * 0.05)
+	monster.transform = Transform3D(Basis(), room.global_position + Vector3.UP * SPAWN_LIFT)
 	monster.sense_boost = 1.0 + SENSE_BOOST_PER_STAGE * stage
 	monsters_parent.add_child(monster, true)
 	monster.home = monster.global_position
@@ -230,7 +253,7 @@ func _update_menace(monster: Monster, delta: float) -> void:
 		_cooldown[monster] -= delta
 		return
 	var near := _distance_to_nearest_player(monster.global_position) < NEAR_DISTANCE
-	var rate := (2.0 if monster.seen_player else 1.0) if near else -0.5
+	var rate := (MENACE_RATE_SEEN if monster.seen_player else MENACE_RATE_NEAR) if near else MENACE_RATE_FAR
 	_menace[monster] = maxf(_menace.get(monster, 0.0) + rate * delta, 0.0)
 	if _menace[monster] >= MENACE_LIMIT and monster.state not in [Monster.State.ATTACK, Monster.State.CARRY, Monster.State.FEED, Monster.State.RECOVER]:
 		# Dość nacisku: odeślij daleko i daj graczom odetchnąć.
@@ -253,7 +276,7 @@ func _update_guard_nest(monster: Monster, delta: float) -> void:
 	var candidates: Array[Room] = []
 	for room in rooms:
 		var from_home := room.global_position.distance_to(monster.home)
-		if room.bounds.size.y < 8.0 and from_home >= GUARD_NEST_DISTANCE.x and from_home <= GUARD_NEST_DISTANCE.y \
+		if room.bounds.size.y < ROOM_MAX_HEIGHT and from_home >= GUARD_NEST_DISTANCE.x and from_home <= GUARD_NEST_DISTANCE.y \
 				and _distance_to_nearest_player(room.global_position) >= GUARD_NEST_SAFE_DISTANCE:
 			candidates.append(room)
 	if candidates.is_empty():
@@ -267,8 +290,9 @@ func _update_guard_nest(monster: Monster, delta: float) -> void:
 func _mark_nest(position: Vector3) -> void:
 	var trail: BloodTrail = get_tree().get_first_node_in_group(&"blood_trail")
 	if trail:
-		for i in 4:
-			trail.add_drop(position + Vector3(randf_range(-1.5, 1.5), 0.0, randf_range(-1.5, 1.5)), 1.8)
+		for i in NEST_DROPS:
+			var offset := Vector3(randf_range(-NEST_DROP_SPREAD, NEST_DROP_SPREAD), 0.0, randf_range(-NEST_DROP_SPREAD, NEST_DROP_SPREAD))
+			trail.add_drop(position + offset, NEST_DROP_AMOUNT)
 
 
 ## Potwór zabłądził: sam jest daleko od graczy i idzie w miejsce też daleko od nich.
@@ -310,7 +334,7 @@ func _farthest_room_from_players() -> Room:
 	var best: Room = rooms[0]
 	var best_distance := -1.0
 	for room in rooms:
-		if room.bounds.size.y >= 8.0:
+		if room.bounds.size.y >= ROOM_MAX_HEIGHT:
 			continue  # bez ramp i schodów (dwa piętra)
 		var distance := _distance_to_nearest_player(room.global_position)
 		if distance > best_distance:
