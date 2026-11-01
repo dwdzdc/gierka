@@ -15,6 +15,35 @@ const FALL_PER_SECOND := 0.2
 ## czy kolegę obok, ani skąd idzie; przerwa, żeby pętla zgubił–znalazł nie grała co chwilę.
 const STINGER_RADIUS := 20.0
 const STINGER_COOLDOWN := 15.0
+## Skok serca po alarmie/trafieniu i tempo jego wygaszania.
+const SPIKE_MAX := 0.8
+const SPIKE_FALL := 0.15
+const STINGER_SPIKE := 0.3
+## Człowiek po ciosach sam z siebie trzyma serce wysoko (poniżej tylu HP).
+const LOW_HP := 40
+const LOW_HP_THREAT := 0.35
+## Rozmycie odczytu odległości: wolno i szybko falujący mnożnik.
+const WOBBLE_BASE := 0.8
+const WOBBLE_SLOW := 0.25
+const WOBBLE_SLOW_SPEED := 0.7
+const WOBBLE_FAST := 0.1
+const WOBBLE_FAST_SPEED := 2.3
+## Ile zagrożenia daje bliski potwór w danym stanie (0..1 po przycięciu).
+const VENT_THREAT := 0.6
+const HUNT_THREAT := 1.25
+const IDLE_THREAT := 0.8
+## Poziomy głośności i tempa pętli (ciszej ambient, głośniej serce i oddech).
+const AMBIENT_CALM_DB := -14.0
+const AMBIENT_DANGER_DB := -40.0
+const HEART_CALM_DB := -50.0
+const HEART_DANGER_DB := -2.0
+const HEART_GAIN := 1.3
+const HEART_PITCH_CALM := 0.85
+const HEART_PITCH_DANGER := 1.9
+const BREATH_CALM_DB := -50.0
+const BREATH_DANGER_DB := -6.0
+const BREATH_THRESHOLD := 0.35  # oddech włącza się dopiero przy wyższym napięciu
+const BREATH_GAIN := 2.0
 
 var threat := 0.0  # 0..1, wygładzone
 var _spike := 0.0  # chwilowy skok po fałszywym alarmie albo trafieniu
@@ -35,7 +64,7 @@ func _ready() -> void:
 
 ## Fałszywy alarm albo trafienie: serce na chwilę podskakuje.
 func spike(amount: float) -> void:
-	_spike = clampf(_spike + amount, 0.0, 0.8)
+	_spike = clampf(_spike + amount, 0.0, SPIKE_MAX)
 
 
 func _process(delta: float) -> void:
@@ -48,12 +77,12 @@ func _process(delta: float) -> void:
 			_check_stinger(node as Monster, target.global_position)
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 		var me := multiplayer.get_unique_id()
-		if game_state and game_state.is_alive(me) and game_state.hp(me) < 40:
-			raw = maxf(raw, 0.35)
+		if game_state and game_state.is_alive(me) and game_state.hp(me) < LOW_HP:
+			raw = maxf(raw, LOW_HP_THREAT)
 	# Rozmycie: wolno falujący mnożnik, żeby nie dało się z serca odczytać dokładnej odległości.
-	raw *= 0.8 + 0.25 * sin(_time * 0.7) + 0.1 * sin(_time * 2.3)
+	raw *= WOBBLE_BASE + WOBBLE_SLOW * sin(_time * WOBBLE_SLOW_SPEED) + WOBBLE_FAST * sin(_time * WOBBLE_FAST_SPEED)
 	raw = clampf(raw + _spike, 0.0, 1.0)
-	_spike = maxf(_spike - delta * 0.15, 0.0)
+	_spike = maxf(_spike - delta * SPIKE_FALL, 0.0)
 	var rate := RISE_PER_SECOND if raw > threat else FALL_PER_SECOND
 	threat = move_toward(threat, raw, rate * delta)
 	_apply(threat)
@@ -69,7 +98,7 @@ func _check_stinger(monster: Monster, position: Vector3) -> void:
 		return
 	_stinger_ready_at = _time + STINGER_COOLDOWN
 	$Stinger.play()
-	spike(0.3)
+	spike(STINGER_SPIKE)
 
 
 func _danger_from(monster: Monster, position: Vector3) -> float:
@@ -78,10 +107,10 @@ func _danger_from(monster: Monster, position: Vector3) -> float:
 	var distance := monster.global_position.distance_to(position)
 	match monster.state:
 		Monster.State.VENT, Monster.State.VENT_CLIMB:
-			return 0.6 * (1.0 - clampf(distance / VENT_RADIUS, 0.0, 1.0))
+			return VENT_THREAT * (1.0 - clampf(distance / VENT_RADIUS, 0.0, 1.0))
 		Monster.State.HUNT, Monster.State.ATTACK, Monster.State.CARRY:
-			return minf(1.25 * (1.0 - clampf(distance / HUNT_RADIUS, 0.0, 1.0)), 1.0)
-	return 0.8 * (1.0 - clampf(distance / DANGER_RADIUS, 0.0, 1.0))
+			return minf(HUNT_THREAT * (1.0 - clampf(distance / HUNT_RADIUS, 0.0, 1.0)), 1.0)
+	return IDLE_THREAT * (1.0 - clampf(distance / DANGER_RADIUS, 0.0, 1.0))
 
 
 func _local_focus() -> Node3D:
@@ -90,7 +119,7 @@ func _local_focus() -> Node3D:
 
 
 func _apply(value: float) -> void:
-	$Ambient.volume_db = lerpf(-14.0, -40.0, value)
-	$Heartbeat.volume_db = lerpf(-50.0, -2.0, clampf(value * 1.3, 0.0, 1.0))
-	$Heartbeat.pitch_scale = lerpf(0.85, 1.9, value)  # szybsze tętno
-	$Breath.volume_db = lerpf(-50.0, -6.0, clampf((value - 0.35) * 2.0, 0.0, 1.0))
+	$Ambient.volume_db = lerpf(AMBIENT_CALM_DB, AMBIENT_DANGER_DB, value)
+	$Heartbeat.volume_db = lerpf(HEART_CALM_DB, HEART_DANGER_DB, clampf(value * HEART_GAIN, 0.0, 1.0))
+	$Heartbeat.pitch_scale = lerpf(HEART_PITCH_CALM, HEART_PITCH_DANGER, value)  # szybsze tętno
+	$Breath.volume_db = lerpf(BREATH_CALM_DB, BREATH_DANGER_DB, clampf((value - BREATH_THRESHOLD) * BREATH_GAIN, 0.0, 1.0))
