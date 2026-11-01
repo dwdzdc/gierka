@@ -9,6 +9,10 @@ extends CanvasLayer
 
 var last_report := ""  # ostatni tekst wysłany do schowka (test nie dotyka schowka)
 
+## Kolory tekstu w oknie (spójne z resztą UI).
+const HINT_COLOR := Color(0.8, 0.8, 0.75)
+const INFO_COLOR := Color(0.5, 0.9, 0.5)
+
 var _main: Node3D
 var _note: TextEdit
 var _info: Label
@@ -45,7 +49,7 @@ func _build_ui() -> void:
 	var hint := Label.new()
 	hint.text = "Krótko, co się stało. Do raportu dołączy się stan gry (seed, pokój, potwory, kamera).\nGra nie stoi: twoja postać stoi w miejscu, dopóki piszesz."
 	hint.add_theme_font_size_override("font_size", 18)
-	hint.add_theme_color_override("font_color", Color(0.8, 0.8, 0.75))
+	hint.add_theme_color_override("font_color", HINT_COLOR)
 	items.add_child(hint)
 
 	_note = TextEdit.new()
@@ -57,7 +61,7 @@ func _build_ui() -> void:
 
 	_info = Label.new()
 	_info.add_theme_font_size_override("font_size", 18)
-	_info.add_theme_color_override("font_color", Color(0.5, 0.9, 0.5))
+	_info.add_theme_color_override("font_color", INFO_COLOR)
 	items.add_child(_info)
 
 	var row := HBoxContainer.new()

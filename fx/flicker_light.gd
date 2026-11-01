@@ -7,6 +7,12 @@ extends OmniLight3D
 
 @export var flicker_chance := 0.35  # szansa na serię mignięć na sekundę
 
+## Podczas serii światło skacze między tymi ułamkami pełnej jasności.
+const FLICKER_MIN_SCALE := 0.05
+const FLICKER_MAX_SCALE := 1.0
+const FLICKER_MIN_TIME := 0.1  # jak długo trwa jedna seria
+const FLICKER_MAX_TIME := 0.6
+
 var _base_energy := -1.0
 var _flicker_left := 0.0
 var _fixture_material: StandardMaterial3D
@@ -18,11 +24,11 @@ func _process(delta: float) -> void:
 		_setup()
 	if _flicker_left > 0.0:
 		_flicker_left -= delta
-		light_energy = _base_energy * randf_range(0.05, 1.0)
+		light_energy = _base_energy * randf_range(FLICKER_MIN_SCALE, FLICKER_MAX_SCALE)
 	else:
 		light_energy = _base_energy
 		if randf() < flicker_chance * delta:
-			_flicker_left = randf_range(0.1, 0.6)
+			_flicker_left = randf_range(FLICKER_MIN_TIME, FLICKER_MAX_TIME)
 	if _fixture_material:
 		_fixture_material.emission_energy_multiplier = _fixture_emission * light_energy / _base_energy
 

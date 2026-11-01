@@ -5,6 +5,13 @@ extends CanvasLayer
 ##
 ## Nowe narzędzie = jedna linia w `_build_actions` (nazwa + funkcja), bez nowych klawiszy.
 
+## Wartości tylko do narzędzi testowych (nie wpływają na rozgrywkę).
+const ROOM_POINT_HEIGHT := 0.5  # punkt na ciele do sprawdzenia, w którym pokoju stoi gracz
+const ROOM_MAX_HEIGHT := 8.0  # wyższe to rampy/schody (nie stawiamy tam potwora)
+const TELEPORT_EXIT_OFFSET := 1.5
+const DRAIN_BATTERY := 15
+const COIN_GRANT := 100
+
 var _main: Node3D
 var _immortal := false
 var _frozen := false
@@ -98,7 +105,7 @@ func _spawn_near(profile_id: String) -> void:
 		return
 	var best: Room = null
 	for room in _main.rooms:
-		if (room.transform * room.bounds).has_point(me.global_position + Vector3.UP * 0.5) or room.bounds.size.y >= 8.0:
+		if (room.transform * room.bounds).has_point(me.global_position + Vector3.UP * ROOM_POINT_HEIGHT) or room.bounds.size.y >= ROOM_MAX_HEIGHT:
 			continue
 		if best == null or room.global_position.distance_to(me.global_position) < best.global_position.distance_to(me.global_position):
 			best = room
@@ -126,7 +133,7 @@ func _toggle_immortal() -> void:
 ## Do sprawdzania migotania i gaśnięcia latarki bez czekania 4,5 minuty.
 func _drain_battery() -> void:
 	var game_state: GameState = _main.game_state
-	game_state.players[multiplayer.get_unique_id()].battery = 15
+	game_state.players[multiplayer.get_unique_id()].battery = DRAIN_BATTERY
 	game_state._broadcast()
 
 
@@ -137,10 +144,10 @@ func _heal() -> void:
 func _add_coins() -> void:
 	var me := _me()
 	if me:
-		_main.game_state.add_coins(multiplayer.get_unique_id(), 100, me.global_position)
+		_main.game_state.add_coins(multiplayer.get_unique_id(), COIN_GRANT, me.global_position)
 
 
 func _teleport_to_exit() -> void:
 	var me := _me()
 	if me:
-		me.global_position = _main.game_state.exit_position + Vector3(1.5, 0, 0)
+		me.global_position = _main.game_state.exit_position + Vector3(TELEPORT_EXIT_OFFSET, 0, 0)
