@@ -76,6 +76,102 @@ const NOTICE_TIME_MAX := 0.8
 ## Wysokości punktów ciała, w które celuje wzrok (stojąc i kucając).
 const SIGHT_POINTS := [1.55, 1.15, 0.5]
 const CROUCH_SIGHT_POINTS := [0.85, 0.5]
+## Punkt ciała gracza brany do porównania z zasięgiem wzroku (klatka piersiowa).
+const SIGHT_CHEST_HEIGHT := 1.0
+## Wysokość oczu przy height_scale = 1; profil skaluje ją razem z ciałem.
+const BASE_EYE_HEIGHT := 1.8
+
+# --- Wygląd i dźwięki (wspólne dla typów) ---
+## Pętla obecności startuje z losowym opóźnieniem, żeby potwory nie oddychały chórem.
+const PRESENCE_START_JITTER := 3.0
+## Godot liczy unit_size dźwięku przestrzennego od zasięgu; 5 to bezpieczny dzielnik.
+const PRESENCE_UNIT_DIVISOR := 5.0
+## Reflektor obserwatora (47g.7): lekko w dół, żeby plama leżała na podłodze.
+const SEARCHLIGHT_TILT_DEG := -12.0
+const SEARCHLIGHT_ENERGY := 6.0
+const SEARCHLIGHT_ATTENUATION := 0.4
+const SEARCHLIGHT_WHITEN := 0.6  # ile bieli domieszane do koloru oczu
+## Rozbłysk oczu w zamachu: widać go u wszystkich (stan jest synchronizowany).
+const ATTACK_EYE_SCALE := 3.0
+const EYE_TWEEN_TIME := 0.15
+## Oddech w pościgu jest głośniejszy i wyższy niż w spokoju.
+const BREATH_HUNT_VOLUME_DB := 4.0
+const BREATH_CALM_VOLUME_DB := -2.0
+const BREATH_HUNT_PITCH := 1.35
+
+# --- Ruch i kroki ---
+const MAX_PLAUSIBLE_SPEED := 20.0  # wyżej = teleport/spawn, nie ruch: nie licz z tego kroków
+const SPEED_SMOOTHING := 10.0  # jak szybko wygładzana jest prędkość do dźwięku kroków
+const STILL_SPEED := 0.4  # poniżej tego potwór "stoi" (kroki, schylanie się)
+const STEP_INTERVAL_SCALE := 1.4  # interwał kroków = to / prędkość; szybciej idzie = częściej
+const STEP_INTERVAL_MIN := 0.3
+const STEP_INTERVAL_MAX := 0.9
+const HOME_REACH := 1.5  # tak blisko gniazda uznaje, że doniósł ofiarę
+const CARRY_SPEED_FACTOR := 0.85  # z ofiarą na plecach idzie wolniej niż w odwrocie
+
+# --- Wentylacja ---
+const VENT_BANG_INTERVAL := Vector2(0.25, 0.6)  # nieregularne dudnienie w szybie
+const VENT_MAX_RISE := 10.0  # wyżej nad kratką nie wchodzi (kratka na innym piętrze)
+const VENT_ABANDON_STUCK := 1.0  # tyle stania pod kratką = rezygnuje z szybu
+const VENT_MIN_LENGTH := 0.1  # krótszy odcinek szybu = dzielenie przez ~0
+const VENT_INSIDE_OFFSET := 0.3  # o tyle nad kratką znika w suficie
+const VENT_CLIMB_SLIDE := 0.25  # do tej części wspinaczki tylko dosuwa się pod kratkę
+## Tempo dosuwania: t * 3 dochodzi do 1 po ~0,33 wspinaczki (wcześniej niż start wznoszenia).
+const VENT_SLIDE_RATE := 3.0
+const VENT_EXIT_MARGIN := 0.1  # zapas, żeby cały potwór zmieścił się pod sufitem
+
+# --- Patrole, rozglądanie, szukanie ---
+const WATCH_TURN_SPEED := 0.5  # rad/s: obserwator rozgląda się powoli
+const INVESTIGATE_TURN_SPEED := 1.5  # rad/s: rozglądanie na miejscu
+const SEARCH_LINGER_FACTOR := 0.5  # przy przeszukiwaniu rozgląda się krócej
+const HIDING_SEARCH_RADIUS := 7.0  # najbliższa szafka do sprawdzenia
+const COVER_SEARCH_RADIUS := 6.0  # najbliższy stół do zajrzenia
+const SURPRISE_WINDUP_FACTOR := 0.5  # wyciągnięty z szafki ma krótszy zamach
+const RETREAT_TRIES := 10  # ile losowych punktów próbuje przed wyborem odwrotu
+const TERRITORY_HOME_FACTOR := 0.5  # wracając pilnować gniazda, krąży w połowie rewiru
+
+# --- Zaglądanie pod stół (55) ---
+const PEEK_ARRIVE_DISTANCE := 1.0  # tak blisko celu uznaje, że doszedł
+const PEEK_WALK_TIMEOUT := 8.0  # po tym czasie podchodzenia zagląda mimo wszystko
+const PEEK_TURN_FACTOR := 4.0  # obraca się szybciej niż w pościgu, żeby zdążyć zajrzeć
+const COVER_FLOOR_TOLERANCE := 1.0  # punkt pod stołem na innym piętrze odpada
+const HIP_HEIGHT := 0.9  # w biodrach ciało się zgina przy schylaniu
+const BEND_SPEED := 2.5  # rad/s schylania i prostowania
+
+# --- Pościg i grupa ---
+## Tyle od wejścia pod stół potwór jeszcze wie, że gracz tam wczołgał się na jego oczach.
+const TABLE_NOTICE_WINDOW := 0.5
+const STALK_TOLERANCE := 1.0  # o tyle może się zbliżyć/oddalić od STALK_DISTANCE
+const STALK_BACKSTEP := 2.0  # cofa się o tyle, gdy gracz podejdzie za blisko
+const SCREAM_DELAY := 0.5  # obserwator krzyczy dopiero po chwili patrzenia
+const MIN_DIRECTION := 0.01  # krótszy wektor = brak kierunku
+const MIN_DELTA := 0.0001  # zabezpieczenie przed dzieleniem przez zero w jednej klatce
+const BEHIND_FACTOR := 0.6  # gracz tak blisko "za plecami" = obrót w zamachu normalny
+const RECOVER_TURN_FACTOR := 0.3  # po ciosie obraca się ospale
+## Odbity porwany: ucieka dłużej niż po zwykłym ataku, żeby nie wracał od razu.
+const SCARED_RETREAT_EXTRA := 6.0
+## Co tyle sprawdza ślad krwi (iteracja po kroplach nie jest darmowa).
+const SMELL_INTERVAL := 0.5
+
+# --- Drzwi ---
+const DOOR_OPEN_RATTLE_INTERVAL := 1.0  # szarpnięcie klamką przy zwykłym otwieraniu
+const DOOR_LATERAL_REACH := 1.2  # jak blisko osi drzwi musi być potwór, żeby je otwierać
+const DOOR_CROSS_MARGIN := 0.3  # margines przy liczeniu drzwi na odcinku hałasu
+## Hałas liczymy ze środka ciała, nie z podłogi (drzwi i ściany mają wysokość).
+const NOISE_POINT_HEIGHT := 0.5
+
+# --- Ruch po NavMeshu, utknięcia ---
+const FLOOR_TOLERANCE := 0.8  # punkt wyżej/niżej = inne piętro
+const ROOM_POINT_HEIGHT := 0.5  # punkt na ciele do sprawdzenia, w którym pokoju stoi
+const RANDOM_POINT_TRIES := 10
+const NAV_QUERY_UP := 0.2  # NavMesh wisi tuż nad podłogą; pytamy o punkt na wysokości stóp
+const STUCK_DISTANCE_FACTOR := 0.2  # mniej niż 20% oczekiwanego ruchu = stoi
+const STUCK_TIME := 1.5
+const STUCK_MOVE_FACTOR := 0.5  # ruszył się ponad połowę = nie jest utknięty
+const UNSTICK_RADII := [0.0, 0.5, 1.0, 1.5, 2.0]
+const UNSTICK_DIRECTIONS := 12
+const UNSTICK_UP := 0.05
+const MIN_DIRECTION_SQ := 0.0001
 
 ## Typ potwora (ustawiany przed dodaniem do drzewa; replikowany przy spawnie).
 @export var profile_id := "hunter"
@@ -90,7 +186,7 @@ const CROUCH_SIGHT_POINTS := [0.85, 0.5]
 @export var retreat_time := 5.0
 @export var retreat_min_distance := 10.0
 @export var blood_memory := 90.0
-@export var eye_height := 1.8
+@export var eye_height := BASE_EYE_HEIGHT
 @export_flags_3d_physics var sight_blockers := 1
 
 var profile: MonsterProfile
@@ -195,7 +291,7 @@ func _ready() -> void:
 	_last_position = global_position
 	# Pętla obecności (oddech albo dźwięk typu, 47g.6): główna poszlaka, zanim potwór wejdzie w kadr.
 	_breath_player.finished.connect(_breath_player.play)
-	_breath_player.play(randf() * 3.0)
+	_breath_player.play(randf() * PRESENCE_START_JITTER)
 	if multiplayer.is_server():
 		NoiseBus.noise_made.connect(_on_noise)
 
@@ -234,13 +330,13 @@ func _apply_profile(new_profile: MonsterProfile) -> void:
 	var shape_scale := minf(profile.height_scale, MAX_COLLISION_HEIGHT / BASE_HEIGHT)
 	$Shape.scale = Vector3.ONE * shape_scale
 	$Shape.position.y *= shape_scale
-	eye_height = 1.8 * profile.height_scale
+	eye_height = BASE_EYE_HEIGHT * profile.height_scale
 	if profile.searchlight and not has_node(^"Searchlight"):
 		_add_searchlight()
 	if profile.presence_sound:
 		_breath_player.stream = profile.presence_sound
 		_breath_player.max_distance = profile.presence_range
-		_breath_player.unit_size = profile.presence_range / 5.0
+		_breath_player.unit_size = profile.presence_range / PRESENCE_UNIT_DIVISOR
 
 
 ## Stożek światła z oczu: to, co oświetla, potwór widzi. Sam wygląd (synchronizuje się obrót).
@@ -248,12 +344,12 @@ func _add_searchlight() -> void:
 	var light := SpotLight3D.new()
 	light.name = "Searchlight"
 	light.position = Vector3.UP * eye_height
-	light.rotation.x = deg_to_rad(-12.0)  # lekko w dół, żeby plama leżała na podłodze
-	light.light_color = profile.eye_color.lerp(Color.WHITE, 0.6)
-	light.light_energy = 6.0
+	light.rotation.x = deg_to_rad(SEARCHLIGHT_TILT_DEG)  # lekko w dół, żeby plama leżała na podłodze
+	light.light_color = profile.eye_color.lerp(Color.WHITE, SEARCHLIGHT_WHITEN)
+	light.light_energy = SEARCHLIGHT_ENERGY
 	light.spot_range = sight_range_flashlight
 	light.spot_angle = profile.sight_angle_deg / 2.0
-	light.spot_angle_attenuation = 0.4
+	light.spot_angle_attenuation = SEARCHLIGHT_ATTENUATION
 	light.shadow_enabled = true  # ściany przecinają stożek: widać, gdzie jest bezpiecznie
 	add_child(light)
 
@@ -267,7 +363,8 @@ func _on_state_visual(new_state: State) -> void:
 	var attacking := new_state == State.ATTACK
 	var tween := create_tween().set_parallel()
 	for eye in [$EyeL, $EyeR]:
-		tween.tween_property(eye, "scale", Vector3.ONE * profile.height_scale * (3.0 if attacking else 1.0), 0.15)
+		var eye_scale := profile.height_scale * (ATTACK_EYE_SCALE if attacking else 1.0)
+		tween.tween_property(eye, "scale", Vector3.ONE * eye_scale, EYE_TWEEN_TIME)
 	match new_state:
 		State.HUNT:
 			$Voice.play()
@@ -283,8 +380,8 @@ func _on_state_visual(new_state: State) -> void:
 	collision_mask = 0 if passing else 9  # świat + kraty (kraty nie zasłaniają wzroku)
 	# Podczas pościgu oddech jest głośniejszy i szybszy.
 	var hunting := new_state in [State.HUNT, State.ATTACK]
-	_breath_player.volume_db = 4.0 if hunting else -2.0
-	_breath_player.pitch_scale = 1.35 if hunting else 1.0
+	_breath_player.volume_db = BREATH_HUNT_VOLUME_DB if hunting else BREATH_CALM_VOLUME_DB
+	_breath_player.pitch_scale = BREATH_HUNT_PITCH if hunting else 1.0
 
 
 func _process(delta: float) -> void:
@@ -293,20 +390,21 @@ func _process(delta: float) -> void:
 		# Dudnienie w szybie: nieregularne, metaliczne, słychać je przez sufit.
 		_vent_bang_timer -= delta
 		if _vent_bang_timer <= 0.0:
-			_vent_bang_timer = randf_range(0.25, 0.6)
+			_vent_bang_timer = randf_range(VENT_BANG_INTERVAL.x, VENT_BANG_INTERVAL.y)
 			$VentSound.play()
 		return
-	var measured := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / maxf(delta, 0.0001)
+	var measured := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / maxf(delta, MIN_DELTA)
 	_last_position = global_position
-	if measured > 20.0:
+	if measured > MAX_PLAUSIBLE_SPEED:
 		measured = 0.0
-	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-10.0 * delta))
-	if _smoothed_speed < 0.4:
+	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-SPEED_SMOOTHING * delta))
+	if _smoothed_speed < STILL_SPEED:
 		_step_timer = 0.0
 		return
 	_step_timer -= delta
 	if _step_timer <= 0.0:
-		_step_timer = clampf(1.4 / _smoothed_speed, 0.3, 0.9)  # szybciej idzie = częstsze kroki
+		# szybciej idzie = częstsze kroki
+		_step_timer = clampf(STEP_INTERVAL_SCALE / _smoothed_speed, STEP_INTERVAL_MIN, STEP_INTERVAL_MAX)
 		_steps_player.play()
 
 
@@ -369,7 +467,7 @@ func _think(delta: float) -> float:
 	elif state in [State.PATROL, State.INVESTIGATE] and smell_radius > 0.0:
 		_smell_timer -= delta
 		if _smell_timer <= 0.0:
-			_smell_timer = 0.5
+			_smell_timer = SMELL_INTERVAL
 			var drop := _smell_blood()
 			if not drop.is_empty():
 				_enter(State.TRACK)
@@ -405,12 +503,12 @@ func _carry() -> float:
 		_start_retreat()
 		return 0.0
 	agent.target_position = home
-	if agent.is_navigation_finished() or global_position.distance_to(home) < 1.5:
+	if agent.is_navigation_finished() or global_position.distance_to(home) < HOME_REACH:
 		_enter(State.FEED)
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 		game_state.set_carry_damage(_victim.get_multiplayer_authority(), profile.feed_damage_per_second)
 		return 0.0
-	return retreat_speed * 0.85
+	return retreat_speed * CARRY_SPEED_FACTOR
 
 
 func _feed(delta: float) -> float:
@@ -449,13 +547,13 @@ func _approach_vent() -> float:
 	var flat := (entry - global_position) * Vector3(1, 0, 1)
 	# Wchodzi tylko spod samej kratki. Jeśli nie da się do niej dojść (koniec ścieżki daleko,
 	# utknięcie), rezygnuje z szybu i idzie do celu normalnie.
-	if flat.length() <= VENT_ENTER_DISTANCE and entry.y - global_position.y < 10.0:
+	if flat.length() <= VENT_ENTER_DISTANCE and entry.y - global_position.y < VENT_MAX_RISE:
 		_vent_progress = 0.0
 		_climb_from = global_position
 		velocity = Vector3.ZERO
 		_enter(State.VENT_CLIMB)
 		return 0.0
-	if agent.is_navigation_finished() or _stuck_time > 1.0:
+	if agent.is_navigation_finished() or _stuck_time > VENT_ABANDON_STUCK:
 		director_goal = _floor_below(_vent_plan.exit)
 		_vent_plan = {}
 		return 0.0
@@ -469,9 +567,10 @@ func _climb_into_vent(delta: float) -> void:
 	_vent_progress = minf(_vent_progress + delta / VENT_CLIMB_TIME, 1.0)
 	# Najpierw dosuwa się pod kratkę, potem w górę, aż stopy znajdą się nad sufitem.
 	var under := Vector3(entry.x, _climb_from.y, entry.z)
-	var inside := entry + Vector3.UP * 0.3
+	var inside := entry + Vector3.UP * VENT_INSIDE_OFFSET
 	var t := _vent_progress
-	global_position = _climb_from.lerp(under, minf(t * 3.0, 1.0)).lerp(inside, clampf((t - 0.25) / 0.75, 0.0, 1.0))
+	var rise := clampf((t - VENT_CLIMB_SLIDE) / (1.0 - VENT_CLIMB_SLIDE), 0.0, 1.0)
+	global_position = _climb_from.lerp(under, minf(t * VENT_SLIDE_RATE, 1.0)).lerp(inside, rise)
 	face(entry - global_position, delta)
 	if _vent_progress >= 1.0:
 		_vent_progress = 0.0
@@ -482,14 +581,14 @@ func _climb_into_vent(delta: float) -> void:
 func _move_in_vent(delta: float) -> void:
 	var entry: Vector3 = _vent_plan.entry
 	var exit: Vector3 = _vent_plan.exit
-	var length := maxf(entry.distance_to(exit), 0.1)
+	var length := maxf(entry.distance_to(exit), VENT_MIN_LENGTH)
 	_vent_progress = minf(_vent_progress + delta * VENT_SPEED / length, 1.0)
 	global_position = entry.lerp(exit, _vent_progress)
 	if _vent_progress >= 1.0:
 		# Wyjście: zeskok z kratki w suficie. Grawitacja zrobi resztę.
 		_vent_plan = {}
 		# Cały potwór (z głową) musi zmieścić się pod sufitem, inaczej fizyka wypchnie go na dach.
-		global_position = exit - Vector3.UP * (2.1 * profile.height_scale + 0.1)
+		global_position = exit - Vector3.UP * (BASE_HEIGHT * profile.height_scale + VENT_EXIT_MARGIN)
 		velocity = Vector3.ZERO
 		_enter(State.INVESTIGATE)
 		agent.target_position = _floor_below(exit)
@@ -500,21 +599,21 @@ func _move_in_vent(delta: float) -> void:
 ## w linii prostej", bo ta bywa za ścianą, w sąsiednim pokoju.
 func _vent_in_current_room() -> Vector3:
 	for room in get_tree().get_first_node_in_group(&"main").rooms:
-		if (room.transform * room.bounds).has_point(global_position + Vector3.UP * 0.5) and not room.get_vents().is_empty():
+		if (room.transform * room.bounds).has_point(global_position + Vector3.UP * ROOM_POINT_HEIGHT) and not room.get_vents().is_empty():
 			return room.get_vents()[0].global_position
 	return Vector3.INF
 
 
 func _floor_below(point: Vector3) -> Vector3:
 	var map := agent.get_navigation_map()
-	return NavigationServer3D.map_get_closest_point(map, Vector3(point.x, global_position.y + 0.2, point.z))
+	return NavigationServer3D.map_get_closest_point(map, Vector3(point.x, global_position.y + NAV_QUERY_UP, point.z))
 
 
 ## Kolega odbił porwanego: potwór puszcza ofiarę i ucieka.
 func drop_victim() -> void:
 	_victim = null
 	_start_retreat()
-	_state_time = -6.0  # spłoszony: ucieka dłużej niż po zwykłym ataku (5 + 6 s)
+	_state_time = -SCARED_RETREAT_EXTRA  # spłoszony: ucieka dłużej niż po zwykłym ataku
 
 
 func _patrol(delta: float) -> float:
@@ -550,13 +649,13 @@ func _next_patrol_point() -> Vector3:
 
 func _return_home() -> float:
 	_enter(State.PATROL)
-	agent.target_position = random_floor_point_near(home, profile.territory_radius * 0.5)
+	agent.target_position = random_floor_point_near(home, profile.territory_radius * TERRITORY_HOME_FACTOR)
 	return patrol_speed
 
 
 ## Obserwator: stoi w miejscu i powoli się rozgląda. Krzyk przy zobaczeniu gracza to jego "atak".
 func _watch(delta: float) -> float:
-	rotate_y(0.5 * delta)
+	rotate_y(WATCH_TURN_SPEED * delta)
 	return 0.0
 
 
@@ -571,18 +670,18 @@ func _investigate(delta: float) -> float:
 	if not _checked_this_search and not is_watcher():
 		_checked_this_search = true
 		var director := get_tree().get_first_node_in_group(&"monster_director") as MonsterDirector
-		var spot := _nearest_hiding_spot(7.0)
+		var spot := _nearest_hiding_spot(HIDING_SEARCH_RADIUS)
 		if spot and director and randf() < director.hiding_check_chance():
 			check_hiding_spot(spot)
 			return investigate_speed
-		var cover := _nearest_cover(director, 6.0)
+		var cover := _nearest_cover(director, COVER_SEARCH_RADIUS)
 		if cover.is_finite() and randf() < director.hiding_check_chance():
 			check_under(cover)
 			return investigate_speed
 	_timer += delta
-	rotate_y(1.5 * delta)
+	rotate_y(INVESTIGATE_TURN_SPEED * delta)
 	var searching := _searching()
-	if _timer >= investigate_linger * (0.5 if searching else 1.0):
+	if _timer >= investigate_linger * (SEARCH_LINGER_FACTOR if searching else 1.0):
 		if searching:
 			_next_search_point()
 			return investigate_speed
@@ -661,7 +760,7 @@ func _open_hiding_spot() -> void:
 			_prey = node
 			last_seen_position = node.global_position
 	_enter(State.ATTACK)
-	_state_time = attack_windup * 0.5  # zaskoczony gracz ma mniej czasu na reakcję
+	_state_time = attack_windup * SURPRISE_WINDUP_FACTOR  # zaskoczony gracz ma mniej czasu na reakcję
 
 
 ## Idź pod stół i zajrzyj pod spód (55). Tylko tak potwór znajduje gracza pod stołem.
@@ -675,9 +774,10 @@ func check_under(point: Vector3) -> void:
 
 func _peek_under(delta: float) -> float:
 	var flat := (_peek_point - global_position) * Vector3(1, 0, 1)
-	if not agent.is_navigation_finished() and flat.length() > 1.0 and _state_time < 8.0:
+	if not agent.is_navigation_finished() and flat.length() > PEEK_ARRIVE_DISTANCE \
+			and _state_time < PEEK_WALK_TIMEOUT:
 		return investigate_speed
-	face(flat, delta * 4.0)
+	face(flat, delta * PEEK_TURN_FACTOR)
 	_timer += delta
 	if _timer < PEEK_TIME:
 		return 0.0
@@ -704,7 +804,7 @@ func _nearest_cover(director: MonsterDirector, max_distance: float) -> Vector3:
 	if director == null:
 		return best
 	for point in director.cover_points():
-		if absf(point.y - global_position.y) < 1.0 and point.distance_to(global_position) <= max_distance \
+		if absf(point.y - global_position.y) < COVER_FLOOR_TOLERANCE and point.distance_to(global_position) <= max_distance \
 				and (not best.is_finite() or point.distance_to(global_position) < best.distance_to(global_position)):
 			best = point
 	return best
@@ -713,11 +813,11 @@ func _nearest_cover(director: MonsterDirector, max_distance: float) -> Vector3:
 ## Schylanie przy zaglądaniu pod stół: ciało i oczy pochylają się w biodrach. Liczone ze stanu,
 ## więc klienci widzą to samo co host.
 func _update_bend(delta: float) -> void:
-	var target := PEEK_BEND if state == State.PEEK_UNDER and _smoothed_speed < 0.4 else 0.0
+	var target := PEEK_BEND if state == State.PEEK_UNDER and _smoothed_speed < STILL_SPEED else 0.0
 	if is_equal_approx(_bend, target):
 		return
-	_bend = move_toward(_bend, target, delta * 2.5)
-	var hip := Vector3.UP * 0.9 * (profile.height_scale if profile else 1.0)
+	_bend = move_toward(_bend, target, delta * BEND_SPEED)
+	var hip := Vector3.UP * HIP_HEIGHT * (profile.height_scale if profile else 1.0)
 	var bend := Transform3D(Basis(Vector3.RIGHT, -_bend), Vector3.ZERO)
 	var pivot := Transform3D(Basis(), hip) * bend * Transform3D(Basis(), -hip)
 	for part in _part_rest:
@@ -742,7 +842,7 @@ func _hunt(delta: float) -> float:
 	else:
 		_timer += delta
 		# Zniknął z oczu, bo wczołgał się pod stół: potwór to widział, więc tam zajrzy.
-		if _timer <= 0.5 and is_instance_valid(_prey) and _prey != _found_under and _prey.under_cover() \
+		if _timer <= TABLE_NOTICE_WINDOW and is_instance_valid(_prey) and _prey != _found_under and _prey.under_cover() \
 				and _prey.global_position.distance_to(global_position) <= sight_range_flashlight:
 			check_under(_prey.global_position)
 			return investigate_speed
@@ -796,11 +896,11 @@ func _stalk(prey: Player) -> float:
 	var distance := away.length()
 	_stalking = true
 	face(-away, get_physics_process_delta_time())
-	if distance > STALK_DISTANCE + 1.0:
+	if distance > STALK_DISTANCE + STALK_TOLERANCE:
 		agent.target_position = prey.global_position
 		return investigate_speed
-	if distance < STALK_DISTANCE - 1.0:
-		agent.target_position = global_position + away.normalized() * 2.0  # cofa się, nie odwracając
+	if distance < STALK_DISTANCE - STALK_TOLERANCE:
+		agent.target_position = global_position + away.normalized() * STALK_BACKSTEP  # cofa się, nie odwracając
 		return patrol_speed
 	return 0.0
 
@@ -880,7 +980,7 @@ func _scream(delta: float) -> float:
 			_enter(State.ATTACK)
 			return 0.0
 	_timer -= delta
-	if _state_time > 0.5 and fmod(_state_time, SCREAM_INTERVAL) < delta and is_instance_valid(_prey):
+	if _state_time > SCREAM_DELAY and fmod(_state_time, SCREAM_INTERVAL) < delta and is_instance_valid(_prey):
 		$Voice.play()
 		NoiseBus.emit_noise(_prey.global_position, SCREAM_RADIUS, self)
 	return 0.0
@@ -929,14 +1029,14 @@ func _attack(delta: float) -> float:
 	var lunge := 0.0
 	if is_instance_valid(_prey):
 		var to_prey := (_prey.global_position - global_position) * Vector3(1, 0, 1)
-		if _lunge_dir == Vector3.ZERO and to_prey.length() > 0.01:
+		if _lunge_dir == Vector3.ZERO and to_prey.length() > MIN_DIRECTION:
 			# Początek zamachu: od razu przodem do celu (np. usłyszał go za plecami), potem już
 			# tylko powolny obrót, żeby unik w bok miał sens.
 			_lunge_dir = to_prey.normalized()
 			rotation.y = atan2(-_lunge_dir.x, -_lunge_dir.z)
 		# Gracz przeszedł przez potwora (nie zderzają się) albo stoi tuż przy nim: obrót normalny,
 		# inaczej przejście na plecy byłoby pewnym unikiem.
-		var behind := to_prey.dot(-global_transform.basis.z) < LUNGE_STOP_DISTANCE * 0.6
+		var behind := to_prey.dot(-global_transform.basis.z) < LUNGE_STOP_DISTANCE * BEHIND_FACTOR
 		face(to_prey, delta * (1.0 if behind else LUNGE_TURN_FACTOR))
 		_lunge_dir = (-global_transform.basis.z * Vector3(1, 0, 1)).normalized()
 		if not is_watcher() and to_prey.dot(_lunge_dir) > LUNGE_STOP_DISTANCE:
@@ -958,7 +1058,7 @@ func _attack(delta: float) -> float:
 ## Po ciosie: stoi (otrząsa się), potem wraca do pościgu, ale przez chwilę wolniej.
 func _recover(delta: float) -> float:
 	if is_instance_valid(_prey):
-		face(_prey.global_position - global_position, delta * 0.3)
+		face(_prey.global_position - global_position, delta * RECOVER_TURN_FACTOR)
 	if _state_time >= profile.recover_time:
 		_slowed_until = Time.get_ticks_msec() / 1000.0 + profile.slowed_time
 		if sensed_prey():
@@ -1001,7 +1101,7 @@ func _on_attack_land() -> void:
 func _start_retreat() -> void:
 	var from := _prey.global_position if is_instance_valid(_prey) else global_position
 	_enter(State.RETREAT)
-	for i in 10:
+	for i in RETREAT_TRIES:
 		var point := random_floor_point()
 		if point != Vector3.ZERO and point.distance_to(from) >= retreat_min_distance:
 			agent.target_position = point
@@ -1038,7 +1138,7 @@ func _handle_doors(speed: float, delta: float) -> float:
 			return 0.0
 		_rattle_timer -= delta
 		if _rattle_timer <= 0.0:
-			_rattle_timer = DOOR_POUND_INTERVAL if _door_breaking else 1.0
+			_rattle_timer = DOOR_POUND_INTERVAL if _door_breaking else DOOR_OPEN_RATTLE_INTERVAL
 			if game_state:
 				game_state.monster_rattle(_door.name, _door_breaking)
 			NoiseBus.emit_noise(_door.global_position, DOOR_POUND_NOISE if _door_breaking else DOOR_RATTLE_NOISE, self)
@@ -1066,7 +1166,8 @@ func _door_ahead() -> Door:
 	var next := agent.get_next_path_position()
 	for node in get_tree().get_nodes_in_group(&"doors"):
 		var door := node as Door
-		if not door.blocks() or door.flat_distance(global_position) > DOOR_REACH or door.lateral(global_position) > 1.2:
+		if not door.blocks() or door.flat_distance(global_position) > DOOR_REACH \
+				or door.lateral(global_position) > DOOR_LATERAL_REACH:
 			continue
 		var here := door.side(global_position)
 		if signf(here) != signf(door.side(next)) or signf(here) != signf(door.side(agent.target_position)):
@@ -1086,7 +1187,7 @@ func _closed_doors_between(a: Vector3, b: Vector3) -> int:
 		if signf(side_a) == signf(side_b):
 			continue
 		var crossing := a.lerp(b, side_a / (side_a - side_b))
-		if door.lateral(crossing) <= Door.SIZE.x / 2.0 + 0.3 and door.flat_distance(crossing) <= Door.SIZE.x:
+		if door.lateral(crossing) <= Door.SIZE.x / 2.0 + DOOR_CROSS_MARGIN and door.flat_distance(crossing) <= Door.SIZE.x:
 			count += 1
 	return count
 
@@ -1097,7 +1198,7 @@ func _on_noise(position: Vector3, radius: float, source: Node) -> void:
 	if source == self:
 		return
 	var distance := global_position.distance_to(position)
-	radius *= pow(DOOR_MUFFLE, _closed_doors_between(global_position + Vector3.UP, position + Vector3.UP * 0.5))
+	radius *= pow(DOOR_MUFFLE, _closed_doors_between(global_position + Vector3.UP, position + Vector3.UP * NOISE_POINT_HEIGHT))
 	if distance <= radius * hearing * sense_boost:
 		heard_position = position
 		_heard_new = true
@@ -1175,7 +1276,7 @@ func _in_dark_room(point: Vector3) -> bool:
 	if main == null:
 		return false
 	for room in main.rooms:
-		if is_instance_valid(room) and (room.transform * room.bounds).has_point(point + Vector3.UP * 0.5):
+		if is_instance_valid(room) and (room.transform * room.bounds).has_point(point + Vector3.UP * ROOM_POINT_HEIGHT):
 			return room.dark
 	return false
 
@@ -1201,7 +1302,7 @@ func can_see(player: Player) -> bool:
 	elif player == _found_under:
 		_found_under = null  # wyszedł spod stołu; pod następnym trzeba go znowu znaleźć
 	var eye := global_position + Vector3.UP * eye_height
-	var to_target := player.global_position + Vector3.UP * 1.0 - eye
+	var to_target := player.global_position + Vector3.UP * SIGHT_CHEST_HEIGHT - eye
 	if to_target.length() > sight_range(player):
 		return false
 	var forward := -global_transform.basis.z
@@ -1236,12 +1337,12 @@ func _sees_through_grate(door: Door, hit_position: Vector3) -> bool:
 ## Odrzuca "wyspy" (wierzchy skrzyń, regałów, dachy), na które nie da się wejść.
 func random_floor_point() -> Vector3:
 	var map := agent.get_navigation_map()
-	for i in 10:
+	for i in RANDOM_POINT_TRIES:
 		var point := NavigationServer3D.map_get_random_point(map, agent.navigation_layers, false)
-		if point != Vector3.ZERO and absf(point.y - global_position.y) < 0.8:
+		if point != Vector3.ZERO and absf(point.y - global_position.y) < FLOOR_TOLERANCE:
 			return point
 	# Na innym piętrze nie ma punktów na naszej wysokości: bierzemy dowolny poza dachami.
-	for i in 10:
+	for i in RANDOM_POINT_TRIES:
 		var point := NavigationServer3D.map_get_random_point(map, agent.navigation_layers, false)
 		if point != Vector3.ZERO:
 			return point
@@ -1251,10 +1352,10 @@ func random_floor_point() -> Vector3:
 ## Losowy punkt podłogi w promieniu `radius` od `center` (rewir, okolica celu).
 func random_floor_point_near(center: Vector3, radius: float) -> Vector3:
 	var map := agent.get_navigation_map()
-	for i in 10:
+	for i in RANDOM_POINT_TRIES:
 		var offset := Vector3(randf_range(-radius, radius), 0.0, randf_range(-radius, radius))
 		var point := NavigationServer3D.map_get_closest_point(map, center + offset)
-		if point != Vector3.ZERO and absf(point.y - center.y) < 1.0:
+		if point != Vector3.ZERO and absf(point.y - center.y) < FLOOR_TOLERANCE:
 			return point
 	return NavigationServer3D.map_get_closest_point(map, center)
 
@@ -1280,16 +1381,16 @@ func _steer(speed: float, delta: float) -> void:
 ## Stan sam wybierze nowy (patrol: kolejny losowy punkt).
 func _check_stuck(speed: float, before: Vector3, delta: float) -> void:
 	var moved := (global_position - before) * Vector3(1, 0, 1)
-	if speed > 0.0 and moved.length() < speed * delta * 0.2:
+	if speed > 0.0 and moved.length() < speed * delta * STUCK_DISTANCE_FACTOR:
 		_stuck_time += delta
-		if _stuck_time > 1.5:
+		if _stuck_time > STUCK_TIME:
 			_stuck_time = 0.0
 			_stuck_strikes += 1
 			if state not in [State.VENT, State.VENT_CLIMB] \
 					and (_stuck_strikes >= UNSTICK_STRIKES or not _fits_at(global_transform)):
 				_unstick()
 			agent.target_position = global_position
-	elif moved.length() > speed * delta * 0.5:
+	elif moved.length() > speed * delta * STUCK_MOVE_FACTOR:
 		_stuck_time = 0.0
 		_stuck_strikes = 0
 	else:
@@ -1303,10 +1404,11 @@ func _unstick() -> void:
 	_stuck_strikes = 0
 	_fall_time = 0.0
 	var base := NavigationServer3D.map_get_closest_point(agent.get_navigation_map(), global_position)
-	for radius in [0.0, 0.5, 1.0, 1.5, 2.0]:
-		for i in (1 if radius == 0.0 else 12):
-			var candidate := Transform3D(global_transform.basis, base + Vector3.UP * 0.05 \
-					+ Vector3(sin(TAU * i / 12.0), 0.0, cos(TAU * i / 12.0)) * radius)
+	for radius in UNSTICK_RADII:
+		for i in (1 if radius == 0.0 else UNSTICK_DIRECTIONS):
+			var angle := TAU * i / UNSTICK_DIRECTIONS
+			var candidate := Transform3D(global_transform.basis, base + Vector3.UP * UNSTICK_UP \
+					+ Vector3(sin(angle), 0.0, cos(angle)) * radius)
 			if _fits_at(candidate):
 				global_transform = candidate
 				velocity = Vector3.ZERO
@@ -1324,7 +1426,7 @@ func _fits_at(at: Transform3D) -> bool:
 
 func face(direction: Vector3, delta: float) -> void:
 	direction.y = 0.0
-	if direction.length_squared() < 0.0001:
+	if direction.length_squared() < MIN_DIRECTION_SQ:
 		return
 	var target_yaw := atan2(-direction.x, -direction.z)
 	rotation.y = lerp_angle(rotation.y, target_yaw, 1.0 - exp(-turn_speed * delta))

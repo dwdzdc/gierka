@@ -29,7 +29,7 @@ Nowe z playtestu 25.10: 15x dźwięk wyważania drzwi (zrobione 25.10), 47g potw
 
 Zrobione 27.10 (sesja ~1 h): 15y, 34b, 47g.6, 47g.7, 47f nauka pięter, 48 glitch, porządki w testach. Następnie: playtest tego wszystkiego (25.10 + 27.10), potem 36c sklep (szkielet do potwierdzenia), 37 MVP. Otwierane kraty w lochach: odłożone (24.10).
 
-Zrobione 1.11: raport błędu (F2) z opisem od gracza — do użycia w najbliższym playteście. Dalej bez zmian: 53a buildy, 36c sklep, 37 MVP.
+Zrobione 1.11: raport błędu (F2) z opisem od gracza — do użycia w najbliższym playteście. Refaktor magii, przebieg 1: `monster/monster.gd` (342 liczby → stałe z nazwami i komentarzami, w sekcjach: wygląd/dźwięki, ruch i kroki, wentylacja, patrole, zaglądanie pod stół, pościg, drzwi, nawigacja/utknięcia). Dalej bez zmian: 53a buildy, 36c sklep, 37 MVP.
 
 Szkielet potwierdzony 24.10:
 - Siatka 2 m w kontrakcie pokoju: wymiary i pozycje przejść w wielokrotnościach 2 m
