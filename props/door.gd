@@ -26,6 +26,40 @@ const PEEK_BACK := 0.6  # jak daleko za skrzydłem stoi kamera podglądu
 ## bo stoi za plecami gracza i jego głowa zasłoniłaby kratkę. Inne postacie zostają widoczne.
 const PEEK_HIDDEN_LAYER := 4  # warstwa 3 (bit)
 const SHAKE_DISTANCE := 10.0
+## Animacje i dźwięki (wartości wizualne, nie mechanika).
+const OPEN_TIME := 0.35  # czas otwierania/zamykania skrzydła
+const BROKEN_SHAKE := 0.3  # wstrząs kamery przy wyłamaniu
+const RATTLE_JOLT_ANGLE := -0.06  # drgnięcie skrzydła przy łomotnięciu
+const RATTLE_JOLT_TIME := 0.05
+const RATTLE_RETURN_TIME := 0.2  # powrót skrzydła z odbiciem
+const RATTLE_SHAKE := 0.12
+## Zapas kształtu kolizji, żeby skrzydło nie klinowało się w futrynie.
+const SHAPE_MARGIN_X := 0.04
+const SHAPE_MARGIN_Y := 0.02
+## Kratka: liczba prętów i ich grubość.
+const GRATE_BARS := 5
+const GRATE_BAR_SIZE := 0.025
+## Klamki po obu stronach skrzydła.
+const HANDLE_OFFSET_X := 0.18
+const HANDLE_HEIGHT := 1.05
+const HANDLE_SIDE := 0.04
+const HANDLE_SIZE := Vector3(0.14, 0.04, 0.04)
+## Gruz po wyłamaniu: deski na podłodze po stronie A.
+const DEBRIS_PLANKS := 3
+const DEBRIS_SIZE := Vector3(1.6, 0.05, 0.35)
+const DEBRIS_SIZE_STEP := 0.3
+const DEBRIS_ORIGIN := Vector3(-0.4, 0.03, 0.8)
+const DEBRIS_STEP := Vector3(0.45, 0.05, 0.35)
+const DEBRIS_YAW := 0.3
+## Kamera podglądu przez kratkę.
+const PEEK_FOV := 70.0
+const PEEK_NEAR := 0.05
+## Odtwarzacze dźwięku drzwi (skrzypienie i łomot).
+const SOUND_HEIGHT := 1.3
+const SOUND_MAX_DISTANCE := 16.0
+const IMPACT_UNIT_SIZE := 6.0
+const IMPACT_VOLUME_DB := 4.0
+const IMPACT_MAX_DISTANCE := 28.0
 
 const WOOD := preload("res://rooms/materials/wood.tres")
 const METAL := preload("res://rooms/materials/metal.tres")
@@ -63,11 +97,11 @@ func apply_state(new_state: State, audible := true) -> void:
 	_debris.visible = state == State.BROKEN
 	var target_yaw := -PI / 2.0 if state == State.OPEN else 0.0
 	if changed and audible and is_inside_tree():
-		create_tween().tween_property(_leaf, "rotation:y", target_yaw, 0.35)
+		create_tween().tween_property(_leaf, "rotation:y", target_yaw, OPEN_TIME)
 		if state == State.BROKEN:
 			_impact.stream = SPLINTER
 			_impact.play()
-			_shake_nearby(0.3)
+			_shake_nearby(BROKEN_SHAKE)
 		else:
 			_play(CREAK)
 	else:
@@ -117,9 +151,9 @@ func rattle(pound := false) -> void:
 	if _jolt:
 		_jolt.kill()
 	_jolt = create_tween()
-	_jolt.tween_property(_leaf, "rotation:y", -0.06, 0.05)
-	_jolt.tween_property(_leaf, "rotation:y", 0.0, 0.2).set_trans(Tween.TRANS_BOUNCE)
-	_shake_nearby(0.12)
+	_jolt.tween_property(_leaf, "rotation:y", RATTLE_JOLT_ANGLE, RATTLE_JOLT_TIME)
+	_jolt.tween_property(_leaf, "rotation:y", 0.0, RATTLE_RETURN_TIME).set_trans(Tween.TRANS_BOUNCE)
+	_shake_nearby(RATTLE_SHAKE)
 
 
 ## Wstrząs kamery u tego peera, gdy jego postać jest blisko (słabnie z odległością).
@@ -141,7 +175,7 @@ func _play(stream: AudioStream) -> void:
 func _build() -> void:
 	_shape = CollisionShape3D.new()
 	var box := BoxShape3D.new()
-	box.size = Vector3(SIZE.x - 0.04, SIZE.y - 0.02, THICKNESS + 0.04)
+	box.size = Vector3(SIZE.x - SHAPE_MARGIN_X, SIZE.y - SHAPE_MARGIN_Y, THICKNESS + SHAPE_MARGIN_X)
 	_shape.shape = box
 	_shape.position = Vector3(0, SIZE.y / 2.0, 0)
 	add_child(_shape)
@@ -159,27 +193,29 @@ func _build() -> void:
 	var grate_height := GRATE_Y.y - GRATE_Y.x
 	_leaf_box(Vector3(side_width / 2.0, (GRATE_Y.x + GRATE_Y.y) / 2.0, 0), Vector3(side_width, grate_height, THICKNESS), WOOD)
 	_leaf_box(Vector3(w - side_width / 2.0, (GRATE_Y.x + GRATE_Y.y) / 2.0, 0), Vector3(side_width, grate_height, THICKNESS), WOOD)
-	for i in 5:
-		var x := w / 2.0 - gw + (i + 0.5) * (2.0 * gw / 5.0)
-		_leaf_box(Vector3(x, (GRATE_Y.x + GRATE_Y.y) / 2.0, 0), Vector3(0.025, grate_height, 0.025), METAL)
+	for i in GRATE_BARS:
+		var x := w / 2.0 - gw + (i + 0.5) * (2.0 * gw / GRATE_BARS)
+		_leaf_box(Vector3(x, (GRATE_Y.x + GRATE_Y.y) / 2.0, 0), Vector3(GRATE_BAR_SIZE, grate_height, GRATE_BAR_SIZE), METAL)
 	for side_sign in [-1.0, 1.0]:  # klamki z obu stron
-		_leaf_box(Vector3(w - 0.18, 1.05, side_sign * (THICKNESS / 2.0 + 0.04)), Vector3(0.14, 0.04, 0.04), METAL)
+		var handle_pos := Vector3(w - HANDLE_OFFSET_X, HANDLE_HEIGHT, side_sign * (THICKNESS / 2.0 + HANDLE_SIDE))
+		_leaf_box(handle_pos, HANDLE_SIZE, METAL)
 
 	# Wyłamane drzwi: deski na podłodze po stronie A (bez kolizji).
 	_debris = Node3D.new()
 	_debris.name = "Debris"
 	add_child(_debris)
-	for i in 3:
-		var plank := _mesh_box(Vector3(1.6 - i * 0.3, 0.05, 0.35), WOOD)
-		plank.position = Vector3(-0.4 + i * 0.45, 0.03 + i * 0.05, 0.8 + i * 0.35)
-		plank.rotation.y = 0.3 * (i - 1)
+	for i in DEBRIS_PLANKS:
+		var size := Vector3(DEBRIS_SIZE.x - i * DEBRIS_SIZE_STEP, DEBRIS_SIZE.y, DEBRIS_SIZE.z)
+		var plank := _mesh_box(size, WOOD)
+		plank.position = DEBRIS_ORIGIN + DEBRIS_STEP * i
+		plank.rotation.y = DEBRIS_YAW * (i - 1)
 		_debris.add_child(plank)
 
 	for peek_name in ["PeekA", "PeekB"]:
 		var camera := Camera3D.new()
 		camera.name = peek_name
-		camera.fov = 70.0
-		camera.near = 0.05
+		camera.fov = PEEK_FOV
+		camera.near = PEEK_NEAR
 		camera.cull_mask &= ~PEEK_HIDDEN_LAYER
 		var back := PEEK_BACK if peek_name == "PeekA" else -PEEK_BACK
 		camera.position = Vector3(0, (GRATE_Y.x + GRATE_Y.y) / 2.0, back)
@@ -188,14 +224,14 @@ func _build() -> void:
 		add_child(camera)
 
 	_sound = AudioStreamPlayer3D.new()
-	_sound.position = Vector3(0, 1.3, 0)
-	_sound.max_distance = 16.0
+	_sound.position = Vector3(0, SOUND_HEIGHT, 0)
+	_sound.max_distance = SOUND_MAX_DISTANCE
 	add_child(_sound)
 	_impact = AudioStreamPlayer3D.new()
-	_impact.position = Vector3(0, 1.3, 0)
-	_impact.unit_size = 6.0
-	_impact.volume_db = 4.0
-	_impact.max_distance = 28.0
+	_impact.position = Vector3(0, SOUND_HEIGHT, 0)
+	_impact.unit_size = IMPACT_UNIT_SIZE
+	_impact.volume_db = IMPACT_VOLUME_DB
+	_impact.max_distance = IMPACT_MAX_DISTANCE
 	add_child(_impact)
 
 
