@@ -11,6 +11,12 @@ const ROOM_MAX_HEIGHT := 8.0  # wyższe to rampy/schody (nie stawiamy tam potwor
 const TELEPORT_EXIT_OFFSET := 1.5
 const DRAIN_BATTERY := 15
 const COIN_GRANT := 100
+## UI menu: warstwa nad HUD-em, marginesy i rozmiary czcionek.
+const LAYER := 5
+const PANEL_MARGIN := 24
+const ITEM_SEPARATION := 6
+const TITLE_FONT := 26
+const BUTTON_FONT := 22
 
 var _main: Node3D
 var _immortal := false
@@ -21,7 +27,7 @@ var _items: VBoxContainer
 func _ready() -> void:
 	_main = get_parent()
 	visible = false
-	layer = 5
+	layer = LAYER
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -30,10 +36,10 @@ func _ready() -> void:
 	center.add_child(panel)
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 24)
+		margin.add_theme_constant_override("margin_" + side, PANEL_MARGIN)
 	panel.add_child(margin)
 	_items = VBoxContainer.new()
-	_items.add_theme_constant_override("separation", 6)
+	_items.add_theme_constant_override("separation", ITEM_SEPARATION)
 	margin.add_child(_items)
 
 
@@ -58,7 +64,7 @@ func _rebuild() -> void:
 		child.queue_free()
 	var title := Label.new()
 	title.text = "MENU TESTOWE (host)   ` zamyka"
-	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_font_size_override("font_size", TITLE_FONT)
 	_items.add_child(title)
 	for action in _build_actions():
 		if action.is_empty():
@@ -66,7 +72,7 @@ func _rebuild() -> void:
 			continue
 		var button := Button.new()
 		button.text = action.name
-		button.add_theme_font_size_override("font_size", 22)
+		button.add_theme_font_size_override("font_size", BUTTON_FONT)
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.pressed.connect(func() -> void:
 			action.run.call()
@@ -86,10 +92,10 @@ func _build_actions() -> Array[Dictionary]:
 	actions.append({"name": "Usuń wszystkie potwory", "run": _remove_monsters})
 	actions.append({})
 	actions.append({"name": "Nieśmiertelność: %s" % ("WŁ" if _immortal else "wył"), "run": _toggle_immortal})
-	actions.append({"name": "Ulecz (HP 100, bez krwawienia, +bandaże)", "run": _heal})
-	actions.append({"name": "+100 monet", "run": _add_coins})
+	actions.append({"name": "Ulecz (HP %d, bez krwawienia, +bandaże)" % GameState.MAX_HP, "run": _heal})
+	actions.append({"name": "+%d monet" % COIN_GRANT, "run": _add_coins})
 	actions.append({"name": "+1 klucz", "run": func() -> void: _main.game_state.add_key(multiplayer.get_unique_id())})
-	actions.append({"name": "Bateria latarki: 15 s", "run": _drain_battery})
+	actions.append({"name": "Bateria latarki: %d s" % DRAIN_BATTERY, "run": _drain_battery})
 	actions.append({"name": "Teleport do windy", "run": _teleport_to_exit})
 	return actions
 
