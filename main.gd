@@ -48,11 +48,13 @@ const ROOMS_PER_BATTERY := 4
 @onready var listener: AudioListener3D = $Listener
 @onready var info_label: Label = $HUD/Info
 @onready var menu: CanvasLayer = $Menu
+@onready var report_dialog: CanvasLayer = $ReportDialog
 @onready var address_input: LineEdit = %Address
 @onready var status_label: Label = %Status
 
 var _show_debug := true  # F1 chowa/pokazuje debug w panelu statystyk (ujęcie, potwory, reżyser)
 var _stage := 0  # znany etap trudności (klienci dostają go z ogłoszeń reżysera)
+var round_number := 1  # numer rundy w sesji (raport błędu); rośnie tak samo u hosta i klientów
 
 ## Mapa. Host ustawia seed i liczbę pokoi; klient dostaje je od hosta.
 var map_seed := 0
@@ -76,6 +78,15 @@ var _bleed_pulse := 0.0
 var _last_hp := -1
 var _last_hit_time := 0.0
 var _threat_until := 0
+
+## Raport błędu (F2): otwarte okno blokuje sterowanie własną postacią, ale nie pauzuje gry.
+var report_open := false
+var _report_notice_until := 0
+## Ostatnio odwiedzone pokoje (raport błędu): skrót drogi do miejsca, w którym coś się stało.
+const VISITED_MAX := 8
+var _visited_rooms: Array[String] = []
+var _visited_room := ""
+var _visited_timer := 0.0
 
 
 func _ready() -> void:
@@ -117,10 +128,15 @@ func _ready() -> void:
 
 ## "Uszy" są przy postaci, ale obrócone jak bieżąca kamera: dźwięk z lewej strony
 ## ekranu słychać z lewej. Domyślnie słuchałaby kamera, czyli z drugiego końca pokoju.
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if $HUD.visible:
 		_update_hud()  # postęp akcji "trzymaj klawisz" zmienia się co klatkę
-		_update_bleed_vignette(_delta)
+		_update_bleed_vignette(delta)
+		# Pokoje do raportu błędu: rzadko, bo to iteracja po wszystkich pokojach mapy.
+		_visited_timer -= delta
+		if _visited_timer <= 0.0:
+			_visited_timer = 0.25
+			_track_room()
 		var stats_open := Input.is_action_pressed("show_stats")
 		$HUD/StatsPanel.visible = stats_open
 		if stats_open:
@@ -132,6 +148,17 @@ func _process(_delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("report_bug") and $HUD.visible:
+		if report_dialog.visible:
+			report_dialog.close()
+		else:
+			report_dialog.open()
+		get_viewport().set_input_as_handled()
+		return
+	# Przy otwartym raporcie klawisze należą do niego: inaczej pisanie odpalałoby akcje
+	# (R = następna runda, F = latarka) i Esc kończył grę zamiast zamknąć okno.
+	if report_open:
+		return
 	if event.is_action_pressed("quit"):
 		get_tree().quit()
 	elif event.is_action_pressed("toggle_debug"):
@@ -176,6 +203,8 @@ func _on_connected() -> void:
 ## Składa mapę i wypieka NavMesh. Ten sam seed i liczba pokoi = ta sama mapa u każdego.
 func _build_map(seed_value: int, count: int) -> void:
 	map_seed = seed_value
+	_visited_rooms.clear()  # nowa mapa = nowa droga
+	_visited_room = ""
 	room_count = count
 	camera_director.set_target(camera_director.target)  # zapomnij strefy starej mapy
 	for child in room_parent.get_children():
@@ -294,6 +323,7 @@ func request_next_round() -> void:
 @rpc("authority", "call_local", "reliable")
 func _start_next_round(seed_value: int, count: int) -> void:
 	$Summary.visible = false
+	round_number += 1  # call_local, więc host i klienci liczą tak samo
 	if multiplayer.is_server():
 		director.stop()
 		fake_alarms.stop()
@@ -720,7 +750,9 @@ func _update_hud() -> void:
 		lines.append(me_node.hint)
 	if Time.get_ticks_msec() < _threat_until:
 		lines.append(_threat_text)
-	lines.append("[Tab] statystyki")
+	if Time.get_ticks_msec() < _report_notice_until:
+		lines.append("Raport skopiowany do schowka (F2 zamyka)")
+	lines.append("[Tab] statystyki    [F2] raport błędu")
 	info_label.text = "\n".join(lines)
 	$HUD/Slats.visible = game_state.is_hidden(me)
 
@@ -748,7 +780,7 @@ func _stats_text() -> String:
 		t += "klient\n\n"
 	t += "[b]STEROWANIE[/b]\n"
 	t += "WASD ruch (tank)    Shift bieg    Ctrl/C kucanie    Spacja skok    Q obrót 180°    F latarka\n"
-	t += "E (trzymaj): podnieś / odbij / bandaż kolegi / szafka / winda    H bandaż    F1 debug    R następna runda (host)\n"
+	t += "E (trzymaj): podnieś / odbij / bandaż kolegi / szafka / winda    H bandaż    F1 debug    R następna runda (host)    F2 raport błędu\n"
 	if _show_debug:
 		t += _debug_text()
 	else:
@@ -805,3 +837,138 @@ func _room_name_at(point: Vector3) -> String:
 		if is_instance_valid(room) and (room.transform * room.bounds).has_point(point):
 			return room.name
 	return "?"
+
+
+# --- Raport błędu (F2) -----------------------------------------------------------
+
+## Blokada sterowania na czas pisania raportu. Gry nie pauzujemy: pauza u hosta
+## zamroziłaby potwory i zegar rundy wszystkim, a raport ma opisywać stan, który leci.
+func set_report_open(value: bool) -> void:
+	report_open = value
+	var me := players.get_node_or_null(str(multiplayer.get_unique_id())) as Player
+	if me:
+		me.set_physics_process(not value)
+		me.set_process_unhandled_input(not value)  # F/Q nie odpala akcji w trakcie pisania
+
+
+func report_copied() -> void:
+	_report_notice_until = Time.get_ticks_msec() + 5000
+
+
+## Pokoje idą do raportu tylko przy zmianie, inaczej lista byłaby pełna powtórzeń.
+func _track_room() -> void:
+	var node := _focus_node()
+	if node == null:
+		return
+	var room := _room_name_at(node.global_position)
+	if room == "?" or room == _visited_room:
+		return
+	_visited_room = room
+	_visited_rooms.append(room)
+	if _visited_rooms.size() > VISITED_MAX:
+		_visited_rooms.pop_front()
+
+
+## Postać, którą aktualnie pokazuje kamera: własna albo oglądany kolega po śmierci.
+func _focus_node() -> Node3D:
+	if is_instance_valid(camera_director.target):
+		return camera_director.target as Node3D
+	return players.get_node_or_null(str(multiplayer.get_unique_id())) as Node3D
+
+
+## Zwykły tekst (nie BBCode), bo wkleja się do zgłoszenia: GitHub, Discord, mail.
+func report_text(note: String) -> String:
+	var me := multiplayer.get_unique_id()
+	var lines: Array[String] = []
+	lines.append("=== GIERKA: raport błędu ===")
+	lines.append("wersja: %s    czas: %s" % [_build_version(), Time.get_datetime_string_from_system(false, true)])
+	lines.append("rola: %s, peer %d" % ["host" if multiplayer.is_server() else "klient", me])
+	lines.append("")
+	lines.append("CO SIĘ STAŁO:")
+	var description := note.strip_edges()
+	lines.append(description if description != "" else "(nie wpisano opisu)")
+	lines.append("")
+	lines.append("RUNDA")
+	lines.append("  numer %d, seed %d, pokoi na mapie %d, etap trudności %d" % [
+		round_number, map_seed, rooms.size(), director.stage if multiplayer.is_server() else _stage])
+	lines.append("  odtworzenie mapy: -- --seed=%d --rooms=%d" % [map_seed, room_count])
+	lines.append("")
+	lines.append("GRACZ")
+	lines.append("  %s, stan: %s, HP %d/%d" % [
+		game_state.player_name(me), LIFE_NAMES.get(game_state.life(me), "?"),
+		game_state.hp(me), GameState.MAX_HP])
+	var node := _focus_node()
+	if node:
+		lines.append("  pokój: %s    pozycja: %.1f, %.1f, %.1f" % [
+			_room_ref_at(node.global_position), node.global_position.x, node.global_position.y, node.global_position.z])
+		if node.get_multiplayer_authority() != me:
+			lines.append("  oglądasz: %s" % game_state.player_name(node.get_multiplayer_authority()))
+	var me_node := players.get_node_or_null(str(me)) as Player
+	var flags: Array[String] = []
+	if game_state.is_bleeding(me):
+		flags.append("krwawi")
+	if game_state.is_hidden(me):
+		flags.append("w szafce")
+	if me_node:
+		if me_node.crouching:
+			flags.append("kuca")
+		if me_node.under_cover():
+			flags.append("pod przykryciem")
+		if me_node.winded:
+			flags.append("zadyszka")
+	lines.append("  bandaże %d, monety %d, klucze %d, bateria %d%%%s" % [
+		game_state.bandages(me), game_state.coins(me), game_state.keys(me),
+		roundi(100.0 * game_state.battery(me) / GameState.BATTERY_MAX),
+		"" if flags.is_empty() else ", " + ", ".join(flags)])
+	if me_node:
+		lines.append("  kondycja %d%%" % roundi(100.0 * me_node.stamina / Player.STAMINA_MAX))
+	lines.append("  ujęcie kamery: %s" % _camera_ref())
+	lines.append("  ostatnio odwiedzone: %s" % (", ".join(_visited_rooms) if not _visited_rooms.is_empty() else "brak"))
+	lines.append("")
+	lines.append("GRACZE (%d)" % game_state.players.size())
+	for peer_id in game_state.players:
+		var entry: Dictionary = game_state.players[peer_id]
+		var player_node := players.get_node_or_null(str(peer_id)) as Node3D
+		var where := "-" if player_node == null else _room_name_at(player_node.global_position)
+		lines.append("  %s [%d]: %s, HP %d, pokój %s" % [
+			entry.name, peer_id, LIFE_NAMES.get(game_state.life(peer_id), "?"), game_state.hp(peer_id), where])
+	lines.append("")
+	lines.append("POTWORY (%d)" % monsters.get_child_count())
+	for child in monsters.get_children():
+		var monster := child as Monster
+		if monster == null or monster.profile == null:
+			continue
+		var distance := "-"
+		if node:
+			distance = "%.1f m" % monster.global_position.distance_to(node.global_position)
+		lines.append("  %s: %s, pokój %s, dystans %s" % [
+			monster.profile.display_name, Monster.State.keys()[monster.state],
+			_room_name_at(monster.global_position), distance])
+	lines.append("")
+	if not multiplayer.is_server():
+		lines.append("(dane potworów i reżysera u klienta są niepełne)")
+	return "\n".join(lines)
+
+
+## Pokój z indeksem w generatorze: nazwa pokoju się powtarza, indeks nie.
+func _room_ref_at(point: Vector3) -> String:
+	for i in rooms.size():
+		var room := rooms[i]
+		if is_instance_valid(room) and (room.transform * room.bounds).has_point(point):
+			return "%s (#%d)" % [room.name, i]
+	return "?"
+
+
+func _camera_ref() -> String:
+	var zone := camera_director.current_zone
+	if not is_instance_valid(zone):
+		return "-"
+	var cam := get_viewport().get_camera_3d()
+	return "%s/%s%s" % [zone.owner.name, zone.name, "" if cam == zone.camera else " (INNA KAMERA!)"]
+
+
+## W edytorze nie ma commita, więc "dev". Buildy dostaną wersję przy eksporcie (53a).
+func _build_version() -> String:
+	if OS.is_debug_build():
+		return "dev"
+	return str(ProjectSettings.get_setting("application/config/version", "?"))

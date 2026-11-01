@@ -85,7 +85,7 @@ godot --path . -- --join=192.168.1.23        # albo adres:port
 
 ## Sterowanie
 
-WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · E tuż po przebiegnięciu przez drzwi: zatrzaśnij je za sobą · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
+WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · E tuż po przebiegnięciu przez drzwi: zatrzaśnij je za sobą · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · F2: raport błędu (opis + stan gry do schowka) · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
 
 ## Pokoje
 
@@ -115,6 +115,7 @@ godot --headless --path . -s tests/door_test.gd               # drzwi: gracz, kl
 godot --headless --path . -s tests/library_test.gd            # biblioteka: antresolę da się obejść dookoła
 godot --headless --path . -s tests/lamps_test.gd              # zgaszone pokoje nie świecą, oprawy migoczą z żarówkami
 godot --headless --path . -s tests/hiding_test.gd -- --case=blocked  # też unseen, seen, table; blocked = zajęte wyjście z szafki
+godot --headless --path . -s tests/report_test.gd             # F2: raport błędu blokuje sterowanie, tekst ma komplet danych
 godot --headless --path . -s tools/coverage_map.gd            # mapy pokrycia kamer -> docs/coverage/*.png
 # sieć: dwa procesy
 godot --headless --path . -s tests/net_test.gd -- --host

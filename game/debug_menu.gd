@@ -37,6 +37,8 @@ static func enabled() -> bool:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("debug_menu"):
 		return
+	if _main.report_open:  # pisanie w raporcie nie może otwierać menu (tylda)
+		return
 	if not enabled() or not multiplayer.is_server() or not _main.get_node("HUD").visible:
 		return
 	visible = not visible

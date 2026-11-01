@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3]
+[gd_scene load_steps=25 format=3]
 
 [ext_resource type="Script" path="res://main.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_director.gd" id="6"]
@@ -15,6 +15,7 @@
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/panic_breath.wav" id="17"]
 [ext_resource type="Script" path="res://game/fake_alarms.gd" id="18"]
 [ext_resource type="Script" path="res://game/debug_menu.gd" id="19"]
+[ext_resource type="Script" path="res://game/report_dialog.gd" id="report"]
 [ext_resource type="AudioStream" path="res://assets/sfx/generated/stinger.wav" id="stinger"]
 [ext_resource type="Script" path="res://fx/monster_glitch.gd" id="glitch"]
 
@@ -310,3 +311,6 @@ text = "Następna runda (R)"
 
 [node name="DebugMenu" type="CanvasLayer" parent="."]
 script = ExtResource("19")
+
+[node name="ReportDialog" type="CanvasLayer" parent="."]
+script = ExtResource("report")
