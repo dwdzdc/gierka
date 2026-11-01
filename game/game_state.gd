@@ -49,6 +49,10 @@ const EXIT_DISTANCE := 2.5
 ## reszta zostaje temu, kto je wyniósł. Twoja część puli dzieli się między ciebie
 ## i tych, którzy wyszli PO tobie: wcześniejsze wyjście nie korzysta z ryzyka reszty.
 const SHARED_FRACTION := 0.5
+## Symulacja HP, krwawienia i baterii chodzi raz na sekundę (nie co klatkę).
+const TICK_SECONDS := 1.0
+## Zapas przy sprawdzaniu odległości: pozycje i NavMesh różnią się o ułamki metra.
+const DISTANCE_SLACK := 0.5
 
 ## peer_id -> {"name", "hp", "life", "bleeding", "bleed_out", "bandages",
 ##             "coins" (niesione), "banked" (wyniesione w tej rundzie), "session" (suma sesji)}
@@ -152,9 +156,9 @@ func _physics_process(delta: float) -> void:
 	if not multiplayer.is_server():
 		return
 	_tick += delta
-	if _tick < 1.0:
+	if _tick < TICK_SECONDS:
 		return
-	_tick -= 1.0
+	_tick -= TICK_SECONDS
 	var dirty := false
 	for peer_id in players.keys():
 		var entry: Dictionary = players[peer_id]
@@ -461,7 +465,7 @@ func _close_enough(helper_id: int, target_id: int) -> bool:
 	var helper := _player_node(helper_id)
 	var target := _player_node(target_id)
 	return helper != null and target != null \
-		and helper.global_position.distance_to(target.global_position) <= HELP_DISTANCE + 0.5
+		and helper.global_position.distance_to(target.global_position) <= HELP_DISTANCE + DISTANCE_SLACK
 
 
 func _player_node(peer_id: int) -> Node3D:
@@ -561,7 +565,7 @@ func request_extract() -> void:
 		return
 	var peer_id := _caller()
 	var body := _player_node(peer_id)
-	if not is_up(peer_id) or body == null or body.global_position.distance_to(exit_position) > EXIT_DISTANCE + 0.5:
+	if not is_up(peer_id) or body == null or body.global_position.distance_to(exit_position) > EXIT_DISTANCE + DISTANCE_SLACK:
 		return
 	var entry: Dictionary = players[peer_id]
 	entry.banked += entry.coins
