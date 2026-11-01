@@ -4,6 +4,14 @@ extends Area3D
 ## klienci dostają ją przez MultiplayerSpawner i widzą tylko wygląd.
 
 const COIN_MESH_HEIGHT := 0.035
+## Wygląd zależny od wartości: więcej monet = więcej słupków (1-6), każdy 2-6 monet wysoki.
+const VALUE_PER_STACK := 12
+const MAX_STACKS := 6
+const STACK_HEIGHT_RANGE := Vector2i(2, 6)
+const STACK_RADIUS := 0.09
+const STACK_RADIAL_SEGMENTS := 8
+const STACK_ANGLE_JITTER := 0.5
+const STACK_OUTER_RADIUS := 0.18  # pierwszy słupek na środku, reszta wokół
 
 ## Ustawiane przed dodaniem do drzewa; replikowane przy spawnie (wygląd zależy od wartości).
 @export var value := 10
@@ -29,19 +37,19 @@ func _on_body_entered(body: Node3D) -> void:
 func _build_visual() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(name)
-	var stacks := clampi(value / 12 + 1, 1, 6)
+	var stacks := clampi(value / VALUE_PER_STACK + 1, 1, MAX_STACKS)
 	for i in stacks:
-		var height := rng.randi_range(2, 6)
+		var height := rng.randi_range(STACK_HEIGHT_RANGE.x, STACK_HEIGHT_RANGE.y)
 		var stack := MeshInstance3D.new()
 		var mesh := CylinderMesh.new()
-		mesh.top_radius = 0.09
-		mesh.bottom_radius = 0.09
+		mesh.top_radius = STACK_RADIUS
+		mesh.bottom_radius = STACK_RADIUS
 		mesh.height = COIN_MESH_HEIGHT * height
-		mesh.radial_segments = 8
+		mesh.radial_segments = STACK_RADIAL_SEGMENTS
 		mesh.rings = 1
 		mesh.material = preload("res://loot/gold.tres")
 		stack.mesh = mesh
-		var angle := TAU * i / stacks + rng.randf() * 0.5
-		var radius := 0.0 if i == 0 else 0.18
+		var angle := TAU * i / stacks + rng.randf() * STACK_ANGLE_JITTER
+		var radius := 0.0 if i == 0 else STACK_OUTER_RADIUS
 		stack.position = Vector3(cos(angle) * radius, mesh.height / 2.0, sin(angle) * radius)
 		$Visual.add_child(stack)
