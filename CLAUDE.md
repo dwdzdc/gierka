@@ -10,6 +10,7 @@ Co-op survival horror ze stałymi kamerami, Godot 4.7 (GDScript), host-klient po
 
 - Commit po każdym małym kroku, zawsze `git commit --no-gpg-sign`; aktualizuj przy tym `progress.md`. Push, gdy użytkownik o to prosi albo kończymy blok pracy.
 - Komentarze i teksty w grze po polsku; komentarz mówi *dlaczego*.
+- **Bez magic values:** żadnych „liczb znikąd” w kodzie. Każdy próg, czas, zasięg, szansa, mnożnik, rozmiar czy kolor zapisuj jako stałą (`const NAZWA := …`) albo zmienną z nazwą i krótkim komentarzem *dlaczego* taka wartość. Wyjątek: strukturalna matematyka (0/1, indeksy pętli, składowe wektorów, połowa długości, konwersje %). Wartości, które i tak są danymi (wagi typów pokoi, kolory gradientu) mogą zostać w słownikach/tabelach, ale z nazwanym kluczem lub komentarzem.
 - Po każdym kroku: odpowiedni test headless + regresje, przy zmianach wizualnych zrzut ekranu (skrypt `-s` z `root.get_texture().get_image().save_png()`, bez `--headless`).
 
 ## Pułapki (nie widać ich w kodzie)
