@@ -6,6 +6,9 @@ extends ColorRect
 const RADIUS := 8.0
 const RISE_PER_SECOND := 3.0
 const FALL_PER_SECOND := 1.5
+## Tłumik siły w shaderze. Efekt ma być poszlaką („coś tu jest”), a nie utrudnieniem
+## w ucieczce; 1.0 to wersja z 27.10, po zgłoszeniu z playtestu stonowana do 0.3.
+const STRENGTH := 0.3
 
 var amount := 0.0
 
@@ -13,7 +16,9 @@ var amount := 0.0
 func _process(delta: float) -> void:
 	var target := _target_amount()
 	amount = move_toward(amount, target, (RISE_PER_SECOND if target > amount else FALL_PER_SECOND) * delta)
-	(material as ShaderMaterial).set_shader_parameter(&"glitch", amount)
+	var mat := material as ShaderMaterial
+	mat.set_shader_parameter(&"glitch", amount)
+	mat.set_shader_parameter(&"glitch_strength", STRENGTH)
 
 
 func _target_amount() -> float:

@@ -467,6 +467,7 @@ przydzielić rewir do pilnowania.
 - [x] 48. Shader glitcha
   - Zrobione 27.10 (razem z odpowiednikiem „nie patrz na potwora” z Amnesii, 47g): uniform `glitch` w `fx/retro_post.gdshader` (rwanie poziomych pasów, rozjazd RGB, bloki szumu; zmienia się skokowo 14×/s). `fx/monster_glitch.gd` liczy lokalnie: potwór do 8 m od postaci, w kadrze bieżącej kamery i niezasłonięty ścianą (raycast z kamery); siła 1 − odległość/8, narasta szybko, opada wolniej; w szybie wentylacji nie działa. Test `glitch_test`
   - Uwaga: to też poszlaka (glitch = potwór blisko, nawet gdy w ciemności go nie widać). Pasuje do horroru, ale razem z sercem i dźwiękiem obecności może być za dużo podpowiedzi; jeśli tak, liczyć tylko, gdy potwór jest oświetlony
+  - Stonowane 1.11 (zgłoszenie: „distortion za mocny, nie ma szans na ucieczkę”): cała siła mnoży się przez `glitch_strength` w shaderze (0.3; 1.0 = wersja z 27.10), bloki szumu są rzadsze (`g*g*0.02` zamiast `0.04`) i ciemniejsze (0.35 zamiast 0.6), a `g` maleje w środku kadru: `smoothstep` od środka do brzegu daje ~15% siły w centrum i 100% przy krawędzi. Środek ekranu (tam się biegnie) zostaje czytelny, rwie się głównie brzeg. `glitch_test` pilnuje, że `glitch_strength` ≤ 0.4 (efekt symboliczny, nie gameplayowy)
 - [ ] 49. Drugi setting
 
 ## Faza 9: wykończenie

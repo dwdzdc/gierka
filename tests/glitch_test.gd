@@ -28,6 +28,8 @@ func _process(_d: float) -> bool:
 		m.set_physics_process(false)
 	if f == 60:
 		_check(glitch.amount > 0.4, "potwór 3 m w kadrze")
+		var strength: float = glitch.material.get_shader_parameter("glitch_strength")
+		_check(strength > 0.0 and strength <= 0.4, "efekt symboliczny, nie utrudnia ucieczki (siła %.2f)" % strength)
 		m.global_position = Vector3(30, 0.05, 0)  # magazyn: za ścianami, 34 m
 	if f == 160:
 		_check(glitch.amount == 0.0, "potwór daleko za ścianami")
