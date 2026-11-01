@@ -35,6 +35,70 @@ const NAV_SYNC_MAX_FRAMES := 600
 ## Baterie do latarki: jedna na tyle pokoi mapy (co najmniej jedna).
 const ROOMS_PER_BATTERY := 4
 
+# --- Łup na mapie (33c) ---
+## Szansa, że znacznik LootSpawns w pokoju da kupkę monet.
+const LOOT_SPAWN_CHANCE := 0.7
+## Gdy środek szerokiego blatu jest poza zasięgiem, próbujemy punktów bliżej krawędzi.
+const LOOT_SURFACE_SHIFT := 0.35
+const LOOT_SURFACE_LIFT := 0.1
+const LOOT_SURFACE_DEPTH := 0.3
+const LOOT_FLOOR_PROBE := 0.2  # wysokość punktu na podłodze pokoju
+const LOOT_FLOOR_RADII := [0.0, 1.0, 2.0]  # szukanie podłogi wokół mebla
+const LOOT_PROBES := 6  # kierunków wokół znacznika
+const WALL_SPOT_TRIES := 8  # losowań miejsca pod ścianą
+const WALL_SPOT_MARGIN := 1.0  # odsunięcie od krawędzi pokoju
+const WALL_SPOT_MAX_DRIFT := 1.5  # dalej od NavMeshu = punkt poza pokojem
+## NavMesh wisi ok. 0,3 m nad podłogą; tyle samo schodzimy promieniem w dół.
+const SURFACE_PROBE_UP := 0.3
+const SURFACE_PROBE_DEPTH := 1.0
+const LOOT_BOX_SIZE := Vector3(0.5, 0.2, 0.5)  # kupka: ~0,45 m średnicy, do 0,2 m wysokości
+const LOOT_BOX_LIFT := 0.13  # środek bryły kontrolnej nad punktem
+const LOOT_SOLID_PROBES := [0.05, 0.18]  # dwie wysokości: kolizje CSG są puste w środku
+const LOOT_SURFACE_STEP := 0.1
+const LOOT_SURFACE_STEP_DEPTH := 0.2
+const LOOT_SPACING := 1.0  # minimalny odstęp od innej znajdźki
+const LOOT_STAND_DROPS := [0.0, 0.7, 1.4]  # próby stanowiska: ta sama, niżej, jeszcze niżej
+const LOOT_STAND_DIRS := 8
+const LOOT_STAND_RADIUS := 0.6
+const LOOT_STAND_SLACK := 0.6  # zapas między zasięgiem zbierania a stanowiskiem
+const LOOT_MAX_RISE := -0.9  # niżej niż to = łup z innego piętra
+const LOOT_RAY_HEAD := 1.4  # wysokość oczu i klatki piersiowej przy sprawdzaniu widoczności
+const LOOT_RAY_CHEST := 0.6
+const LOOT_PATH_END := 0.3  # koniec ścieżki NavMesh tak blisko stanowiska = dojście jest
+## Kapsuła gracza do sprawdzenia, czy da się podejść bliżej niż NavMesh.
+const STEP_CAPSULE_RADIUS := 0.35
+const STEP_CAPSULE_HEIGHT := 1.7
+const STEP_CAPSULE_CENTER := 0.85
+const STEP_CAPSULE_LIFT := 0.1
+const STEP_MAX := 0.6
+const SOLID_RAY_UP := 6.0  # promień z góry na tyle, żeby przejść przez całą bryłę
+const SOLID_RAY_STEPS := 16
+const SOLID_RAY_EPS := 0.001
+const LOOT_TRIES := 4  # próby znalezienia miejsca na baterię/klucz
+
+# --- Efekty (krwawienie, trafienie, raport) ---
+const LISTENER_HEIGHT := 1.6  # uszy na wysokości głowy postaci
+const VISITED_INTERVAL := 0.25  # co tyle zapisujemy pokój do raportu (iteracja po mapie)
+const HIT_GRACE := 0.2  # ubytek HP w tym czasie po ciosie to nie krwawienie
+const BLEED_SHAKE := 0.05  # wyraźnie słabiej niż cios (HIT_SHAKE)
+const BLEED_PULSE_FALL := 1.4
+const BLEED_BASE_MIN := 0.25
+const BLEED_BASE_RANGE := 0.4
+const BLEED_PULSE_MIN := 0.55
+const BLEED_PULSE_RANGE := 0.45
+const BLEED_FADE := 2.0
+const HIT_SPIKE := 0.5
+const HIT_SHAKE := 0.25
+const HIT_FLASH_ALPHA := 0.6
+const HIT_FLASH_TIME := 0.6
+const HIT_BLOOD_AMOUNT := 1.4
+const COIN_DROP_LIFT := 0.05
+const COIN_SOUND_LIFT := 0.5
+const THREAT_NOTICE_MS := 6000
+const REPORT_NOTICE_MS := 5000
+const NAV_SYNC_MIN_FRAMES := 4  # pierwsze klatki po wypieku zawsze pomijamy
+
+
 @onready var navigation: NavigationRegion3D = $Navigation
 @onready var players: Node3D = $Players
 @onready var monsters: Node3D = $Monsters
@@ -135,7 +199,7 @@ func _process(delta: float) -> void:
 		# Pokoje do raportu błędu: rzadko, bo to iteracja po wszystkich pokojach mapy.
 		_visited_timer -= delta
 		if _visited_timer <= 0.0:
-			_visited_timer = 0.25
+			_visited_timer = VISITED_INTERVAL
 			_track_room()
 		var stats_open := Input.is_action_pressed("show_stats")
 		$HUD/StatsPanel.visible = stats_open
@@ -144,7 +208,7 @@ func _process(delta: float) -> void:
 	var cam := get_viewport().get_camera_3d()
 	if cam == null or not is_instance_valid(camera_director.target):
 		return
-	listener.global_transform = Transform3D(cam.global_transform.basis, camera_director.target.global_position + Vector3.UP * 1.6)
+	listener.global_transform = Transform3D(cam.global_transform.basis, camera_director.target.global_position + Vector3.UP * LISTENER_HEIGHT)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -274,7 +338,7 @@ func _bake_navigation() -> void:
 		await get_tree().physics_frame
 		# Pusta mapa zwraca (0, 0, 0), a hala stoi w (0, 0, 0): sprawdzamy więc, czy punkt ma
 		# właściciela (region nawigacji), a nie samą odległość.
-		if i >= 4 and NavigationServer3D.map_get_iteration_id(map) > baked_iteration \
+		if i >= NAV_SYNC_MIN_FRAMES and NavigationServer3D.map_get_iteration_id(map) > baked_iteration \
 				and NavigationServer3D.map_get_closest_point_owner(map, probe).is_valid():
 			break
 	navigation_ready.emit()
@@ -364,7 +428,7 @@ func _spawn_loot() -> void:
 	rng.seed = map_seed
 	for room in rooms.slice(1):
 		for marker in room.get_loot_spawns():
-			if rng.randf() < 0.7:
+			if rng.randf() < LOOT_SPAWN_CHANCE:
 				var spot := _furniture_spot(room, marker.global_position)
 				if spot.is_finite():
 					_spawn_coin_pile(spot, rng.randi_range(LOOT_VALUE_MIN, LOOT_VALUE_MAX))
@@ -380,15 +444,15 @@ func _spawn_loot() -> void:
 ## sięgnie się z ziemi); gdy mebel jest poza zasięgiem, na podłodze w pobliżu, przy ścianie.
 func _furniture_spot(room: Room, marker: Vector3) -> Vector3:
 	for shift in [Vector3.ZERO, Vector3.RIGHT, Vector3.LEFT, Vector3.FORWARD, Vector3.BACK]:
-		var top := _surface_below(marker + shift * 0.35 + Vector3.UP * 0.1, 0.3)
+		var top := _surface_below(marker + shift * LOOT_SURFACE_SHIFT + Vector3.UP * LOOT_SURFACE_LIFT, LOOT_SURFACE_DEPTH)
 		if top.is_finite() and _loot_reachable(room, top):
 			return top
 	# Najbliższy NavMesh bywa wysepką na blacie albo w celi za kratą, więc szukamy wokół.
 	var map := navigation.get_navigation_map()
-	var floor_y := room.global_position.y + 0.2
-	for radius in [0.0, 1.0, 2.0]:
-		for i in 6:
-			var angle := TAU * i / 6.0
+	var floor_y := room.global_position.y + LOOT_FLOOR_PROBE
+	for radius in LOOT_FLOOR_RADII:
+		for i in LOOT_PROBES:
+			var angle := TAU * i / float(LOOT_PROBES)
 			var probe := Vector3(marker.x + cos(angle) * radius, floor_y, marker.z + sin(angle) * radius)
 			var spot := _snug(NavigationServer3D.map_get_closest_point(map, probe))
 			if spot.is_finite() and _loot_reachable(room, spot):
@@ -399,12 +463,12 @@ func _furniture_spot(room: Room, marker: Vector3) -> Vector3:
 ## Losowe miejsce w pokoju dosunięte do ściany albo mebla (najchętniej w kąt).
 func _wall_spot(rng: RandomNumberGenerator, room: Room) -> Vector3:
 	var map := navigation.get_navigation_map()
-	for attempt in 8:
+	for attempt in WALL_SPOT_TRIES:
 		var local := Vector3(
-			rng.randf_range(room.bounds.position.x + 1.0, room.bounds.end.x - 1.0), 0.2,
-			rng.randf_range(room.bounds.position.z + 1.0, room.bounds.end.z - 1.0))
+			rng.randf_range(room.bounds.position.x + WALL_SPOT_MARGIN, room.bounds.end.x - WALL_SPOT_MARGIN), LOOT_FLOOR_PROBE,
+			rng.randf_range(room.bounds.position.z + WALL_SPOT_MARGIN, room.bounds.end.z - WALL_SPOT_MARGIN))
 		var point := NavigationServer3D.map_get_closest_point(map, room.to_global(local))
-		if point.distance_to(room.to_global(local)) > 1.5:
+		if point.distance_to(room.to_global(local)) > WALL_SPOT_MAX_DRIFT:
 			continue
 		var spot := _snug(point)
 		if spot.is_finite() and _loot_reachable(room, spot):
@@ -415,7 +479,7 @@ func _wall_spot(rng: RandomNumberGenerator, room: Room) -> Vector3:
 ## Przesuwa punkt na podłodze do najbliższej przeszkody (ściana, bok mebla), a jeśli w poprzek
 ## też coś jest blisko, w kąt. Promienie nisko (0,3 m), więc meble z prześwitem łapią łup pod siebie.
 func _snug(point: Vector3) -> Vector3:
-	var spot := _surface_below(point + Vector3.UP * 0.3, 1.0)  # NavMesh wisi ok. 0,3 m nad podłogą
+	var spot := _surface_below(point + Vector3.UP * SURFACE_PROBE_UP, SURFACE_PROBE_DEPTH)  # NavMesh wisi ok. 0,3 m nad podłogą
 	if not spot.is_finite():
 		return Vector3.INF
 	var dirs: Array[Vector3] = [Vector3.RIGHT, Vector3.LEFT, Vector3.FORWARD, Vector3.BACK]
@@ -427,12 +491,12 @@ func _snug(point: Vector3) -> Vector3:
 	var second := _nearest_obstacle(spot, across, LOOT_CORNER_SEARCH)
 	if not second.is_empty():
 		spot += second.dir * (second.distance - LOOT_WALL_GAP)
-	return _surface_below(spot + Vector3.UP * 0.3, 1.0)
+	return _surface_below(spot + Vector3.UP * SURFACE_PROBE_UP, SURFACE_PROBE_DEPTH)
 
 
 ## {dir, distance} do najbliższej przeszkody na wysokości 0,3 m w jednym z kierunków, albo {}.
 func _nearest_obstacle(floor_point: Vector3, dirs: Array[Vector3], reach: float) -> Dictionary:
-	var from := floor_point + Vector3.UP * 0.3
+	var from := floor_point + Vector3.UP * SURFACE_PROBE_UP
 	var best := {}
 	for dir in dirs:
 		var hit := _ray(from, from + dir * reach)
@@ -446,46 +510,47 @@ func _nearest_obstacle(floor_point: Vector3, dirs: Array[Vector3], reach: float)
 ## gdy kapsuła gracza wejdzie w jej walec) i go widzi (nie przez ścianę ani półkę).
 func _loot_reachable(room: Room, spot: Vector3) -> bool:
 	var box := BoxShape3D.new()
-	box.size = Vector3(0.5, 0.2, 0.5)  # kupka ma ok. 0,45 m średnicy i do 0,2 m wysokości
+	box.size = LOOT_BOX_SIZE  # kupka ma ok. 0,45 m średnicy i do 0,2 m wysokości
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = box
-	query.transform = Transform3D(Basis(), spot + Vector3.UP * 0.13)
+	query.transform = Transform3D(Basis(), spot + Vector3.UP * LOOT_BOX_LIFT)
 	query.collision_mask = WORLD_MASK
 	# Kolizje CSG są puste w środku: kupka całkiem w meblu nie przecina żadnego trójkąta.
 	if not get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty() \
-			or _inside_solid(spot + Vector3.UP * 0.05) or _inside_solid(spot + Vector3.UP * 0.18):
+			or LOOT_SOLID_PROBES.any(func(h: float) -> bool: return _inside_solid(spot + Vector3.UP * h)):
 		return false
-	if not _surface_below(spot + Vector3.UP * 0.1, 0.2).is_finite():
+	if not _surface_below(spot + Vector3.UP * LOOT_SURFACE_STEP, LOOT_SURFACE_STEP_DEPTH).is_finite():
 		return false
 	for doorway in room.get_doorways():
 		if (doorway.global_position - spot).length() < LOOT_DOOR_CLEARANCE:
 			return false
 	for item in loot.get_children():
-		if (item as Node3D).position.distance_to(spot) < 1.0:
+		if (item as Node3D).position.distance_to(spot) < LOOT_SPACING:
 			return false
 	var map := navigation.get_navigation_map()
 	var hall := NavigationServer3D.map_get_closest_point(map, rooms[0].global_position)
-	for drop in [0.0, 0.7, 1.4]:
-		for i in 8:
-			var angle := TAU * i / 8.0
+	for drop in LOOT_STAND_DROPS:
+		for i in LOOT_STAND_DIRS:
+			var angle := TAU * i / float(LOOT_STAND_DIRS)
 			var stand := NavigationServer3D.map_get_closest_point(
-				map, spot + Vector3(cos(angle) * 0.6, -drop, sin(angle) * 0.6))
-			if Vector2(stand.x - spot.x, stand.z - spot.z).length() > PICKUP_REACH + 0.6:
+				map, spot + Vector3(cos(angle) * LOOT_STAND_RADIUS, -drop, sin(angle) * LOOT_STAND_RADIUS))
+			if Vector2(stand.x - spot.x, stand.z - spot.z).length() > PICKUP_REACH + LOOT_STAND_SLACK:
 				continue
-			var feet := _surface_below(stand + Vector3.UP * 0.3, 1.0)  # NavMesh wisi nad podłogą
+			var feet := _surface_below(stand + Vector3.UP * SURFACE_PROBE_UP, SURFACE_PROBE_DEPTH)  # NavMesh wisi nad podłogą
 			if not feet.is_finite():
 				continue
 			feet = _step_towards(feet, spot)
 			if Vector2(feet.x - spot.x, feet.z - spot.z).length() > PICKUP_REACH:
 				continue
 			var rise := spot.y - feet.y
-			if rise < -0.9 or rise > LOOT_REACH_HEIGHT:
+			if rise < LOOT_MAX_RISE or rise > LOOT_REACH_HEIGHT:
 				continue
-			var target := spot + Vector3.UP * 0.1
-			if not _ray(feet + Vector3.UP * 1.4, target).is_empty() and not _ray(feet + Vector3.UP * 0.6, target).is_empty():
+			var target := spot + Vector3.UP * LOOT_SURFACE_STEP
+			if not _ray(feet + Vector3.UP * LOOT_RAY_HEAD, target).is_empty() \
+					and not _ray(feet + Vector3.UP * LOOT_RAY_CHEST, target).is_empty():
 				continue
 			var path := NavigationServer3D.map_get_path(map, hall, stand, true)
-			if not path.is_empty() and path[-1].distance_to(stand) < 0.3:
+			if not path.is_empty() and path[-1].distance_to(stand) < LOOT_PATH_END:
 				return true
 	return false
 
@@ -495,12 +560,12 @@ func _loot_reachable(room: Room, spot: Vector3) -> bool:
 func _step_towards(feet: Vector3, spot: Vector3) -> Vector3:
 	var flat := (spot - feet) * Vector3(1, 0, 1)
 	var capsule := CapsuleShape3D.new()
-	capsule.radius = 0.35
-	capsule.height = 1.7
+	capsule.radius = STEP_CAPSULE_RADIUS
+	capsule.height = STEP_CAPSULE_HEIGHT
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = capsule
-	query.transform = Transform3D(Basis(), feet + Vector3.UP * (0.85 + 0.1))
-	query.motion = flat.limit_length(0.6)
+	query.transform = Transform3D(Basis(), feet + Vector3.UP * (STEP_CAPSULE_CENTER + STEP_CAPSULE_LIFT))
+	query.motion = flat.limit_length(STEP_MAX)
 	query.collision_mask = WORLD_MASK
 	var safe := get_world_3d().direct_space_state.cast_motion(query)
 	return feet + query.motion * safe[0]
@@ -513,17 +578,17 @@ func _inside_solid(point: Vector3) -> bool:
 	# z góry, krok po kroku) i najbliższy spód nad punktem. Na zewnątrz między punktem a tym
 	# wierzchem musi być spód (sam punkt jest pod bryłą); w środku bryły spodu nie ma.
 	var lowest_top := INF
-	var from := point + Vector3.UP * 6.0
-	for i in 16:
+	var from := point + Vector3.UP * SOLID_RAY_UP
+	for i in SOLID_RAY_STEPS:
 		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(from, point, WORLD_MASK))
 		if hit.is_empty():
 			break
 		lowest_top = hit.position.y
-		from = hit.position + Vector3.DOWN * 0.001
+		from = hit.position + Vector3.DOWN * SOLID_RAY_EPS
 	if lowest_top == INF:
 		return false
-	var up := space.intersect_ray(PhysicsRayQueryParameters3D.create(point, point + Vector3.UP * 6.0, WORLD_MASK))
-	return up.is_empty() or up.position.y > lowest_top + 0.001
+	var up := space.intersect_ray(PhysicsRayQueryParameters3D.create(point, point + Vector3.UP * SOLID_RAY_UP, WORLD_MASK))
+	return up.is_empty() or up.position.y > lowest_top + SOLID_RAY_EPS
 
 
 func _surface_below(from: Vector3, depth: float) -> Vector3:
@@ -541,7 +606,7 @@ func _spawn_batteries(rng: RandomNumberGenerator) -> void:
 	if candidates.is_empty():
 		return
 	for i in maxi(1, candidates.size() / ROOMS_PER_BATTERY):
-		for attempt in 4:
+		for attempt in LOOT_TRIES:
 			var spot := _wall_spot(rng, candidates[rng.randi_range(0, candidates.size() - 1)])
 			if spot.is_finite():
 				var battery: BatteryPickup = BATTERY_SCENE.instantiate()
@@ -558,7 +623,7 @@ func _spawn_keys(rng: RandomNumberGenerator) -> void:
 	for i in locked_doors:
 		var spot := Vector3.INF
 		var room: Room
-		for attempt in 4:
+		for attempt in LOOT_TRIES:
 			room = key_rooms[rng.randi_range(0, key_rooms.size() - 1)]
 			spot = _wall_spot(rng, room)
 			if spot.is_finite():
@@ -587,7 +652,7 @@ func _on_rescued(_peer_id: int, monster_name: String) -> void:
 
 
 func _drop_coins(_peer_id: int, amount: int, position: Vector3) -> void:
-	_spawn_coin_pile(position + Vector3.UP * 0.05, amount)
+	_spawn_coin_pile(position + Vector3.UP * COIN_DROP_LIFT, amount)
 
 
 func _despawn_player(peer_id: int) -> void:
@@ -605,12 +670,12 @@ func _on_game_state_changed() -> void:
 	# Ubytek HP bez ciosu = krwawienie (albo zjadanie przez porywacza): puls + lekki wstrząs.
 	var me := multiplayer.get_unique_id()
 	var hp := game_state.hp(me)
-	var recent_hit := Time.get_ticks_msec() / 1000.0 - _last_hit_time < 0.2
+	var recent_hit := Time.get_ticks_msec() / 1000.0 - _last_hit_time < HIT_GRACE
 	if _last_hp >= 0 and hp < _last_hp and not recent_hit:
 		_bleed_pulse = 1.0
 		var cam := get_viewport().get_camera_3d() as FixedCamera
 		if cam:
-			cam.shake(0.05)  # wyraźnie słabiej niż cios (0.25)
+			cam.shake(BLEED_SHAKE)  # wyraźnie słabiej niż cios (HIT_SHAKE)
 	_last_hp = hp
 
 
@@ -637,12 +702,12 @@ func _build_bleed_vignette() -> void:
 func _update_bleed_vignette(delta: float) -> void:
 	var me := multiplayer.get_unique_id()
 	var losing := (game_state.is_up(me) and game_state.is_bleeding(me)) or game_state.is_downed(me) or game_state.is_carried(me)
-	_bleed_pulse = maxf(_bleed_pulse - delta * 1.4, 0.0)
+	_bleed_pulse = maxf(_bleed_pulse - delta * BLEED_PULSE_FALL, 0.0)
 	var target := 0.0
 	if losing:
-		var base := 0.25 + 0.4 * (1.0 - game_state.hp(me) / float(GameState.MAX_HP))
-		target = base * (0.55 + 0.45 * _bleed_pulse)
-	_bleed_vignette.modulate.a = move_toward(_bleed_vignette.modulate.a, target, delta * 2.0)
+		var base := BLEED_BASE_MIN + BLEED_BASE_RANGE * (1.0 - game_state.hp(me) / float(GameState.MAX_HP))
+		target = base * (BLEED_PULSE_MIN + BLEED_PULSE_RANGE * _bleed_pulse)
+	_bleed_vignette.modulate.a = move_toward(_bleed_vignette.modulate.a, target, delta * BLEED_FADE)
 
 
 ## Martwy albo wydostany gracz ogląda kamery żyjącego kolegi (Tab = następny).
@@ -678,12 +743,12 @@ func _on_round_finished(results: Array) -> void:
 func _on_new_threat(stage: int, monster_name: String) -> void:
 	_stage = stage
 	_threat_text = "Coś się zmieniło w kompleksie... (etap %d%s)" % [stage, "" if monster_name == "" else ", nowy potwór: " + monster_name]
-	_threat_until = Time.get_ticks_msec() + 6000
+	_threat_until = Time.get_ticks_msec() + THREAT_NOTICE_MS
 	$ThreatSound.play()
 
 
 func _on_coins_picked(_peer_id: int, position: Vector3) -> void:
-	$CoinSound.global_position = position + Vector3.UP * 0.5
+	$CoinSound.global_position = position + Vector3.UP * COIN_SOUND_LIFT
 	$CoinSound.play()
 
 
@@ -695,16 +760,16 @@ func _on_player_hit(peer_id: int, _amount: int) -> void:
 		$HitSound.global_position = victim.global_position + Vector3.UP
 		$HitSound.play()
 		if multiplayer.is_server():
-			blood_trail.add_drop(victim.global_position, 1.4)  # rozbryzg przy trafieniu
+			blood_trail.add_drop(victim.global_position, HIT_BLOOD_AMOUNT)  # rozbryzg przy trafieniu
 	if peer_id != multiplayer.get_unique_id():
 		return
-	$TensionAudio.spike(0.5)
+	$TensionAudio.spike(HIT_SPIKE)
 	var cam := get_viewport().get_camera_3d() as FixedCamera
 	if cam:
-		cam.shake(0.25)
+		cam.shake(HIT_SHAKE)
 	var flash: ColorRect = $HUD/HitFlash
-	flash.modulate.a = 0.6
-	create_tween().tween_property(flash, "modulate:a", 0.0, 0.6)
+	flash.modulate.a = HIT_FLASH_ALPHA
+	create_tween().tween_property(flash, "modulate:a", 0.0, HIT_FLASH_TIME)
 
 
 func _on_camera_changed(_zone: CameraZone) -> void:
@@ -852,7 +917,7 @@ func set_report_open(value: bool) -> void:
 
 
 func report_copied() -> void:
-	_report_notice_until = Time.get_ticks_msec() + 5000
+	_report_notice_until = Time.get_ticks_msec() + REPORT_NOTICE_MS
 
 
 ## Pokoje idą do raportu tylko przy zmianie, inaczej lista byłaby pełna powtórzeń.
