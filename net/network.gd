@@ -8,6 +8,9 @@ signal disconnected(reason: String)
 
 const DEFAULT_PORT := 7777
 const MAX_CLIENTS := 4  # host + 4 = 5 graczy (więcej wymaga skalowania trudności, patrz progress.md)
+## Prefiksy adresów, których nie podajemy koledze: pętla lokalna i link-local.
+const LOOPBACK_PREFIX := "127."
+const LINK_LOCAL_PREFIX := "169.254."
 
 ## Powód ostatniego rozłączenia. Autoload przeżywa przeładowanie sceny, więc menu może go pokazać.
 var last_disconnect_reason := ""
@@ -63,7 +66,7 @@ static func parse_address(text: String) -> Array:
 func local_addresses() -> PackedStringArray:
 	var result := PackedStringArray()
 	for address in IP.get_local_addresses():
-		if address.count(".") == 3 and not address.begins_with("127.") and not address.begins_with("169.254."):
+		if address.count(".") == 3 and not address.begins_with(LOOPBACK_PREFIX) and not address.begins_with(LINK_LOCAL_PREFIX):
 			result.append(address)
 	return result
 

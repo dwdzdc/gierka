@@ -172,6 +172,9 @@ const UNSTICK_RADII := [0.0, 0.5, 1.0, 1.5, 2.0]
 const UNSTICK_DIRECTIONS := 12
 const UNSTICK_UP := 0.05
 const MIN_DIRECTION_SQ := 0.0001
+## Warstwy fizyki potwora: potwór na warstwie 4 (bit 3), kolizja ze światem i kratami (1+8).
+const MONSTER_LAYER := 4
+const MONSTER_MASK := 9
 
 ## Typ potwora (ustawiany przed dodaniem do drzewa; replikowany przy spawnie).
 @export var profile_id := "hunter"
@@ -376,8 +379,8 @@ func _on_state_visual(new_state: State) -> void:
 	var passing := new_state in [State.VENT, State.VENT_CLIMB]
 	for part in [$Body, $EyeL, $EyeR]:
 		part.visible = not in_vent
-	collision_layer = 0 if passing else 4
-	collision_mask = 0 if passing else 9  # świat + kraty (kraty nie zasłaniają wzroku)
+	collision_layer = 0 if passing else MONSTER_LAYER
+	collision_mask = 0 if passing else MONSTER_MASK  # świat + kraty (kraty nie zasłaniają wzroku)
 	# Podczas pościgu oddech jest głośniejszy i szybszy.
 	var hunting := new_state in [State.HUNT, State.ATTACK]
 	_breath_player.volume_db = BREATH_HUNT_VOLUME_DB if hunting else BREATH_CALM_VOLUME_DB
