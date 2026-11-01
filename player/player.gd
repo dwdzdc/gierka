@@ -78,6 +78,52 @@ const WINDED_NOISE_INTERVAL := 1.0
 ## Poniżej tej części baterii latarka zaczyna migać.
 const LOW_BATTERY := 0.2
 
+# --- Oddech, wygląd, latarka ---
+const BREATH_MAX_DISTANCE := 12.0  # dyszenie słychać z tej odległości
+const BREATH_VOLUME_DB := -4.0
+const BREATH_HEIGHT := 1.5  # usta, nie stopy
+## Powalony/martwy leży na ziemi, sprawny stoi wyżej.
+const LYING_BODY_Y := 0.35
+const STANDING_BODY_Y := 0.85
+## Migotanie słabej baterii: im słabsza, tym częściej gaśnie i mocniej przygasa.
+const FLICKER_OUT_CHANCE := 0.25
+const FLICKER_OUT_CHANCE_WEAK := 0.5
+const FLICKER_OUT_ENERGY := Vector2(0.0, 0.25)
+const FLICKER_DIM_ENERGY := Vector2(0.5, 0.9)
+const FLICKER_OUT_TIME := Vector2(0.04, 0.18)
+const FLICKER_DIM_TIME := Vector2(0.2, 1.5)
+const FLICKER_DIM_TAIL := 0.2
+## Kolor gracza z peer id: złoty krok odcienia, żeby kolory były różne i deterministyczne.
+const TINT_HUE_STEP := 0.618
+const TINT_SATURATION := 0.45
+const TINT_VALUE := 0.7
+const TINT_ROUGHNESS := 0.9
+
+# --- Ruch, kroki, szafka ---
+const LANDING_AIR_TIME := 0.35  # dłużej w powietrzu = lądowanie robi hałas
+const FREE_EXIT_RADII := [0.5, 0.9, 1.3, 1.7]  # szukanie wolnego wyjścia z szafki
+const FREE_EXIT_DIRECTIONS := 12
+const VISOR_OFFSET := 0.25  # daszek/oczy tuż pod czubkiem głowy
+const LANDING_VOLUME_DB := 0.0  # głośny krok po lądowaniu
+const LANDING_REPORT_RANGE := 3.0  # host ufa zgłoszeniu lądowania tylko z tej odległości
+const CARRIER_BACK_OFFSET := 0.8  # porwany wisi za plecami potwora
+const CARRIER_LIFT := 0.4
+const TELEPORT_SPEED_FACTOR := 3.0  # szybszy "ruch" = teleport/spawn, nie licz kroków
+const FOOTSTEP_SPEED_SMOOTHING := 10.0  # pozycje z sieci przychodzą nierówno
+const FOOTSTEP_STILL_SPEED := 0.5  # poniżej tego postać stoi
+const RUNNING_SPEED_FACTOR := 1.3  # od tylu razy walk_speed to już bieg (krok biegu)
+const STEP_VOLUME_CROUCH := -20.0
+const STEP_VOLUME_RUN := -4.0
+const STEP_VOLUME_WALK := -10.0
+const STAMINA_MOVE_SLACK := 0.1  # chęć biegu liczy się tylko, gdy naprawdę się ruszamy
+
+# --- Drzwi i podgląd ---
+const DOOR_EYE_HEIGHT := 1.3  # patrzymy na drzwi na wysokości oczu
+const DOOR_FACING_FACTOR := 1.6  # przy drzwiach wystarczy szerszy kąt niż FACING_ANGLE
+const DOOR_TRACK_DISTANCE := 3.0  # tak blisko drzwi pamiętamy, po której jesteśmy stronie
+const MIN_FACING_DIRECTION := 0.05  # krótszy wektor = nie ma kierunku
+const COVER_RAY_FROM := 0.5  # promień spod pasa w górę: blat nad głową = pod przykryciem
+
 ## Bieżąca akcja "trzymaj klawisz" (tylko u właściciela postaci, do HUD-a).
 var help_kind := Help.NONE
 var help_target: Player
@@ -117,9 +163,9 @@ func _ready() -> void:
 	_tint_body()
 	_breath_player = AudioStreamPlayer3D.new()
 	_breath_player.stream = preload("res://assets/sfx/generated/panic_breath.wav")
-	_breath_player.max_distance = 12.0
-	_breath_player.volume_db = -4.0
-	_breath_player.position.y = 1.5
+	_breath_player.max_distance = BREATH_MAX_DISTANCE
+	_breath_player.volume_db = BREATH_VOLUME_DB
+	_breath_player.position.y = BREATH_HEIGHT
 	add_child(_breath_player)
 	_flashlight_energy = flashlight.light_energy
 	if is_multiplayer_authority():
@@ -143,7 +189,7 @@ func _process(_delta: float) -> void:
 	var life := GameState.Life.OK if game_state == null else game_state.life(get_multiplayer_authority())
 	var lying := life in [GameState.Life.DOWNED, GameState.Life.DEAD, GameState.Life.CARRIED]
 	$Body.rotation.x = PI / 2.0 if lying else 0.0
-	$Body.position.y = 0.35 if lying else 0.85
+	$Body.position.y = LYING_BODY_Y if lying else STANDING_BODY_Y
 	$Visor.visible = life != GameState.Life.DEAD
 	_update_flashlight_battery(_delta)
 	var gone := life == GameState.Life.EXTRACTED or (game_state != null and game_state.is_hidden(get_multiplayer_authority()))
@@ -165,9 +211,12 @@ func _update_flashlight_battery(delta: float) -> void:
 	var weak := clampf(1.0 - charge / LOW_BATTERY, 0.0, 1.0)  # 0 = w porządku, 1 = prawie pusta
 	_flicker_time -= delta
 	if weak > 0.0 and _flicker_time <= 0.0:
-		var out := randf() < 0.25 + 0.5 * weak
-		flashlight.light_energy = _flashlight_energy * (randf_range(0.0, 0.25) if out else randf_range(0.5, 0.9))
-		_flicker_time = randf_range(0.04, 0.18) if out else randf_range(0.2, 1.5 * (1.0 - weak) + 0.2)
+		var out := randf() < FLICKER_OUT_CHANCE + FLICKER_OUT_CHANCE_WEAK * weak
+		var dim := randf_range(FLICKER_OUT_ENERGY.x, FLICKER_OUT_ENERGY.y) if out \
+				else randf_range(FLICKER_DIM_ENERGY.x, FLICKER_DIM_ENERGY.y)
+		flashlight.light_energy = _flashlight_energy * dim
+		_flicker_time = randf_range(FLICKER_OUT_TIME.x, FLICKER_OUT_TIME.y) if out \
+				else randf_range(FLICKER_DIM_TIME.x, FLICKER_DIM_TIME.y * (1.0 - weak) + FLICKER_DIM_TAIL)
 	elif weak <= 0.0:
 		flashlight.light_energy = _flashlight_energy
 
@@ -184,8 +233,8 @@ func respawn_at(spawn: Transform3D) -> void:
 ## Każdy gracz w innym kolorze, deterministycznie z peer id (u wszystkich ten sam).
 func _tint_body() -> void:
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color.from_hsv(fmod(get_multiplayer_authority() * 0.618, 1.0), 0.45, 0.7)
-	material.roughness = 0.9
+	material.albedo_color = Color.from_hsv(fmod(get_multiplayer_authority() * TINT_HUE_STEP, 1.0), TINT_SATURATION, TINT_VALUE)
+	material.roughness = TINT_ROUGHNESS
 	$Body.material_override = material
 
 
@@ -223,7 +272,7 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_track_passed_doors(delta)
 	_air_time = 0.0 if is_on_floor() else _air_time + delta
-	if is_on_floor() and was_airborne > 0.35:
+	if is_on_floor() and was_airborne > LANDING_AIR_TIME:
 		_on_landed()
 
 
@@ -263,9 +312,9 @@ func _free_exit(spot: HidingSpot) -> Transform3D:
 	var front := spot.front_transform()
 	if _fits_at(front):
 		return front
-	for radius in [0.5, 0.9, 1.3, 1.7]:
-		for i in 12:
-			var angle := TAU * i / 12.0
+	for radius in FREE_EXIT_RADII:
+		for i in FREE_EXIT_DIRECTIONS:
+			var angle := TAU * i / float(FREE_EXIT_DIRECTIONS)
 			var candidate := front
 			candidate.origin += Vector3(sin(angle), 0.0, cos(angle)) * radius
 			if _fits_at(candidate):
@@ -298,7 +347,7 @@ func _nearest_free_hiding_spot() -> HidingSpot:
 func under_cover() -> bool:
 	if not crouching or not is_inside_tree():
 		return false
-	var from := global_position + Vector3.UP * 0.5
+	var from := global_position + Vector3.UP * COVER_RAY_FROM
 	var query := PhysicsRayQueryParameters3D.create(from, global_position + Vector3.UP * COVER_HEIGHT, 1)
 	return not get_world_3d().direct_space_state.intersect_ray(query).is_empty()
 
@@ -322,12 +371,12 @@ func _apply_crouch_shape() -> void:
 	$Shape.position.y = height / 2.0
 	$Body.scale.y = height / STAND_HEIGHT
 	$Body.position.y = height / 2.0
-	$Visor.position.y = height - 0.25
+	$Visor.position.y = height - VISOR_OFFSET
 
 
 ## Lądowanie po skoku/upadku robi hałas. Hałas liczy host, więc klient go zgłasza.
 func _on_landed() -> void:
-	_footstep_player.volume_db = 0.0
+	_footstep_player.volume_db = LANDING_VOLUME_DB
 	_footstep_player.play()
 	if multiplayer.is_server():
 		NoiseBus.emit_noise(global_position, LANDING_NOISE_RADIUS, self)
@@ -338,7 +387,7 @@ func _on_landed() -> void:
 @rpc("authority", "call_remote", "reliable")
 func _report_landing(position: Vector3) -> void:
 	# Host ufa zgłoszeniu tylko, gdy zgadza się z pozycją, którą zna.
-	if position.distance_to(global_position) < 3.0:
+	if position.distance_to(global_position) < LANDING_REPORT_RANGE:
 		NoiseBus.emit_noise(position, LANDING_NOISE_RADIUS, self)
 
 
@@ -351,7 +400,7 @@ func _follow_carrier() -> bool:
 	var monsters := get_tree().get_first_node_in_group(&"main").get_node_or_null(^"Monsters") if get_tree().get_first_node_in_group(&"main") else null
 	var carrier: Node3D = monsters.get_node_or_null(game_state.carrier(get_multiplayer_authority())) if monsters else null
 	if carrier:
-		global_position = carrier.global_position - carrier.global_transform.basis.z * 0.8 + Vector3.UP * 0.4
+		global_position = carrier.global_position - carrier.global_transform.basis.z * CARRIER_BACK_OFFSET + Vector3.UP * CARRIER_LIFT
 		rotation.y = carrier.rotation.y
 	velocity = Vector3.ZERO
 	return true
@@ -438,7 +487,7 @@ func _usable_door() -> Door:
 		var door := node as Door
 		if door.state == Door.State.BROKEN or door.flat_distance(global_position) > Door.USE_DISTANCE:
 			continue
-		if not _facing(door.global_position + Vector3.UP * 1.3, FACING_ANGLE * 1.6):
+		if not _facing(door.global_position + Vector3.UP * DOOR_EYE_HEIGHT, FACING_ANGLE * DOOR_FACING_FACTOR):
 			continue
 		if best == null or door.flat_distance(global_position) < best.flat_distance(global_position):
 			best = door
@@ -450,7 +499,7 @@ func _track_passed_doors(delta: float) -> void:
 	_passed_timer += delta
 	for node in get_tree().get_nodes_in_group(&"doors"):
 		var door := node as Door
-		if door.flat_distance(global_position) > 3.0:
+		if door.flat_distance(global_position) > DOOR_TRACK_DISTANCE:
 			_door_sides.erase(door)
 			continue
 		var here := signf(door.side(global_position))
@@ -471,7 +520,7 @@ func _slam_target() -> Door:
 
 func _facing(point: Vector3, max_angle: float) -> bool:
 	var to_point := (point - global_position) * Vector3(1, 0, 1)
-	if to_point.length() < 0.05:
+	if to_point.length() < MIN_FACING_DIRECTION:
 		return true
 	return rad_to_deg((-global_transform.basis.z).angle_to(to_point.normalized())) <= max_angle
 
@@ -557,18 +606,18 @@ func _tank_movement(delta: float) -> Vector3:
 func _footsteps(delta: float) -> void:
 	var measured := ((global_position - _last_position) * Vector3(1, 0, 1)).length() / delta
 	_last_position = global_position
-	if measured > run_speed * 3.0:  # teleport/spawn, nie ruch
+	if measured > run_speed * TELEPORT_SPEED_FACTOR:  # teleport/spawn, nie ruch
 		measured = 0.0
 	# Wygładzenie: pozycje z sieci przychodzą nierówno, więc surowa prędkość skacze.
-	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-10.0 * delta))
-	if _smoothed_speed < 0.5 or not is_up():
+	_smoothed_speed = lerpf(_smoothed_speed, measured, 1.0 - exp(-FOOTSTEP_SPEED_SMOOTHING * delta))
+	if _smoothed_speed < FOOTSTEP_STILL_SPEED or not is_up():
 		_step_timer = 0.0
 		return
 	_step_timer -= delta
 	if _step_timer <= 0.0:
-		var running := _smoothed_speed > walk_speed * 1.3
+		var running := _smoothed_speed > walk_speed * RUNNING_SPEED_FACTOR
 		_step_timer = run_step_interval if running else walk_step_interval
-		_footstep_player.volume_db = -20.0 if crouching else (-4.0 if running else -10.0)
+		_footstep_player.volume_db = STEP_VOLUME_CROUCH if crouching else (STEP_VOLUME_RUN if running else STEP_VOLUME_WALK)
 		_footstep_player.play()
 		if multiplayer.is_server():
 			var radius := run_noise_radius if running else walk_noise_radius
@@ -584,7 +633,7 @@ func _footsteps(delta: float) -> void:
 ## bieg w ścianę też męczył). Po wyczerpaniu: zadyszka, tylko marsz, aż wróci WINDED_RECOVER.
 func _update_stamina(delta: float, desired: Vector3) -> void:
 	var running := Input.is_action_pressed("run") and not winded and not crouching \
-			and desired.length() > walk_speed + 0.1
+			and desired.length() > walk_speed + STAMINA_MOVE_SLACK
 	if running:
 		stamina = maxf(stamina - delta, 0.0)
 		_stamina_rest = 0.0
