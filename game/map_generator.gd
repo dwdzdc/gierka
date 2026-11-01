@@ -65,6 +65,48 @@ const MIRROR := Transform3D(Basis.FLIP_X, Vector3.ZERO)
 const MAX_ATTEMPTS := 400
 ## Bryły sąsiadów stykają się ścianami; zmniejszamy je odrobinę, żeby styk nie był kolizją.
 const OVERLAP_TOLERANCE := 0.05
+## Przy wyborze wariantu większa mapa bije dodatkową pętlę (10 pokoi = 1 pętla).
+const SCORE_SIZE_WEIGHT := 10
+## Gdy mapa się blokuje, próbujemy jeszcze tyle podejść na każdy zamówiony pokój.
+const ATTEMPTS_PER_ROOM := 20
+## Liczba pierwsza do rozrzucania wariantów seeda; formuła przenośna między peerami.
+const SEED_MULTIPLIER := 7919
+
+# --- Drobne rekwizyty (clutter) ---
+## Tylko w pokojach niższych niż to i szerszych niż CLUTTER_MIN_ROOM_SIDE: w wąskich
+## korytarzach skrzynia pod ścianą potrafi zatkać przejście.
+const CLUTTER_MAX_HEIGHT := 8.0
+const CLUTTER_MIN_ROOM_SIDE := 4.5
+const CLUTTER_WALL_MARGIN := 0.5  # odstęp rekwizytu od wewnętrznej strony ściany
+const CLUTTER_TRIES_PER_PROP := 4  # kilka losowań na każdy rekwizyt
+const CLUTTER_SIZE := Vector2(0.6, 0.95)  # bok skrzyni / średnica beczki
+const CLUTTER_FOOTPRINT_MARGIN := 0.2  # zapas między rzutami, żeby rzeczy się nie stykały
+const BARREL_CHANCE := 0.4  # reszta to skrzynie
+const BARREL_RADIUS_FACTOR := 0.45
+const BARREL_HEIGHT := 1.1
+const BARREL_SIDES := 10
+const BARREL_CENTER_HEIGHT := 0.55  # połowa wysokości: beczka stoi na podłodze
+const CRATE_YAW_JITTER := 0.4  # rad: lekko przekręcona skrzynia wygląda naturalniej
+const STACKED_CRATE_CHANCE := 0.3  # druga skrzynia na wierzchu
+const STACKED_CRATE_SIZE_FACTOR := 0.7
+const STACKED_CRATE_HEIGHT_FACTOR := 0.85
+const STACKED_CRATE_YAW_JITTER := 0.6
+const SOLID_MAX_HEIGHT := 2.5  # wyżej to nie mebel na podłodze (np. belka, lampa)
+const LOCKER_FOOTPRINT := Vector2(1.2, 1.2)
+
+# --- Łączenie przejść ---
+## Dwa przejścia w tym samym miejscu (bliżej niż tyle) patrzące na siebie tworzą pętlę.
+const JOIN_DISTANCE := 0.05
+## Cosinus kąta między przejściami patrzącymi na siebie (~180°).
+const OPPOSITE_DOT := -0.99
+## Cosinus, od którego uznajemy kierunek odcinka za zgodny (błąd siatki).
+const ALIGNMENT_DOT := 0.99
+## Tolerancja siatki: współrzędne powinny wypadać w wielokrotnościach 2 m.
+const GRID_TOLERANCE := 0.05
+const SAME_FLOOR_TOLERANCE := 0.05
+const TRANSFORM_SNAP := 0.001  # zaokrąglenie origin, żeby błąd float nie rósł z każdym pokojem
+const MIN_LINK_LENGTH := 4
+const MAX_LINK_PIECE := 16
 
 var rooms: Array[Room] = []
 ## Połączone przejścia: [{"a": Marker3D, "b": Marker3D}] (przydatne do testów i debugowania).
@@ -98,7 +140,7 @@ func generate(parent: Node3D, map_seed: int, room_count: int) -> Array[Room]:
 		_build_variant(map_seed, variant, room_count)
 		var size := rooms.size() - _links
 		var loop_count := mini(loops + closed_loops, wanted_loops)
-		var score := size * 10 + loop_count
+		var score := size * SCORE_SIZE_WEIGHT + loop_count
 		if score > best_score:
 			best_score = score
 			best_variant = variant
@@ -143,7 +185,7 @@ func _decorate() -> void:
 		_drop_optional_props(room)
 		# Bez ramp i schodów (pochyłe podłogi) i bez wąskich korytarzy (3,6 m): skrzynia pod jedną
 		# ścianą i mebel pod drugą potrafiły zatkać przejście.
-		if room.bounds.size.y < 8.0 and minf(room.bounds.size.x, room.bounds.size.z) > 4.5 and not _is_corridor(room):
+		if room.bounds.size.y < CLUTTER_MAX_HEIGHT and minf(room.bounds.size.x, room.bounds.size.z) > CLUTTER_MIN_ROOM_SIDE and not _is_corridor(room):
 			_add_clutter(room)
 
 
@@ -169,8 +211,8 @@ func _add_clutter(room: Room) -> void:
 	for spot in room.find_children("Locker*", "", true, false):
 		keep_clear.append(spot.position + spot.transform.basis.z)
 	var occupied := _solid_footprints(room)
-	var inner := room.bounds.grow(-Room.WALL_THICKNESS - 0.5)
-	for i in count * 4:  # kilka prób na każdy rekwizyt
+	var inner := room.bounds.grow(-Room.WALL_THICKNESS - CLUTTER_WALL_MARGIN)
+	for i in count * CLUTTER_TRIES_PER_PROP:  # kilka prób na każdy rekwizyt
 		if count == 0:
 			break
 		# Przy losowej ścianie, 0.5 m od niej.
@@ -181,11 +223,11 @@ func _add_clutter(room: Room) -> void:
 			1: position = Vector3(lerpf(inner.position.x, inner.end.x, along), 0, inner.end.z)
 			2: position = Vector3(inner.position.x, 0, lerpf(inner.position.z, inner.end.z, along))
 			_: position = Vector3(inner.end.x, 0, lerpf(inner.position.z, inner.end.z, along))
-		var size := _rng.randf_range(0.6, 0.95)
+		var size := _rng.randf_range(CLUTTER_SIZE.x, CLUTTER_SIZE.y)
 		var footprint := Rect2(Vector2(position.x, position.z) - Vector2.ONE * size / 2.0, Vector2.ONE * size)
 		if keep_clear.any(func(p: Vector3) -> bool: return Vector2(p.x, p.z).distance_to(Vector2(position.x, position.z)) < CLUTTER_KEEP_CLEAR):
 			continue
-		if occupied.any(func(r: Rect2) -> bool: return r.grow(0.2).intersects(footprint)):
+		if occupied.any(func(r: Rect2) -> bool: return r.grow(CLUTTER_FOOTPRINT_MARGIN).intersects(footprint)):
 			continue
 		occupied.append(footprint)
 		_spawn_prop(room, position, size)
@@ -194,27 +236,27 @@ func _add_clutter(room: Room) -> void:
 
 func _spawn_prop(room: Room, position: Vector3, size: float) -> void:
 	var prop: CSGShape3D
-	if _rng.randf() < 0.4:
+	if _rng.randf() < BARREL_CHANCE:
 		var barrel := CSGCylinder3D.new()
-		barrel.radius = size * 0.45
-		barrel.height = 1.1
-		barrel.sides = 10
+		barrel.radius = size * BARREL_RADIUS_FACTOR
+		barrel.height = BARREL_HEIGHT
+		barrel.sides = BARREL_SIDES
 		barrel.material = RUST
-		barrel.position = position + Vector3.UP * 0.55
+		barrel.position = position + Vector3.UP * BARREL_CENTER_HEIGHT
 		prop = barrel
 	else:
 		var crate := CSGBox3D.new()
 		crate.size = Vector3.ONE * size
 		crate.material = WOOD
 		crate.position = position + Vector3.UP * size / 2.0
-		crate.rotation.y = _rng.randf_range(-0.4, 0.4)
+		crate.rotation.y = _rng.randf_range(-CRATE_YAW_JITTER, CRATE_YAW_JITTER)
 		prop = crate
-		if _rng.randf() < 0.3:  # druga skrzynia na wierzchu
+		if _rng.randf() < STACKED_CRATE_CHANCE:  # druga skrzynia na wierzchu
 			var top := CSGBox3D.new()
-			top.size = Vector3.ONE * size * 0.7
+			top.size = Vector3.ONE * size * STACKED_CRATE_SIZE_FACTOR
 			top.material = WOOD
-			top.position = Vector3.UP * size * 0.85
-			top.rotation.y = _rng.randf_range(-0.6, 0.6)
+			top.position = Vector3.UP * size * STACKED_CRATE_HEIGHT_FACTOR
+			top.rotation.y = _rng.randf_range(-STACKED_CRATE_YAW_JITTER, STACKED_CRATE_YAW_JITTER)
 			crate.add_child(top)
 	prop.name = "Clutter%d" % room.get_node("Geometry").get_child_count()
 	room.get_node("Geometry").add_child(prop)
@@ -228,18 +270,19 @@ func _solid_footprints(room: Room) -> Array[Rect2]:
 		# Drobiazgi opcjonalne (Opt_*) to pod-kombinatory: ich części leżą w nich, w układzie pokoju.
 		solids.append_array(node.get_children() if node.name.begins_with("Opt_") else [node])
 	for node in solids:
-		if node is CSGBox3D and node.position.y < 2.5 and not node.name.begins_with("Wall") and node.name != "Floor":
+		if node is CSGBox3D and node.position.y < SOLID_MAX_HEIGHT and not node.name.begins_with("Wall") and node.name != "Floor":
 			var half := Vector2(node.size.x, node.size.z) / 2.0
 			result.append(Rect2(Vector2(node.position.x, node.position.z) - half, half * 2.0))
 		elif node is CSGCylinder3D:
 			result.append(Rect2(Vector2(node.position.x, node.position.z) - Vector2.ONE * node.radius, Vector2.ONE * node.radius * 2.0))
 	for spot in room.find_children("Locker*", "", true, false):
-		result.append(Rect2(Vector2(spot.position.x, spot.position.z) - Vector2(0.6, 0.6), Vector2(1.2, 1.2)))
+		var locker_half := LOCKER_FOOTPRINT / 2.0
+		result.append(Rect2(Vector2(spot.position.x, spot.position.z) - locker_half, LOCKER_FOOTPRINT))
 	return result
 
 
 func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
-	_rng.seed = map_seed * 7919 + variant  # prosta, przenośna formuła (bez zależności od hash())
+	_rng.seed = map_seed * SEED_MULTIPLIER + variant  # prosta, przenośna formuła (bez zależności od hash())
 	_room_count = room_count
 	_type_counts.clear()
 	_place_start()
@@ -247,7 +290,8 @@ func _build_variant(map_seed: int, variant: int, room_count: int) -> void:
 	_links = 0
 	loop_stats = {"tries": 0, "pairs": 0, "short_loop": 0, "no_plan": 0, "blocked": 0}
 	var attempts := 0
-	while rooms.size() - _links < room_count and not _open.is_empty() and attempts < maxi(MAX_ATTEMPTS, room_count * 20):
+	while rooms.size() - _links < room_count and not _open.is_empty() \
+			and attempts < maxi(MAX_ATTEMPTS, room_count * ATTEMPTS_PER_ROOM):
 		attempts += 1
 		var index := _rng.randi_range(0, _open.size() - 1)
 		var open: Dictionary = _open[index]
@@ -278,7 +322,7 @@ func _connect_loops() -> void:
 		var matched := -1
 		for j in range(i + 1, _open.size()):
 			var b: Transform3D = _open[j].room.transform * _open[j].door.transform
-			if a.origin.distance_to(b.origin) < 0.05 and a.basis.z.dot(b.basis.z) < -0.99:
+			if a.origin.distance_to(b.origin) < JOIN_DISTANCE and a.basis.z.dot(b.basis.z) < OPPOSITE_DOT:
 				matched = j
 				break
 		if matched == -1:
@@ -462,7 +506,7 @@ func _room_hops() -> Dictionary:
 func _plan_link(a: Dictionary, b: Dictionary) -> Array:
 	var ta: Transform3D = a.room.transform * a.door.transform
 	var tb: Transform3D = b.room.transform * b.door.transform
-	if absf(tb.origin.y - ta.origin.y) > 0.05:
+	if absf(tb.origin.y - ta.origin.y) > SAME_FLOOR_TOLERANCE:
 		loop_stats.other_floor = loop_stats.get("other_floor", 0) + 1
 		return []
 	if ta.origin.distance_to(tb.origin) > MAX_LOOP_REACH:
@@ -502,14 +546,14 @@ const SEGMENTS := [0, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
 ## Długość prostego odcinka z `from` w kierunku `dir`, który kończy się dokładnie w `goal`
 ## i wchodzi tam w kierunku `arrive`. -1, jeśli się nie da.
 func _segment_to(from: Vector2, dir: Vector2, goal: Vector2, arrive: Vector2) -> int:
-	if dir.dot(arrive) < 0.99:
+	if dir.dot(arrive) < ALIGNMENT_DOT:
 		return -1
 	var delta := goal - from
 	var along := delta.dot(dir)
-	if (delta - dir * along).length() > 0.05:
+	if (delta - dir * along).length() > GRID_TOLERANCE:
 		return -1
 	var n := roundi(along)
-	if absf(along - n) > 0.05 or n < 0 or (n > 0 and _straight(n).is_empty()):
+	if absf(along - n) > GRID_TOLERANCE or n < 0 or (n > 0 and _straight(n).is_empty()):
 		return -1
 	return n
 
@@ -518,11 +562,11 @@ func _segment_to(from: Vector2, dir: Vector2, goal: Vector2, arrive: Vector2) ->
 func _straight(length: int) -> Array:
 	if length == 0:
 		return []
-	if length < 4 or length > MAX_SEGMENT:
+	if length < MIN_LINK_LENGTH or length > MAX_SEGMENT:
 		return []
 	if LINKS.has(length):
 		return [[LINKS[length], "West", null]]
-	var first := mini(16, length - 4)
+	var first := mini(MAX_LINK_PIECE, length - MIN_LINK_LENGTH)
 	if LINKS.has(first) and LINKS.has(length - first):
 		return [[LINKS[first], "West", null], [LINKS[length - first], "West", null]]
 	return []
@@ -555,7 +599,7 @@ func _build_link(a: Dictionary, b: Dictionary, plan: Array) -> bool:
 		current = {"room": piece, "door": choice.exit}
 	if ok:
 		var end: Transform3D = current.room.transform * current.door.transform
-		ok = end.origin.distance_to(target_b.origin) < 0.05 and end.basis.z.dot(target_b.basis.z) < -0.99
+		ok = end.origin.distance_to(target_b.origin) < JOIN_DISTANCE and end.basis.z.dot(target_b.basis.z) < OPPOSITE_DOT
 	if not ok:
 		for piece in pieces:
 			piece.room.free()
@@ -594,7 +638,7 @@ func _orient_piece(piece: Room, step: Array, current: Dictionary) -> Dictionary:
 		if step[2] != null:
 			var placed := _aligned_transform(door, current) * exit.transform
 			var out := Vector2(-placed.basis.z.x, -placed.basis.z.z)
-			if out.dot(step[2]) < 0.99:
+			if out.dot(step[2]) < ALIGNMENT_DOT:
 				continue
 		return {"door": door, "exit": exit}
 	return {}
@@ -683,7 +727,7 @@ func _aligned_transform(door: Marker3D, open: Dictionary) -> Transform3D:
 	# Obroty są wielokrotnościami 90°: zaokrąglamy, żeby błędy float nie rosły z każdym pokojem.
 	for axis in 3:
 		result.basis[axis] = result.basis[axis].round()
-	result.origin = result.origin.snapped(Vector3.ONE * 0.001)
+	result.origin = result.origin.snapped(Vector3.ONE * TRANSFORM_SNAP)
 	return result
 
 
