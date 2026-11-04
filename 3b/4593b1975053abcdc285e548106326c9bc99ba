@@ -1,0 +1,19 @@
+tests/camera_flip_test.gd
+  s_193f7b62e89c5b::t_a5b0eb93626183 1-150
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "3b4593b1975053abcdc285e548106326c9bc99ba",
+  "prompts": {},
+  "sessions": {
+    "s_193f7b62e89c5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1885908-d377-4020-a236-ee5d5f86acc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
