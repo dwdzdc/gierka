@@ -56,6 +56,9 @@ const LOOP_MIN_AGE := 3.0
 const LOOP_MATCH_DISTANCE := 1.5
 const RUN_SPEED_ESTIMATE := 4.6  # bieg gracza; z zapasem, żeby potwór zdążył
 const HEAR_MEMORY := 1.2
+## Ile metrów bliżej musi być inny gracz, żeby goniący potwór zmienił ofiarę. Bez tego przy dwóch
+## graczach w podobnej odległości cel przeskakiwał co 0,1 s i potwór szarpał w miejscu.
+const PREY_SWITCH_MARGIN := 3.0
 const SCREAM_INTERVAL := 3.0
 const SIGHT_INTERVAL := 0.1
 ## Drzwi (15n): otwieranie długie (szarpie klamkę), wyważanie krótsze i głośne.
@@ -1207,8 +1210,15 @@ func _on_noise(position: Vector3, radius: float, source: Node) -> void:
 		_heard_new = true
 		heard.emit(position)
 		if source is Player and distance <= HEAR_HUNT_DISTANCE * hearing * sense_boost:
-			heard_player = source
-			_heard_player_time = Time.get_ticks_msec() / 1000.0
+			var now := Time.get_ticks_msec() / 1000.0
+			# Słuch też trzyma się gonionej ofiary: kroki drugiego gracza w podobnej odległości
+			# nie przestawiają celu (inaczej ślepy Rzeźnik miotał się między dwoma graczami).
+			var keep_prey: bool = source != _prey and is_instance_valid(heard_player) and heard_player == _prey \
+					and state in [State.HUNT, State.ATTACK] and now - _heard_player_time <= HEAR_MEMORY \
+					and distance > global_position.distance_to(_prey.global_position) - PREY_SWITCH_MARGIN
+			if not keep_prey:
+				heard_player = source
+				_heard_player_time = now
 
 
 ## Gracz, którego potwór teraz "czuje": widzi go albo przed chwilą słyszał z bliska.
@@ -1237,7 +1247,9 @@ func _update_sight(delta: float) -> void:
 	if sight_range_dark <= 0.0 and sight_range_flashlight <= 0.0:
 		return  # ślepy
 	var best_distance := INF
+	var prey_distance := INF
 	var noticing := {}
+	var chasing := state in [State.HUNT, State.ATTACK]
 	for node in get_tree().get_nodes_in_group(&"players"):
 		var player := node as Player
 		if not can_see(player):
@@ -1246,11 +1258,16 @@ func _update_sight(delta: float) -> void:
 		var needed := notice_time(player, distance)
 		var watched: float = _notice.get(player, 0.0) + SIGHT_INTERVAL
 		noticing[player] = watched
-		if watched < needed and not (state in [State.HUNT, State.ATTACK] and player == _prey):
+		if watched < needed and not (chasing and player == _prey):
 			continue
+		if chasing and player == _prey:
+			prey_distance = distance
 		if distance < best_distance:
 			best_distance = distance
 			seen_player = player
+	# Goniona ofiara wygrywa, dopóki ją widać i nikt nie jest wyraźnie bliżej.
+	if prey_distance < INF and best_distance > prey_distance - PREY_SWITCH_MARGIN:
+		seen_player = _prey
 	_notice = noticing  # kogo przestał widzieć, tego zapomina od zera
 	if seen_player:
 		last_seen_position = seen_player.global_position

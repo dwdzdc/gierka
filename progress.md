@@ -498,9 +498,10 @@ przydzielić rewir do pilnowania.
 
 Uwagi zebrane na bieżąco w trakcie gry. Na razie tylko wpisy, bez kodu.
 
-- [ ] 56. Bug: potwór nie może się zdecydować, na kogo poluje (kilku graczy w zasięgu)
+- [x] 56. Bug: potwór nie może się zdecydować, na kogo poluje (kilku graczy w zasięgu)
   - Diagnoza z kodu: w `_hunt` cel to co 0,1 s `sensed_prey()`, czyli najbliższy widziany (`_update_sight` bierze `best_distance`), a w razie braku – ostatnio słyszany. Gdy dwóch graczy jest w podobnej odległości, `_prey` i `last_seen_position` przeskakują między nimi i potwór szarpie w miejscu
   - Propozycja: histereza celu. Dopóki obecną ofiarę widać albo słychać, potwór jej się trzyma; zmienia cel tylko, gdy nowa jest wyraźnie bliżej (np. o 3 m) albo obecną zgubił. Test: dwóch graczy w równej odległości, cel nie zmienia się przez kilka sekund
+  - Zrobione 04.11: `PREY_SWITCH_MARGIN` = 3 m w `_update_sight` (goniona ofiara wygrywa, dopóki ją widać i nikt nie jest bliżej o 3 m) i w `_on_noise` (kroki innego gracza nie nadpisują słyszanej ofiary). Test `prey_switch_test` (bez poprawki: 3 zmiany celu w 6 s)
 - [ ] 57. Pomysł: pole **Dołącz** pamięta ostatnio wpisany adres (także po rozłączeniu i po tym, jak host wyjdzie i klienta wyrzuca do menu)
   - Dziś adres nie jest nigdzie zapisywany. Najprościej: `ConfigFile` w `user://settings.cfg`, zapis przy kliknięciu Dołącz, wpisanie przy starcie menu. Jedna zmiana załatwia oba przypadki. Pierwszy plik ustawień w grze, więc dobrze od razu pomyśleć o nim jak o miejscu na przyszłe opcje (50)
 - [ ] 58. Bug: po śmierci kamera przechodzi na kolegę dopiero, gdy ten zmieni strefę kamery
