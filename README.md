@@ -100,6 +100,7 @@ godot --headless --path . -s tests/visibility_test.gd  # gdzie kamera nie widzi 
 godot --headless --path . -s tests/map_test.gd -- --rooms=20  # generator: kolizje, determinizm, dostępność
 godot --headless --path . -s tests/camera_rules_test.gd       # każde przejście widoczne z kamery swojej strefy
 godot --headless --path . -s tests/camera_turn_test.gd       # prędkość obrotu kamer za graczem w każdej strefie (próg 150°/s)
+godot --headless --path . -s tests/camera_flip_test.gd [-- --list]  # diagnoza: cięcia odwracające kierunek ruchu (w pokojach i przez drzwi)
 godot --headless --path . -s tests/stamina_test.gd            # bieg: zadyszka po ~6 s, dyszenie = hałas, regeneracja
 godot --headless --path . -s tests/kite_test.gd [-- --off|--no-burst]  # łowca vs bieg w kółko wokół fontanny
 godot --headless --path . -s tests/director_goal_test.gd     # daleki potwór szybko dostaje cel przy graczu i krąży w okolicy
