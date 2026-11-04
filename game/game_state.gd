@@ -37,6 +37,9 @@ const MAX_HP := 100
 const BLEED_CHANCE := 0.6
 const BLEED_DAMAGE_PER_SECOND := 2
 const BLEED_OUT_SECONDS := 30
+## Gdy nikt nie stoi na nogach (wszyscy powaleni, porwani albo już poza grą), nikt nikomu nie
+## pomoże: po tej pauzie powaleni i porwani giną i runda się kończy, zamiast czekać 30 s.
+const HOPELESS_SECONDS := 3
 const REVIVE_HP := 30
 ## Bateria latarki (41c), w sekundach świecenia. Bateria do znalezienia doładowuje ułamek pełnej.
 const BATTERY_MAX := 270
@@ -67,6 +70,7 @@ var _extract_counter := 0  # kolejność wyjść w rundzie (1 = pierwszy)
 var invulnerable := {}
 
 var _tick := 0.0
+var _hopeless := 0  # ile sekund z rzędu nikt nie stoi na nogach (patrz HOPELESS_SECONDS)
 
 
 func _ready() -> void:
@@ -177,6 +181,7 @@ func _physics_process(delta: float) -> void:
 		if entry.life == Life.OK and _flashlight_on(peer_id) and battery(peer_id) > 0:
 			entry.battery = battery(peer_id) - 1
 			dirty = true
+	_check_hopeless()
 	if dirty:
 		_broadcast()
 
@@ -288,6 +293,7 @@ func add_coins(peer_id: int, amount: int, position: Vector3) -> void:
 func reset_for_round() -> void:
 	assert(multiplayer.is_server())
 	round_over = false
+	_hopeless = 0
 	_extract_counter = 0
 	for peer_id in players:
 		players[peer_id] = _fresh_entry(players[peer_id])
@@ -335,6 +341,23 @@ func _fresh_entry(keep: Dictionary) -> Dictionary:
 	return {"name": keep.get("name", "?"), "session": keep.get("session", 0),
 		"hp": MAX_HP, "life": Life.OK, "bleeding": false, "bleed_out": 0,
 		"bandages": START_BANDAGES, "coins": 0, "banked": 0, "carried_by": "", "carry_dps": 0, "hidden_in": "", "extract_order": 0, "keys": 0, "battery": BATTERY_MAX}
+
+
+## Nikt nie stoi, ale ktoś jeszcze leży albo jest niesiony: odliczanie do końca.
+func _check_hopeless() -> void:
+	if round_over:
+		return
+	var waiting := players.keys().filter(func(id: int) -> bool: return life(id) in [Life.DOWNED, Life.CARRIED])
+	var standing := players.keys().any(func(id: int) -> bool: return life(id) == Life.OK)
+	if standing or waiting.is_empty():
+		_hopeless = 0
+		return
+	_hopeless += 1
+	if _hopeless < HOPELESS_SECONDS:
+		return
+	_hopeless = 0
+	for peer_id in waiting:
+		_kill(peer_id)
 
 
 ## Runda się kończy, gdy nikt nie został na mapie (każdy zginął albo wyszedł).
