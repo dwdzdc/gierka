@@ -125,4 +125,5 @@ godot --headless --path . -s tools/coverage_map.gd            # mapy pokrycia ka
 godot --headless --path . -s tests/net_test.gd -- --host
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
 godot --headless --path . -s tests/address_test.gd           # pole Dołącz: adres z opcjonalnym portem
+godot --headless --path . -s tests/last_address_test.gd      # pole Dołącz pamięta ostatni adres (user://settings.cfg)
 ```

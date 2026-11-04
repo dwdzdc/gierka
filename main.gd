@@ -176,6 +176,9 @@ func _ready() -> void:
 	players.child_entered_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
 	players.child_exiting_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
 
+	# Ostatnio wpisany adres: po rozłączeniu albo wyjściu hosta gra wraca do menu i nie trzeba
+	# go wpisywać od nowa (`--join=` z terminala i tak go nadpisze).
+	address_input.text = Settings.get_value("net", "last_address", address_input.text)
 	map_seed = randi()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--rooms="):
@@ -242,6 +245,7 @@ func _on_host_pressed() -> void:
 
 
 func _on_join_pressed() -> void:
+	Settings.set_value("net", "last_address", address_input.text.strip_edges())
 	var target := Net.parse_address(address_input.text)
 	var err := Net.join(target[0], target[1])
 	status_label.text = "Łączenie z %s..." % address_input.text if err == OK else "Zły adres"
