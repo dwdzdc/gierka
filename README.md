@@ -111,6 +111,7 @@ godot --headless --path . -s tests/no_finish_test.gd [-- --case=control]  # łow
 godot --headless --path . -s tests/table_peek_test.gd        # pod stołem niewidoczny; potwór zagląda (widział / przeszukuje) i znajduje
 godot --headless --path . -s tests/spawn_order_test.gd       # kolejność potworów: pierwszy Łowca, potem losowo bez powtórzeń
 godot --headless --path . -s tests/prey_switch_test.gd       # potwór trzyma się gonionej ofiary, zmienia ją tylko na wyraźnie bliższą
+godot --headless --path . -s tests/spectate_test.gd          # po śmierci od razu ujęcie kolegi, który stoi w miejscu
 godot --headless --path . -s tests/monster_states_test.gd -- --scenario=walk_away  # też run_away, sidestep, dodge, escape, attack, noise, death
 godot --headless --path . -s tests/door_test.gd               # drzwi: gracz, klucz, potwór otwiera/wyważa, kratka
 godot --headless --path . -s tests/library_test.gd            # biblioteka: antresolę da się obejść dookoła

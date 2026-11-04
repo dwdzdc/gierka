@@ -49,12 +49,6 @@ func hold_camera(camera: Camera3D) -> void:
 func release_hold() -> void:
 	_held_camera = null
 	set_target(target)  # wybierz ujęcie od nowa według stref
-	# Postać mogła się nie ruszyć (podgląd przez kratkę drzwi): strefy, w których już stoi,
-	# nie zgłoszą ponownego wejścia, więc szukamy ich same.
-	if is_instance_valid(target) and target is PhysicsBody3D:
-		for zone in get_tree().get_nodes_in_group(&"camera_zones"):
-			if zone.overlaps_body(target):
-				on_zone_entered(zone, target)
 
 
 func set_target(new_target: Node3D) -> void:
@@ -63,6 +57,16 @@ func set_target(new_target: Node3D) -> void:
 	current_zone = null
 	_hidden_time = 0.0
 	_guard_shot = false
+	# Cel mógł już stać w strefach (podgląd kolegi po śmierci, koniec podglądu przez kratkę):
+	# te strefy nie zgłoszą ponownego wejścia, więc zbieramy je same. Bez tego ujęcie
+	# pojawiało się dopiero, gdy kolega przeszedł do innej strefy.
+	if not is_instance_valid(target) or not target is PhysicsBody3D or _held_camera:
+		return
+	for zone in get_tree().get_nodes_in_group(&"camera_zones"):
+		if zone.overlaps_body(target):
+			_zones.append(zone)
+	if not _zones.is_empty():
+		_activate(_pick_best(_zones))
 
 
 func on_zone_entered(zone: CameraZone, body: Node3D) -> void:

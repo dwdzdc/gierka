@@ -504,9 +504,10 @@ Uwagi zebrane na bieżąco w trakcie gry. Na razie tylko wpisy, bez kodu.
   - Zrobione 04.11: `PREY_SWITCH_MARGIN` = 3 m w `_update_sight` (goniona ofiara wygrywa, dopóki ją widać i nikt nie jest bliżej o 3 m) i w `_on_noise` (kroki innego gracza nie nadpisują słyszanej ofiary). Test `prey_switch_test` (bez poprawki: 3 zmiany celu w 6 s)
 - [ ] 57. Pomysł: pole **Dołącz** pamięta ostatnio wpisany adres (także po rozłączeniu i po tym, jak host wyjdzie i klienta wyrzuca do menu)
   - Dziś adres nie jest nigdzie zapisywany. Najprościej: `ConfigFile` w `user://settings.cfg`, zapis przy kliknięciu Dołącz, wpisanie przy starcie menu. Jedna zmiana załatwia oba przypadki. Pierwszy plik ustawień w grze, więc dobrze od razu pomyśleć o nim jak o miejscu na przyszłe opcje (50)
-- [ ] 58. Bug: po śmierci kamera przechodzi na kolegę dopiero, gdy ten zmieni strefę kamery
+- [x] 58. Bug: po śmierci kamera przechodzi na kolegę dopiero, gdy ten zmieni strefę kamery
   - Potwierdzone w kodzie: `CameraDirector.set_target` czyści strefy i ustawia `current_zone = null`, a ujęcie wybiera się tylko w `on_zone_entered`, czyli przy *wejściu* nowego celu do strefy. Kolega stojący w miejscu nie daje obrazu, dopóki nie przejdzie do innej strefy. Ten sam problem jest przy przełączaniu Spacją
   - Naprawa: przy `set_target` od razu zebrać strefy, w których cel już stoi (`get_overlapping_bodies` / punkt w strefie), i aktywować najlepszą
+  - Zrobione 04.11: `CameraDirector.set_target` zbiera strefy, w których cel już stoi (`overlaps_body`), i od razu aktywuje najlepszą; `release_hold` korzysta z tego samego. Test `spectate_test`
 - [ ] 59. Kamera za często się zmienia w pomieszczeniach (zgłoszenie od graczy). Pomysł: kamera bardziej ruchoma, mniej przełączania
   - Uwaga krytyczna: to dotyka filaru „stałe kamery jak w RE”. Pełna kamera ruchoma = inna gra. Rozwiązania pośrednie, od najtańszego: (a) mniej stref na pokój i dłuższy minimalny czas ujęcia (dziś 1,2 s, `camera_churn_test` mierzy ~7 cięć/min); (b) mocniejsze `follow` (kamera obraca się za graczem, już jest w `fixed_camera.gd`), wtedy jedno ujęcie obejmuje większy pokój; (c) kamery na szynie w korytarzach (jak w RE: kamera jedzie wzdłuż korytarza za graczem). (c) rozwiązuje też 60
   - Potrzebne konkrety: w których pokojach? `camera_churn_test` może wypisać cięcia na minutę dla każdego typu pokoju osobno
