@@ -229,7 +229,7 @@ fov = 68
 near = 0.05
 script = ExtResource("3")
 look_target = Vector3(2, 0, -4)
-follow = 0.2
+follow = 0.38
 
 [node name="South" type="Area3D" parent="CameraZones"]
 collision_layer = 0
@@ -248,7 +248,7 @@ fov = 68
 near = 0.05
 script = ExtResource("3")
 look_target = Vector3(-2, 0, 4)
-follow = 0.2
+follow = 0.38
 
 [node name="Entry" type="Area3D" parent="CameraZones"]
 collision_layer = 0
@@ -267,7 +267,7 @@ fov = 68
 near = 0.05
 script = ExtResource("3")
 look_target = Vector3(-6, 0.5, -3)
-follow = 0.25
+follow = 0.26
 
 [node name="EastAisle" type="Area3D" parent="CameraZones"]
 collision_layer = 0
@@ -286,7 +286,7 @@ fov = 68
 near = 0.05
 script = ExtResource("3")
 look_target = Vector3(7, 0.5, -4)
-follow = 0.2
+follow = 0.24
 
 [node name="Lights" type="Node3D" parent="."]
 

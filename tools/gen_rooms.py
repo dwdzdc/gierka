@@ -17,6 +17,12 @@ DOOR_W = 2.0
 DOOR_H = 2.6
 FLOOR_STEP = 5.0  # wysokość piętra (rampa, klatka schodowa)
 CAMERA_FOV = 68.0
+# Kamery mocniej obracają się za graczem (playtest 04.11: mniej cięć, więcej obrotu); zakres
+# obrotu i tak ogranicza `FixedCamera.max_turn`. Wartości `follow` w pokojach to proporcje.
+FOLLOW_SCALE = 2.0
+# Kamera blisko gracza (wąski korytarz) przy mocnym `follow` kręciłaby się za szybko
+# (`camera_turn_test`): górny limit `follow` rośnie z odległością kamery od środka strefy.
+FOLLOW_PER_M = 0.045
 LIGHT_SCALE = 1.3  # wspólne strojenie jasności wszystkich lamp
 
 EXT = [
@@ -172,6 +178,14 @@ def check_lockers(name, solids, lockers):
                 LOCKER_ERRORS.append(f"{name}: bryła {sd[0]} {sd[1]} stoi przed szafką {pos} (wyjście {fx:.2f}, {fz:.2f})")
 
 
+def zone_follow(follow, cam_pos, rect):
+    """Siła obracania kamery za graczem: projekt pokoju razy FOLLOW_SCALE, ale nie więcej, niż
+    pozwala odległość kamery od środka strefy (bliska kamera obraca się szybciej)."""
+    cx, cz = (rect[0] + rect[1]) / 2, (rect[2] + rect[3]) / 2
+    dist = math.hypot(cam_pos[0] - cx, cam_pos[2] - cz)
+    return round(min(follow * FOLLOW_SCALE, 0.7, max(follow, FOLLOW_PER_M * dist)), 2)
+
+
 def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=(), outer=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
@@ -324,7 +338,7 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         nodes.append(
             f'[node name="Camera" type="Camera3D" parent="CameraZones/{zname}"]\n'
             f"transform = {tf(*cam_pos)}\nfov = {CAMERA_FOV:g}\nnear = 0.05\n"
-            f'script = ExtResource("{EXT_ID["cam"]}")\nlook_target = Vector3({v(*target)})\nfollow = {follow:g}\n'
+            f'script = ExtResource("{EXT_ID["cam"]}")\nlook_target = Vector3({v(*target)})\nfollow = {zone_follow(follow, cam_pos, (x0, x1, z0, z1)):g}\n'
         )
 
     nodes.append('[node name="Lights" type="Node3D" parent="."]\n')
@@ -631,13 +645,14 @@ def link(length):
     li = length - 2 * T
     half = li / 2
     lights = [((0, 3.6, 0), COLD, 0.7, max(6.0, li * 0.6), False)] if length >= 6 else []
+    follow = 0.3 if length >= 6 else 0.12  # w łączniku 4 m kamera stoi tuż nad graczem
     build(
         f"Link{length}", li, 3.6, 4.0,
         doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
         solids=[optional(0.5, ("box", (0, 3.6, -1.55), (li + 0.4, 0.2, 0.2), "metal"))],  # rura wzdłuż ściany
         zones=[
-            ("WestHalf", (-half, 0.3, -1.8, 1.8), (half - 0.4, 3.6, 1.2), (-half + 1.0, 0.8, 0), 0.3, 0),
-            ("EastHalf", (-0.3, half, -1.8, 1.8), (-half + 0.4, 3.6, -1.2), (half - 1.0, 0.8, 0), 0.3, 0),
+            ("WestHalf", (-half, 0.3, -1.8, 1.8), (half - 0.4, 3.6, 1.2), (-half + 1.0, 0.8, 0), follow, 0),
+            ("EastHalf", (-0.3, half, -1.8, 1.8), (-half + 0.4, 3.6, -1.2), (half - 1.0, 0.8, 0), follow, 0),
         ],
         lights=lights,
         vent=(0, 0),

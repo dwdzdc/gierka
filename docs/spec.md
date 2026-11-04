@@ -44,6 +44,7 @@ Każdy gracz ma własne, nieruchome ujęcia, przecinane według tego, gdzie stoi
 - **Minimalny czas ujęcia: 1,2 s.** Zwykłe cięcie czeka, chyba że postać zniknęła z kadru. Przy losowym błądzeniu wychodzi ok. 7 cięć na minutę.
 - **Bezpiecznik.** Jeśli postaci nie widać przez 0,5 s (zasłonięta, pod kamerą), kamera przeskakuje na inną z tego pokoju, która ją widzi, i wraca do własnej, gdy tylko to możliwe.
 - **Zasada drzwi.** Każde przejście widać z kamery strefy, w której leży, pod kątem < 70° do ściany. Pilnuje tego test automatyczny.
+- **Kamery się nie ruszają**, ale obracają się za graczem, najwyżej o 30° od ustawienia bazowego. Gdzie musiałyby się kręcić szybciej, patrzy już inna kamera.
 - **Sterowanie tank** (przód/tył względem postaci), więc cięcie kamery nigdy nie zmienia kierunku ruchu.
 - **Dźwięk** słyszysz „uszami” postaci, obróconymi jak kamera: dźwięk z lewej strony ekranu jest z lewej.
 - Retro look: kwantyzacja kolorów, dithering, winieta, mgła. Render w Full HD.

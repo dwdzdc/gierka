@@ -3,7 +3,9 @@ class_name FixedCamera
 extends Camera3D
 ## Nieruchome ujęcie w stylu RE. Pozycja jest stała, kamera celuje w `look_target`
 ## (współrzędne lokalne rodzica, czyli strefy). Gdy `follow > 0`, obraca się
-## lekko za graczem, ale nigdy nie zmienia pozycji.
+## za graczem, ale nigdy nie zmienia pozycji i nie wychodzi poza `max_turn` od
+## ustawienia bazowego. Gdyby musiała się kręcić szybko albo daleko, w tym miejscu
+## powinna już patrzeć inna kamera: to sprawa rozstawienia stref (`camera_turn_test`).
 
 @export var look_target := Vector3.ZERO:
 	set(value):
@@ -13,6 +15,8 @@ extends Camera3D
 ## 0 = statyczna, 1 = patrzy prosto na gracza. Wartości pośrednie dają lekki "pan".
 @export_range(0.0, 1.0) var follow := 0.0
 @export var follow_smoothing := 4.0
+## Największy kąt (stopnie) między kierunkiem bazowym a kierunkiem za graczem.
+@export var max_turn := 30.0
 
 const DEFAULT_SHAKE := 0.15  # typowy wstrząs (np. trafienie)
 const SHAKE_FADE := 0.5  # jednostek na sekundę: wstrząs wygasa
@@ -54,7 +58,21 @@ func _process(delta: float) -> void:
 func _goal_point() -> Vector3:
 	if follow <= 0.0 or follow_target == null:
 		return _base_point()
-	return _base_point().lerp(follow_target.global_position + Vector3.UP, follow)
+	return aim_point(follow_target.global_position)
+
+
+## Punkt, w który kamera patrzy, gdy gracz stoi w `player_position`: przesunięcie w stronę
+## gracza o `follow`, przycięte do `max_turn` od kierunku bazowego. Publiczne dla testów.
+func aim_point(player_position: Vector3) -> Vector3:
+	var base := _base_point()
+	var wanted := base.lerp(player_position + Vector3.UP, follow)
+	var base_dir := (base - global_position).normalized()
+	var wanted_dir := (wanted - global_position).normalized()
+	var angle := base_dir.angle_to(wanted_dir)
+	var limit := deg_to_rad(max_turn)
+	if angle <= limit or angle < 0.001:
+		return wanted
+	return global_position + base_dir.slerp(wanted_dir, limit / angle) * global_position.distance_to(wanted)
 
 
 func _base_point() -> Vector3:
