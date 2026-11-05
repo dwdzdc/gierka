@@ -1,0 +1,76 @@
+rooms/servers.tscn
+  s_193f7b62e89c5b::t_321d49ce8adeb6 204,208,223,227
+tools/gen_rooms.py
+  s_193f7b62e89c5b::t_7d12b30874ee20 1110
+  s_193f7b62e89c5b::t_5b6009665b7816 201
+  s_193f7b62e89c5b::t_b2bd989b864592 223-226,230
+  s_193f7b62e89c5b::t_291749264f5c47 189-194,196-200,202,209-222,227-229,231-233,269
+  s_193f7b62e89c5b::t_d44b9c4c853ed5 1080-1082
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 534-536,657-659,699,702-708,713,768-769,788-789,825-829,831,926-929
+  s_193f7b62e89c5b::t_8d02f259de2389 700,1009
+  s_193f7b62e89c5b::t_976ec1002bbb7f 533
+  s_193f7b62e89c5b::t_429360a296bb40 701
+  s_193f7b62e89c5b::t_8f435cb9e81425 195,203-208
+  s_193f7b62e89c5b::t_4e3b1b0bedba08 574-576,578
+  s_193f7b62e89c5b::t_c0ec9fa9a49aa3 859,862-865
+  s_193f7b62e89c5b::t_321d49ce8adeb6 1078,1142-1144
+rooms/chapel.tscn
+  s_193f7b62e89c5b::t_8d02f259de2389 289
+rooms/corridor.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 157,161-162,176,180-181
+rooms/link6.tscn
+  s_193f7b62e89c5b::t_429360a296bb40 115,119
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 1,20-21,103,110-112,114,120
+rooms/atrium.tscn
+  s_193f7b62e89c5b::t_c0ec9fa9a49aa3 20-21,23-24,221,228-230,232-233,237,240,247-249,251-252,256
+rooms/link14.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 118,122-123,137,141-142
+rooms/corridor_x.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 170,174-175,189,193-194
+rooms/ramp.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 142,146-147,161,165-166
+rooms/storage.tscn
+  s_193f7b62e89c5b::t_4e3b1b0bedba08 274,278-279,312,316
+rooms/link8.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 118,122,137,141
+rooms/link12.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 118,122-123,137,141-142
+rooms/link10.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 118,122,137,141
+rooms/corridor_t.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 154,158-159,173,177-178
+rooms/showers.tscn
+  s_193f7b62e89c5b::t_7d12b30874ee20 200,204-205
+rooms/cells.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 241,245-246,260,264-265,279,283,298,302,355,359,374,378
+tests/camera_flip_test.gd
+  s_193f7b62e89c5b::t_9c93f1a1b6ac77 3-7,9,12-13,37-38,40-43,46-52,92,150,192
+  s_193f7b62e89c5b::t_8f435cb9e81425 8,90-91,96-119
+  s_193f7b62e89c5b::t_b2bd989b864592 14-17,93-95,183
+rooms/library.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 393,397,412,416-417,431,435-436
+rooms/link16.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 118,122-123,137,141-142
+rooms/archive.tscn
+  s_193f7b62e89c5b::t_321d49ce8adeb6 246,250
+  s_193f7b62e89c5b::t_d44b9c4c853ed5 265,269-270
+rooms/link4.tscn
+  s_193f7b62e89c5b::t_bb0e608c6a6f7e 1,20-21,99,106-108,110,116
+  s_193f7b62e89c5b::t_429360a296bb40 111,115
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "16890c77f8828f32c43f1b7b568946ad26e29196",
+  "prompts": {},
+  "sessions": {
+    "s_193f7b62e89c5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1885908-d377-4020-a236-ee5d5f86acc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
