@@ -864,6 +864,18 @@ func _debug_text() -> String:
 	var t := "\n[b]DEBUG[/b]\nujęcie: %s\n" % ("-" if not is_instance_valid(zone) else "%s/%s" % [zone.owner.name, zone.name])
 	var focus := camera_director.target as Node3D if is_instance_valid(camera_director.target) else null
 	var host := multiplayer.is_server()
+	# Pozycje wszystkich graczy (nie tylko własnej postaci): postacie są replikowane, więc
+	# klient też je zna. Przydaje się przy zgłaszaniu, gdzie kolega utknął.
+	t += "\n[b]GRACZE (pozycje)[/b]\n[table=3]"
+	for header in ["Gracz", "Pokój", "Pozycja"]:
+		t += "[cell][color=#999999]%s[/color][/cell]" % header
+	for body in players.get_children():
+		var peer_id: int = body.get_multiplayer_authority()
+		var who: String = game_state.players.get(peer_id, {}).get("name", str(peer_id))
+		var at: Vector3 = body.global_position
+		for value in [who, _room_name_at(at), "%.1f, %.1f, %.1f" % [at.x, at.y, at.z]]:
+			t += "[cell]%s[/cell]" % value
+	t += "[/table]\n"
 	t += "\n[b]POTWORY[/b]\n[table=8]"
 	for header in ["Typ", "Stan", "Dystans", "Pokój", "Wzrok", "Słuch", "Zagrożenie", "Cel reżysera"]:
 		t += "[cell][color=#999999]%s[/color][/cell]" % header

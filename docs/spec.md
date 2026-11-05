@@ -68,7 +68,7 @@ Każdy gracz ma własne, nieruchome ujęcia, przecinane według tego, gdzie stoi
 | F1 | debug w panelu statystyk (ujęcie kamery, stany potworów); po śmierci Spacja przełącza oglądanego kolegę |
 | F2 | raport błędu: wpisz krótko, co się stało, Ctrl+Enter kopiuje do schowka opis + stan gry (seed, pokój, potwory, kamera); gra się nie pauzuje, tylko twoja postać stoi |
 | Esc | wyjście z gry (przy otwartym raporcie: zamknięcie raportu) |
-| \` (tylda) | host, build deweloperski: menu testowe (spawn potworów, następny etap, zamrożenie, nieśmiertelność, leczenie, monety, teleport do windy) |
+| \` (tylda) | host, build deweloperski: menu testowe (spawn potworów, następny etap, zamrożenie; na wybranym graczu: nieśmiertelność, ożywienie i leczenie, monety; teleport do windy) |
 
 ## Mapa
 

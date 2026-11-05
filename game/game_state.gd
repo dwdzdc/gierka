@@ -265,9 +265,10 @@ func set_invulnerable(peer_id: int, value: bool) -> void:
 
 
 ## Menu testowe: pełne HP, bez krwawienia, bandaże na start, z powrotem na nogi.
+## Ożywia też martwego (wstaje tam, gdzie leży), ale nie po końcu rundy i nie wydostanego.
 func debug_heal(peer_id: int) -> void:
 	assert(multiplayer.is_server())
-	if not players.has(peer_id) or life(peer_id) in [Life.DEAD, Life.EXTRACTED]:
+	if not players.has(peer_id) or life(peer_id) == Life.EXTRACTED or round_over:
 		return
 	var entry: Dictionary = players[peer_id]
 	entry.hp = MAX_HP

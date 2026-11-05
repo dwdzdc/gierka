@@ -19,7 +19,7 @@ const TITLE_FONT := 26
 const BUTTON_FONT := 22
 
 var _main: Node3D
-var _immortal := false
+var _target_id := 0  # gracz, na którym działają narzędzia gracza; 0 = ja
 var _frozen := false
 var _items: VBoxContainer
 
@@ -91,13 +91,45 @@ func _build_actions() -> Array[Dictionary]:
 	actions.append({"name": "Zamroź potwory: %s" % ("WŁ" if _frozen else "wył"), "run": _toggle_freeze})
 	actions.append({"name": "Usuń wszystkie potwory", "run": _remove_monsters})
 	actions.append({})
-	actions.append({"name": "Nieśmiertelność: %s" % ("WŁ" if _immortal else "wył"), "run": _toggle_immortal})
-	actions.append({"name": "Ulecz (HP %d, bez krwawienia, +bandaże)" % GameState.MAX_HP, "run": _heal})
+	# Narzędzia gracza działają na wybranym celu: host decyduje o HP i życiu wszystkich,
+	# więc wystarczy podać inny peer_id. Ruch postaci należy do jej właściciela, dlatego
+	# teleport zostaje tylko dla hosta.
+	var target := _target()
+	var game_state: GameState = _main.game_state
+	actions.append({"name": "Cel: %s   (kliknij: następny gracz)" % _target_name(target), "run": _next_target})
+	actions.append({"name": "Nieśmiertelność: %s" % ("WŁ" if game_state.invulnerable.get(target, false) else "wył"), "run": _toggle_immortal})
+	actions.append({"name": "Ożyw / ulecz (HP %d, bez krwawienia, +bandaże)" % GameState.MAX_HP, "run": _heal})
 	actions.append({"name": "+%d monet" % COIN_GRANT, "run": _add_coins})
-	actions.append({"name": "+1 klucz", "run": func() -> void: _main.game_state.add_key(multiplayer.get_unique_id())})
+	actions.append({"name": "+1 klucz", "run": func() -> void: game_state.add_key(_target())})
 	actions.append({"name": "Bateria latarki: %d s" % DRAIN_BATTERY, "run": _drain_battery})
-	actions.append({"name": "Teleport do windy", "run": _teleport_to_exit})
+	actions.append({"name": "Ożyw i ulecz wszystkich", "run": _heal_all})
+	actions.append({})
+	actions.append({"name": "Teleport do windy (ty)", "run": _teleport_to_exit})
 	return actions
+
+
+## Peer wybranego celu; gdy wybrany gracz wyszedł z gry, wracamy do siebie.
+func _target() -> int:
+	if _target_id == 0 or not _main.game_state.players.has(_target_id):
+		_target_id = 0
+		return multiplayer.get_unique_id()
+	return _target_id
+
+
+func _target_name(peer_id: int) -> String:
+	var name: String = _main.game_state.players.get(peer_id, {}).get("name", "?")
+	return name + (" (ty)" if peer_id == multiplayer.get_unique_id() else "")
+
+
+func _next_target() -> void:
+	var ids: Array = _main.game_state.players.keys()
+	var next: int = ids[(ids.find(_target()) + 1) % ids.size()]
+	_target_id = 0 if next == multiplayer.get_unique_id() else next
+
+
+func _heal_all() -> void:
+	for peer_id in _main.game_state.players:
+		_main.game_state.debug_heal(peer_id)
 
 
 func _me() -> Player:
@@ -132,25 +164,25 @@ func _remove_monsters() -> void:
 
 
 func _toggle_immortal() -> void:
-	_immortal = not _immortal
-	_main.game_state.set_invulnerable(multiplayer.get_unique_id(), _immortal)
+	var target := _target()
+	_main.game_state.set_invulnerable(target, not _main.game_state.invulnerable.get(target, false))
 
 
 ## Do sprawdzania migotania i gaśnięcia latarki bez czekania 4,5 minuty.
 func _drain_battery() -> void:
 	var game_state: GameState = _main.game_state
-	game_state.players[multiplayer.get_unique_id()].battery = DRAIN_BATTERY
+	game_state.players[_target()].battery = DRAIN_BATTERY
 	game_state._broadcast()
 
 
 func _heal() -> void:
-	_main.game_state.debug_heal(multiplayer.get_unique_id())
+	_main.game_state.debug_heal(_target())
 
 
 func _add_coins() -> void:
-	var me := _me()
-	if me:
-		_main.game_state.add_coins(multiplayer.get_unique_id(), COIN_GRANT, me.global_position)
+	var body := _main.players.get_node_or_null(str(_target())) as Node3D
+	if body:
+		_main.game_state.add_coins(_target(), COIN_GRANT, body.global_position)
 
 
 func _teleport_to_exit() -> void:
