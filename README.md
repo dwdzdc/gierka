@@ -109,6 +109,7 @@ godot --headless --path . -s tests/battery_test.gd            # bateria latarki:
 godot --headless --path . -s tests/loot_reach_test.gd        # łup dostępny: nie w meblu, nie na środku, da się zebrać (3 seedy, 20 pokoi)
 godot --headless --path . -s tests/no_finish_test.gd [-- --case=control]  # łowca nie dobija powalonego i nie pilnuje ciała
 godot --headless --path . -s tests/table_peek_test.gd        # pod stołem niewidoczny; potwór zagląda (widział / przeszukuje) i znajduje
+godot --headless --path . -s tests/table_peek_many_test.gd   # dwóch pod jednym stołem: jedno zajrzenie odkrywa obu
 godot --headless --path . -s tests/spawn_order_test.gd       # kolejność potworów: pierwszy Łowca, potem losowo bez powtórzeń
 godot --headless --path . -s tests/prey_switch_test.gd       # potwór trzyma się gonionej ofiary, zmienia ją tylko na wyraźnie bliższą
 godot --headless --path . -s tests/spectate_test.gd          # po śmierci od razu ujęcie kolegi, który stoi w miejscu

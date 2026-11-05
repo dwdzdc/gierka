@@ -527,9 +527,10 @@ Uwagi zebrane na bieżąco w trakcie gry. Na razie tylko wpisy, bez kodu.
 - [ ] 63. Pytanie: czy grafika proceduralna zamiast obecnej byłaby ładniejsza albo lżejsza?
   - Odpowiedź: to nie są sprite'y. Ściany i meble to już geometria składana proceduralnie przez `tools/gen_rooms.py`: ok. 720 brył `CSGBox3D` i 180 `MeshInstance3D` w pokojach, z jednolitymi kolorami materiałów, bez tekstur
   - Możliwe zyski: (a) lżej: CSG po złożeniu mapy zamienić na zwykłe siatki (`bake_static_mesh`) albo generować od razu `BoxMesh`. CSG liczy się w runtime i każda bryła to osobne wywołanie rysowania. Warto zmierzyć dopiero przy profilowaniu (52); na M1 jest 60 FPS; (b) ładniej: tekstury proceduralne w shaderze (szum na beton, rdza, kafle) bez plików graficznych, pasują do retro wyglądu z ditheringiem. Uwaga: nie zastąpi modeli (51), tylko ożywi greybox
-- [ ] 64. Bug: potwór zagląda pod stół i znajduje tylko jednego gracza, choć jest ich tam kilku
+- [x] 64. Bug: potwór zagląda pod stół i znajduje tylko jednego gracza, choć jest ich tam kilku
   - Potwierdzone w kodzie: `_peek_under` przerywa pętlę po pierwszym znalezionym graczu, a `_found_under` to jeden gracz. Pozostali pod tym samym stołem zostają niewidzialni
   - Propozycja: zapamiętać wszystkich znalezionych (lista zamiast jednego pola), zaatakować najbliższego, reszta jest „odkryta” do czasu wyjścia spod stołu
+  - Zrobione 04.11: `Monster._found_under` to lista; `_peek_under` dopisuje wszystkich spod blatu (do 1,8 m od zaglądanego miejsca) i goni najbliższego. Test `table_peek_many_test`
 - [ ] 65. Pomysł: podręczna mapka, odkrywana w miarę eksploracji (jak w R.E.P.O.), z podziałem na piętra
   - Technicznie tanie: generator zna prostokąty pokoi i ich poziomy, więc mapka to rysowanie prostokątów 2D dla odwiedzonych pokoi; każdy gracz odkrywa ją lokalnie (bez sieci)
   - Ustalone 04.11: mapka to notatnik, nie poradnik. Każdy gracz ma własną, pokój pojawia się na niej dopiero po wejściu do niego, a windę widzi ten, kto ją znalazł. Nie kłóci się z 34b: reszta drużyny dalej nie wie, gdzie jest winda, dopóki ktoś im nie powie. Pomaga w orientacji (24.10 „łatwo się zgubić”)

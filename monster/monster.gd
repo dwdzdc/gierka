@@ -260,7 +260,9 @@ var _victim: Player  # porwany (CARRY/FEED)
 # Przejście wentylacją: {"entry": Vector3, "exit": Vector3} (kratki), czas w szybie.
 var _check_spot: HidingSpot  # szafka do sprawdzenia (INVESTIGATE)
 var _peek_point := Vector3.INF  # miejsce pod stołem do sprawdzenia (PEEK_UNDER)
-var _found_under: Player  # tego zajrzał pod stół i widzi, dopóki gracz spod niego nie wyjdzie
+## Tych zajrzał pod stół i widzi, dopóki spod niego nie wyjdą. Lista, bo pod jednym blatem
+## może leżeć kilku graczy, a zajrzenie odkrywa wszystkich, nie tylko pierwszego.
+var _found_under: Array[Player] = []
 var _bend := 0.0  # schylenie przy zaglądaniu (wygląd, u każdego peera ze stanu)
 var _part_rest := {}  # część ciała -> transform bez schylenia
 var _checked_this_search := false
@@ -787,17 +789,22 @@ func _peek_under(delta: float) -> float:
 	_timer += delta
 	if _timer < PEEK_TIME:
 		return 0.0
+	var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
+	var nearest: Player = null
 	for node in get_tree().get_nodes_in_group(&"players"):
 		var player := node as Player
 		var to_player := (player.global_position - _peek_point) * Vector3(1, 0, 1)
-		if player.under_cover() and to_player.length() <= PEEK_FIND_RADIUS:
-			var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
-			if game_state == null or _is_target(game_state, player.get_multiplayer_authority()):
-				_found_under = player
-				_prey = player
-				last_seen_position = player.global_position
-				_enter(State.HUNT)
-				return 0.0
+		if player.under_cover() and to_player.length() <= PEEK_FIND_RADIUS \
+				and (game_state == null or _is_target(game_state, player.get_multiplayer_authority())):
+			if not _found_under.has(player):
+				_found_under.append(player)
+			if nearest == null or player.global_position.distance_to(global_position) < nearest.global_position.distance_to(global_position):
+				nearest = player
+	if nearest:
+		_prey = nearest  # atakuje najbliższego, reszta pod stołem jest już odkryta
+		last_seen_position = nearest.global_position
+		_enter(State.HUNT)
+		return 0.0
 	# Pusto: dalej przeszukuje okolicę, ale pod ten sam stół od razu nie zagląda.
 	_enter(State.INVESTIGATE)
 	_checked_this_search = true
@@ -848,7 +855,7 @@ func _hunt(delta: float) -> float:
 	else:
 		_timer += delta
 		# Zniknął z oczu, bo wczołgał się pod stół: potwór to widział, więc tam zajrzy.
-		if _timer <= TABLE_NOTICE_WINDOW and is_instance_valid(_prey) and _prey != _found_under and _prey.under_cover() \
+		if _timer <= TABLE_NOTICE_WINDOW and is_instance_valid(_prey) and not _found_under.has(_prey) and _prey.under_cover() \
 				and _prey.global_position.distance_to(global_position) <= sight_range_flashlight:
 			check_under(_prey.global_position)
 			return investigate_speed
@@ -1229,7 +1236,7 @@ func sensed_prey() -> Player:
 		var game_state: GameState = get_tree().get_first_node_in_group(&"game_state")
 		var peer_id := heard_player.get_multiplayer_authority()
 		if (game_state == null or (_is_target(game_state, peer_id) and not game_state.is_hidden(peer_id))) \
-				and (not heard_player.under_cover() or heard_player == _found_under):
+				and (not heard_player.under_cover() or _found_under.has(heard_player)):
 			last_seen_position = heard_player.global_position
 			return heard_player
 	return null
@@ -1314,13 +1321,13 @@ func can_see(player: Player) -> bool:
 	if game_state and game_state.is_hidden(player.get_multiplayer_authority()):
 		return false
 	if player.under_cover():
-		if player != _found_under:
+		if not _found_under.has(player):
 			return false
 		# Zajrzał pod spód i patrzy prosto na niego: blat zasłania promienie z wysokości oczu.
 		if player.global_position.distance_to(global_position) <= FOUND_UNDER_SIGHT:
 			return true
-	elif player == _found_under:
-		_found_under = null  # wyszedł spod stołu; pod następnym trzeba go znowu znaleźć
+	elif _found_under.has(player):
+		_found_under.erase(player)  # wyszedł spod stołu; pod następnym trzeba go znowu znaleźć
 	var eye := global_position + Vector3.UP * eye_height
 	var to_target := player.global_position + Vector3.UP * SIGHT_CHEST_HEIGHT - eye
 	if to_target.length() > sight_range(player):

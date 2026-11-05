@@ -64,16 +64,16 @@ func _physics_process(_d: float) -> bool:
 		peeked = true
 	if start > 0 and f == start + 60 * 6:
 		_check(peeked, "widział, jak gracz wchodzi pod stół: zagląda (PEEK_UNDER)")
-		_check(m.state in [m.State.HUNT, m.State.ATTACK, m.State.RECOVER] and m._found_under == p,
+		_check(m.state in [m.State.HUNT, m.State.ATTACK, m.State.RECOVER] and m._found_under.has(p),
 			"po zajrzeniu znalazł gracza (%s)" % m.State.keys()[m.state])
 		_check(m.can_see(p), "znalezionego pod stołem widzi")
 		# 3) Pod stół 3 m dalej: pusto.
-		m._found_under = null
+		m._found_under.clear()
 		m.global_position = Vector3(-4.0, 0.05, 3.0)
 		m.check_under(Vector3(-1.5, 0.05, -1.0))
 		start = -f
 	if start < 0 and f == -start + 60 * 6:
-		_check(m.state != m.State.HUNT and m._found_under == null,
+		_check(m.state != m.State.HUNT and m._found_under.is_empty(),
 			"zaglądanie 3 m od gracza nic nie daje (%s)" % m.State.keys()[m.state])
 		Input.action_release("crouch")
 		print("WYNIK: ", "OK" if ok else "BŁĄD")
