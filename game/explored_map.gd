@@ -8,6 +8,24 @@ extends CanvasLayer
 const FLOOR_STEP := 5.0  # wysokość piętra, jak FLOOR_STEP w tools/gen_rooms.py
 const MAX_SCALE := 14.0  # px na metr: pierwszy pokój nie wypełnia całego ekranu
 const PANEL_FRACTION := 0.8  # część wysokości ekranu zajęta przez mapę
+const LAYER := 5  # nad HUD-em, pod menu
+const BODY_POINT := 0.5  # m nad stopami: punkt ciała do sprawdzania, w którym pokoju stoi gracz
+const EXIT_SIGN_HEIGHT := 1.3  # m nad znacznikiem wyjścia: znak nad drzwiami windy
+const EXIT_SEE_RANGE := 25.0  # m: dalej winda w kadrze to plamka, nie „znalezienie”
+const WORLD_MASK := 1  # warstwa "world"
+const WALL := 0.2  # m: ściana pokoju, rysujemy wnętrze
+const MARGIN := 48.0  # px od brzegu panelu do mapy
+const TITLE_OFFSET := Vector2(16, 30)
+const TITLE_SIZE := 22
+const LABEL_SIZE := 18
+const PANEL_EDGE := 2.0  # px: obwódka panelu
+const ROOM_EDGE := 1.5  # px: obwódka pokoju
+const DOOR_MARK := 8.0  # px: kwadracik przejścia
+const EXIT_MARK := 14.0  # px: kwadrat windy
+const EXIT_LABEL_OFFSET := Vector2(10, 6)
+const ARROW_TIP := 12.0  # px: strzałka gracza (czubek, tył i pół szerokości)
+const ARROW_BACK := 7.0
+const ARROW_HALF := 7.0
 const COLOR_BACK := Color(0.05, 0.06, 0.07, 0.88)
 const COLOR_ROOM := Color(0.55, 0.58, 0.55, 0.35)
 const COLOR_HERE := Color(0.75, 0.78, 0.7, 0.55)
@@ -28,7 +46,7 @@ var _canvas := Control.new()
 
 
 func _ready() -> void:
-	layer = 5
+	layer = LAYER
 	visible = false
 	_canvas.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -96,7 +114,7 @@ func _rooms() -> Array:
 ## Zaznacza pokój, w którym stoi gracz, i windę, gdy była w kadrze (nie od samego wejścia do pokoju:
 ## winda w głębi dużej sali nie jest jeszcze „znaleziona”).
 func _explore(player: Node3D) -> void:
-	var point := player.global_position + Vector3.UP * 0.5
+	var point := player.global_position + Vector3.UP * BODY_POINT
 	for i in main.rooms.size():
 		var room: Room = main.rooms[i]
 		if not visited.has(i) and is_instance_valid(room) and room_box(room).has_point(point):
@@ -107,10 +125,10 @@ func _explore(player: Node3D) -> void:
 	var camera := get_viewport().get_camera_3d()
 	if not exit.is_finite() or camera == null:
 		return
-	var sign_point := exit + Vector3.UP * 1.3
-	if camera.global_position.distance_to(sign_point) > 25.0 or not camera.is_position_in_frustum(sign_point):
+	var sign_point := exit + Vector3.UP * EXIT_SIGN_HEIGHT
+	if camera.global_position.distance_to(sign_point) > EXIT_SEE_RANGE or not camera.is_position_in_frustum(sign_point):
 		return
-	var query := PhysicsRayQueryParameters3D.create(camera.global_position, sign_point, 1)
+	var query := PhysicsRayQueryParameters3D.create(camera.global_position, sign_point, WORLD_MASK)
 	if camera.get_world_3d().direct_space_state.intersect_ray(query).is_empty():
 		exit_seen = true
 
@@ -140,13 +158,13 @@ func _draw_map() -> void:
 	var side := view.y * PANEL_FRACTION
 	var panel := Rect2((view - Vector2(side, side)) / 2.0, Vector2(side, side))
 	_canvas.draw_rect(panel, COLOR_BACK)
-	_canvas.draw_rect(panel, COLOR_EDGE, false, 2.0)
+	_canvas.draw_rect(panel, COLOR_EDGE, false, PANEL_EDGE)
 	var font := ThemeDB.fallback_font
 	var floors := _visited_floors()
 	var title := "Piętro %d" % shown_floor
 	if floors.size() > 1:
 		title += "   (W/S: piętro, %d z %d)" % [floors.find(shown_floor) + 1, floors.size()]
-	_canvas.draw_string(font, panel.position + Vector2(16, 30), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 22, COLOR_EDGE)
+	_canvas.draw_string(font, panel.position + TITLE_OFFSET, title, HORIZONTAL_ALIGNMENT_LEFT, -1, TITLE_SIZE, COLOR_EDGE)
 
 	# Skala z obrysu wszystkich odwiedzonych pokoi (wszystkie piętra): przełączanie pięter nie
 	# przesuwa ani nie powiększa mapy, więc piętra da się porównać.
@@ -161,7 +179,7 @@ func _draw_map() -> void:
 		first = false
 	if first:
 		return
-	var inner := panel.grow(-48.0)
+	var inner := panel.grow(-MARGIN)
 	var scale := minf(MAX_SCALE, minf(inner.size.x / maxf(area.size.x, 1.0), inner.size.y / maxf(area.size.y, 1.0)))
 	var origin := inner.get_center() - area.get_center() * scale
 	var to_screen := func(p: Vector3) -> Vector2: return origin + Vector2(p.x, p.z) * scale
@@ -175,27 +193,27 @@ func _draw_map() -> void:
 			continue
 		var box := room_box(room)
 		# Ściany 0,2 m: rysujemy wnętrze, żeby sąsiednie pokoje nie zlewały się w jedną plamę.
-		var rect := Rect2(to_screen.call(box.position), Vector2(box.size.x, box.size.z) * scale).grow(-0.2 * scale)
-		var here := player != null and box.has_point(player.global_position + Vector3.UP * 0.5)
+		var rect := Rect2(to_screen.call(box.position), Vector2(box.size.x, box.size.z) * scale).grow(-WALL * scale)
+		var here := player != null and box.has_point(player.global_position + Vector3.UP * BODY_POINT)
 		_canvas.draw_rect(rect, COLOR_HERE if here else COLOR_ROOM)
-		_canvas.draw_rect(rect, COLOR_EDGE, false, 1.5)
+		_canvas.draw_rect(rect, COLOR_EDGE, false, ROOM_EDGE)
 	# Przejścia odwiedzonych pokoi: notatnik wie, że tam są drzwi, nawet jeśli nie wie dokąd.
 	for connection in main.map_connections:
 		for door in [connection.a, connection.b]:
 			var room := _room_of(door)
 			var index: int = main.rooms.find(room)
 			if visited.has(index) and floor_of(door.global_position.y) == shown_floor:
-				_canvas.draw_rect(Rect2(to_screen.call(door.global_position) - Vector2(4, 4), Vector2(8, 8)), COLOR_DOOR)
+				_canvas.draw_rect(Rect2(to_screen.call(door.global_position) - Vector2.ONE * DOOR_MARK / 2.0, Vector2.ONE * DOOR_MARK), COLOR_DOOR)
 	if exit_seen and floor_of(main.game_state.exit_position.y) == shown_floor:
 		var at: Vector2 = to_screen.call(main.game_state.exit_position)
-		_canvas.draw_rect(Rect2(at - Vector2(7, 7), Vector2(14, 14)), COLOR_EXIT)
-		_canvas.draw_string(font, at + Vector2(10, 6), "winda", HORIZONTAL_ALIGNMENT_LEFT, -1, 18, COLOR_EXIT)
+		_canvas.draw_rect(Rect2(at - Vector2.ONE * EXIT_MARK / 2.0, Vector2.ONE * EXIT_MARK), COLOR_EXIT)
+		_canvas.draw_string(font, at + EXIT_LABEL_OFFSET, "winda", HORIZONTAL_ALIGNMENT_LEFT, -1, LABEL_SIZE, COLOR_EXIT)
 	if player != null and floor_of(player.global_position.y) == shown_floor:
 		var at: Vector2 = to_screen.call(player.global_position)
 		var forward := -player.global_transform.basis.z
 		var dir := Vector2(forward.x, forward.z).normalized()
 		var normal := Vector2(-dir.y, dir.x)
-		_canvas.draw_colored_polygon(PackedVector2Array([at + dir * 12, at - dir * 7 + normal * 7, at - dir * 7 - normal * 7]), COLOR_PLAYER)
+		_canvas.draw_colored_polygon(PackedVector2Array([at + dir * ARROW_TIP, at - dir * ARROW_BACK + normal * ARROW_HALF, at - dir * ARROW_BACK - normal * ARROW_HALF]), COLOR_PLAYER)
 
 
 func _room_of(node: Node) -> Room:

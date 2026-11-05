@@ -17,6 +17,7 @@ extends Camera3D
 @export var follow_smoothing := 4.0
 ## Największy kąt (stopnie) między kierunkiem bazowym a kierunkiem za graczem.
 @export var max_turn := 30.0
+const TURN_EPSILON := 0.001  # rad: kierunki praktycznie równe, nie ma czego ograniczać
 
 const DEFAULT_SHAKE := 0.15  # typowy wstrząs (np. trafienie)
 const SHAKE_FADE := 0.5  # jednostek na sekundę: wstrząs wygasa
@@ -70,7 +71,7 @@ func aim_point(player_position: Vector3) -> Vector3:
 	var wanted_dir := (wanted - global_position).normalized()
 	var angle := base_dir.angle_to(wanted_dir)
 	var limit := deg_to_rad(max_turn)
-	if angle <= limit or angle < 0.001:
+	if angle <= limit or angle < TURN_EPSILON:
 		return wanted
 	return global_position + base_dir.slerp(wanted_dir, limit / angle) * global_position.distance_to(wanted)
 
