@@ -1,9 +1,8 @@
-docs/spec.md
-  ai_agent 172
 fx/retro_post.gdshader
-  ai_agent 9,26-35,57-62,76-80
+  s_193f7b62e89c5b::t_abf76f1b3260e2 9,58,61
 progress.md
-  s_193f7b62e89c5b::t_07ace247305280 541,544
+  s_193f7b62e89c5b::t_e7a2b3f4c6fa0f 515-516,539
+  ai_agent 505,507,521,524
 ---
 {
   "schema_version": "authorship/3.0.0",

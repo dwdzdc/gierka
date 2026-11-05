@@ -1,0 +1,25 @@
+progress.md
+  s_193f7b62e89c5b::t_e7a2b3f4c6fa0f 514-515,536
+game/game_state.gd
+  s_193f7b62e89c5b::t_c5a2208a3faeb2 40-42,184,346-360
+  s_193f7b62e89c5b::t_17f4112de3e9e8 73
+  s_193f7b62e89c5b::t_b26dce3ea7c11a 296
+tests/all_down_test.gd
+  s_193f7b62e89c5b::t_b26dce3ea7c11a 1-44
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "08ae5c989a4efae0915a1034c9b47b71804b480d",
+  "prompts": {},
+  "sessions": {
+    "s_193f7b62e89c5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1885908-d377-4020-a236-ee5d5f86acc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}

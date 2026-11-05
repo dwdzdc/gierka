@@ -1,0 +1,65 @@
+rooms/canteen.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 322,341
+rooms/corridor_x.tscn
+  s_193f7b62e89c5b::t_7948c0984318d9 213,232
+rooms/storage.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 260
+  s_193f7b62e89c5b::t_7948c0984318d9 298,336
+tools/gen_rooms.py
+  s_193f7b62e89c5b::t_68a3953294371d 20-22
+  s_193f7b62e89c5b::t_d55017e193a497 23-24,181-188,341
+  s_193f7b62e89c5b::t_7948c0984318d9 25
+rooms/atrium.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 238,257
+rooms/cells.tscn
+  s_193f7b62e89c5b::t_7948c0984318d9 284,303,322,341,360,379
+rooms/closet.tscn
+  s_193f7b62e89c5b::t_7948c0984318d9 140
+tests/camera_turn_test.gd
+  s_193f7b62e89c5b::t_90e914ae5e01b0 1-4,7-8,10-12,15-20,23-24,26-35,38-46,48-50,53-54,57-60,62-65
+  s_193f7b62e89c5b::t_2212fa3d95a1e3 5-6,14,21-22,36-37,47,51-52,55-56,61
+  s_193f7b62e89c5b::t_4b4314a28f3988 9,13
+  s_193f7b62e89c5b::t_8305c1c8ff31c4 25
+rooms/archive.tscn
+  s_193f7b62e89c5b::t_7948c0984318d9 232,251,289
+progress.md
+  s_193f7b62e89c5b::t_e7a2b3f4c6fa0f 515-516,540
+  ai_agent 505,507,522,525
+camera/fixed_camera.gd
+  s_193f7b62e89c5b::t_edd738e1c54074 6-8,18-19,61-75
+rooms/showers.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 224
+rooms/corridor_t.tscn
+  s_193f7b62e89c5b::t_7948c0984318d9 197
+rooms/junction.tscn
+  s_193f7b62e89c5b::t_7948c0984318d9 188
+rooms/library.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 379,398
+rooms/servers.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 209,228
+  s_193f7b62e89c5b::t_7948c0984318d9 247,266
+rooms/boiler.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 247,266
+rooms/chapel.tscn
+  s_193f7b62e89c5b::t_68a3953294371d 294,313
+tests/camera_turn_test.gd.uid
+  s_193f7b62e89c5b::t_90e914ae5e01b0 1
+README.md
+  ai_agent 129
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "2af65c4c8a2aeb7d92c39271a30445be328fc971",
+  "prompts": {},
+  "sessions": {
+    "s_193f7b62e89c5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1885908-d377-4020-a236-ee5d5f86acc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}

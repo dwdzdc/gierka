@@ -1,0 +1,23 @@
+progress.md
+  s_193f7b62e89c5b::t_e7a2b3f4c6fa0f 514-515,535
+camera/camera_director.gd
+  s_193f7b62e89c5b::t_cf26bb65e45a18 60-69
+tests/spectate_test.gd
+  s_193f7b62e89c5b::t_0e1e4df566cc0c 1-49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "64bec5683532d6da661f562c3ffcacfed63dbf7d",
+  "prompts": {},
+  "sessions": {
+    "s_193f7b62e89c5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1885908-d377-4020-a236-ee5d5f86acc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
