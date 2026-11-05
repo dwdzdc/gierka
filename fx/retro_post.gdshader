@@ -6,7 +6,7 @@ uniform sampler2D screen_texture : hint_screen_texture, filter_nearest;
 uniform float color_levels = 20.0;
 uniform float dither_strength = 1.0;
 uniform float vignette = 0.45;
-// 0..1: potwór blisko w kadrze (fx/monster_glitch.gd). Rwanie pasów, rozjazd RGB, bloki.
+// 0..1: potwór blisko w kadrze (fx/monster_glitch.gd). Drżenie obrazu, rwanie pasów, rozjazd RGB, śnieg.
 uniform float glitch = 0.0;
 // Tłumik efektu: ma być poszlaką („coś tu jest”), a nie utrudnieniem w ucieczce.
 // Cała siła zakłócenia mnoży się przez to jedno pokrętło (1.0 = wersja sprzed 1.11).
@@ -23,15 +23,19 @@ const float BAYER[16] = float[16](
 const float GLITCH_MIN = 0.001;         // poniżej tego efekt wyłączony
 const float GLITCH_TICK_HZ = 14.0;      // skoki kilkanaście razy na sekundę
 const float GLITCH_BANDS = 24.0;        // pasy poziome
-const float GLITCH_BAND_CHANCE = 0.6;   // szansa, że dany pas się przesunie
-const float GLITCH_BAND_SHIFT = 0.12;   // maksymalne przesunięcie pasa (UV)
-const vec2 GLITCH_BLOCKS = vec2(16.0, 9.0);  // siatka bloków szumu
-const float GLITCH_NOISE_CHANCE = 0.02;
-const float GLITCH_RGB_SPLIT = 0.006;   // rozjazd kanałów RGB
+const float GLITCH_BAND_CHANCE = 0.5;   // szansa, że dany pas się przesunie
+const float GLITCH_BAND_SHIFT = 0.08;   // maksymalne przesunięcie pasa (UV)
+const float GLITCH_RGB_SPLIT = 0.005;   // rozjazd kanałów RGB
+const float GLITCH_JITTER_PX = 6.0;     // drżenie całego obrazu: do ±3 px przy pełnej sile
+const float GLITCH_SNOW_GRAIN = 2.0;    // ziarno śniegu w pikselach
+const float GLITCH_SNOW = 0.45;         // ile śniegu przy pełnej sile
+const float GLITCH_SNOW_MAX = 0.7;
+const float GLITCH_ROLL = 0.25;         // dodatkowy śnieg w przewijającym się pasie
+const float GLITCH_ROLL_WIDTH = 0.03;   // szerokość pasa (UV)
+const float GLITCH_ROLL_SPEED = 0.35;   // przesuw pasa na sekundę (UV)
 const float GLITCH_EDGE_START = 0.18;   // środek kadru: mało efektu...
 const float GLITCH_EDGE_END = 0.62;     // ...krawędź: pełna siła
 const float GLITCH_CENTER_MIN = 0.15;   // ile siły zostaje w środku
-const float GLITCH_NOISE_BRIGHT = 0.35; // jasność bloków szumu
 // Vignette, dithering i hash.
 const float VIGNETTE_POWER = 2.0;
 const float DITHER_GRID = 4.0;
@@ -50,25 +54,30 @@ void fragment() {
 	vec3 c;
 	if (glitch > GLITCH_MIN) {
 		// Zmienia się skokowo kilkanaście razy na sekundę, nie płynnie: wygląda jak zakłócenie.
+		float tick = floor(TIME * GLITCH_TICK_HZ);
+		// Drżenie całego obrazu o 1–3 px (w shaderze, nie ruchem kamery): prawdziwy wstrząs
+		// kamery zostaje sygnałem trafienia, więc bliski potwór nie może go udawać. Liczone
+		// bez osłabienia środka: cały obraz musi przesunąć się o tyle samo, inaczej się wykrzywia.
+		vec2 px = 1.0 / vec2(textureSize(screen_texture, 0));
+		uv += (vec2(hash(vec2(tick, 1.7)), hash(vec2(tick, 4.3))) - 0.5) * px * GLITCH_JITTER_PX * glitch * glitch_strength;
 		float g = glitch * glitch_strength;
 		// Środek kadru zostaje czytelny (tam biegniesz i patrzysz na potwora); przeszkadza
 		// tylko brzeg ekranu. Bez tego efekt utrudniał ucieczkę, a to ma być poszlaka.
 		float edge = smoothstep(GLITCH_EDGE_START, GLITCH_EDGE_END, length(SCREEN_UV - vec2(0.5)));
 		g *= mix(GLITCH_CENTER_MIN, 1.0, edge);
-		float tick = floor(TIME * GLITCH_TICK_HZ);
 		float band = floor(uv.y * GLITCH_BANDS);
 		if (hash(vec2(band, tick)) < g * GLITCH_BAND_CHANCE) {
 			uv.x += (hash(vec2(tick, band)) - 0.5) * GLITCH_BAND_SHIFT * g;
 		}
-		vec2 block = floor(uv * GLITCH_BLOCKS);
-		bool noisy = hash(block + tick) < g * g * GLITCH_NOISE_CHANCE;
 		float split = GLITCH_RGB_SPLIT * g;
 		c.r = texture(screen_texture, uv + vec2(split, 0.0)).r;
 		c.g = texture(screen_texture, uv).g;
 		c.b = texture(screen_texture, uv - vec2(split, 0.0)).b;
-		if (noisy) {
-			c = vec3(hash(FRAGCOORD.xy + tick)) * GLITCH_NOISE_BRIGHT;
-		}
+		// Śnieg jak w starym telewizorze zamiast bloków szumu: drobne ziarno na całym obrazie,
+		// gęstsze im bliżej potwór, plus jasny pas przewijający się w dół.
+		float snow = hash(floor(FRAGCOORD.xy / GLITCH_SNOW_GRAIN) + vec2(tick * 7.1, tick * 3.3));
+		float roll = smoothstep(GLITCH_ROLL_WIDTH, 0.0, abs(fract(SCREEN_UV.y - TIME * GLITCH_ROLL_SPEED) - 0.5));
+		c = mix(c, vec3(snow), clamp(g * GLITCH_SNOW + roll * g * GLITCH_ROLL, 0.0, GLITCH_SNOW_MAX));
 	} else {
 		c = texture(screen_texture, uv).rgb;
 	}
