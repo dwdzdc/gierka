@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://rooms/room.gd" id="1"]
 [ext_resource type="Script" path="res://camera/camera_zone.gd" id="2"]
@@ -17,11 +17,8 @@
 [ext_resource type="Material" path="res://rooms/materials/tile.tres" id="15"]
 [ext_resource type="Material" path="res://rooms/materials/cloth.tres" id="16"]
 
-[sub_resource type="BoxShape3D" id="zone_WestHalf"]
-size = Vector3(3.1, 4, 3.6)
-
-[sub_resource type="BoxShape3D" id="zone_EastHalf"]
-size = Vector3(3.1, 4, 3.6)
+[sub_resource type="BoxShape3D" id="zone_All"]
+size = Vector3(5.6, 4, 3.6)
 
 [sub_resource type="BoxMesh" id="lamp_mesh"]
 size = Vector3(0.7, 0.08, 0.35)
@@ -103,43 +100,24 @@ transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3, 0, 0)
 
 [node name="CameraZones" type="Node3D" parent="."]
 
-[node name="WestHalf" type="Area3D" parent="CameraZones"]
+[node name="All" type="Area3D" parent="CameraZones"]
 collision_layer = 0
 collision_mask = 2
 monitorable = false
 script = ExtResource("2")
 camera_priority = 0
 
-[node name="Shape" type="CollisionShape3D" parent="CameraZones/WestHalf"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.25, 2, 0)
-shape = SubResource("zone_WestHalf")
+[node name="Shape" type="CollisionShape3D" parent="CameraZones/All"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("zone_All")
 
-[node name="Camera" type="Camera3D" parent="CameraZones/WestHalf"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4, 3.6, 1.2)
+[node name="Camera" type="Camera3D" parent="CameraZones/All"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.7, 1.6)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(-1.8, 0.8, 0)
-follow = 0.3
-
-[node name="EastHalf" type="Area3D" parent="CameraZones"]
-collision_layer = 0
-collision_mask = 2
-monitorable = false
-script = ExtResource("2")
-camera_priority = 0
-
-[node name="Shape" type="CollisionShape3D" parent="CameraZones/EastHalf"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.25, 2, 0)
-shape = SubResource("zone_EastHalf")
-
-[node name="Camera" type="Camera3D" parent="CameraZones/EastHalf"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.4, 3.6, -1.2)
-fov = 68
-near = 0.05
-script = ExtResource("3")
-look_target = Vector3(1.8, 0.8, 0)
-follow = 0.3
+look_target = Vector3(0, 0, -0.6)
+follow = 0.2
 
 [node name="Lights" type="Node3D" parent="."]
 

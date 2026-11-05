@@ -271,12 +271,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.695, 3, -6.615)
 shape = SubResource("zone_NorthAisle")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/NorthAisle"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.408, 5.4, -9.408)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.41, 5.4, -9.408)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(-2.94, 0.6, -6.86)
-follow = 0.33
+look_target = Vector3(6.86, 0.6, -6.86)
+follow = 0.34
 
 [node name="MiddleAisle" type="Area3D" parent="CameraZones"]
 collision_layer = 0
@@ -309,11 +309,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.695, 3, 6.615)
 shape = SubResource("zone_SouthAisle")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/SouthAisle"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.408, 5.4, 9.408)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.41, 5.4, 6.37)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(-2.94, 0.6, 6.86)
+look_target = Vector3(6.86, 0.6, 8.33)
 follow = 0
 
 [node name="EastEnd" type="Area3D" parent="CameraZones"]

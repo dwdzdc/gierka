@@ -186,6 +186,51 @@ def zone_follow(follow, cam_pos, rect):
     return round(min(follow * FOLLOW_SCALE, 0.7, max(follow, FOLLOW_PER_M * dist)), 2)
 
 
+CUT_SIDE = 0.2  # jak w tests/camera_flip_test.gd
+CUT_ALONG = 0.3
+
+
+def cut_flips(zone_a, zone_b):
+    """60: czy cięcie między stykającymi się strefami odwraca kierunek ruchu na ekranie (zasada 180°).
+    Ruch w poprzek wspólnej granicy; liczy się lewo/prawo, a gdy obie kamery patrzą
+    wzdłuż ruchu, głębia. Ta sama reguła co w tests/camera_flip_test.gd (tu szybko, na projekcie)."""
+    (ax0, ax1, az0, az1), (bx0, bx1, bz0, bz1) = zone_a[1], zone_b[1]
+    if ax0 > bx1 + 0.3 or bx0 > ax1 + 0.3 or az0 > bz1 + 0.3 or bz0 > az1 + 0.3:
+        return False
+    ya, yb = (zone_a[6] if len(zone_a) > 6 else None), (zone_b[6] if len(zone_b) > 6 else None)
+    if ya and yb and (ya[0] >= yb[1] or yb[0] >= ya[1]):
+        return False
+    # Kierunek przejścia: w poprzek najwęższego nakładania (dla równoległych alejek to ruch
+    # w bok, nie wzdłuż, jak dałby wektor między środkami).
+    ox, oz = min(ax1, bx1) - max(ax0, bx0), min(az1, bz1) - max(az0, bz0)
+    dx, dz = (bx0 + bx1 - ax0 - ax1) / 2, (bz0 + bz1 - az0 - az1) / 2
+    mx, mz = (math.copysign(1, dx), 0) if ox < oz else (0, math.copysign(1, dz))
+    if (dx if ox < oz else dz) == 0:
+        return False
+
+    def screen(zone):
+        fx, fz = zone[3][0] - zone[2][0], zone[3][2] - zone[2][2]
+        fl = math.hypot(fx, fz)
+        fx, fz = fx / fl, fz / fl
+        return mx * -fz + mz * fx, mx * fx + mz * fz  # (w prawo, w głąb)
+
+    (ha, da), (hb, db) = screen(zone_a), screen(zone_b)
+    if ha * hb < 0 and min(abs(ha), abs(hb)) > CUT_SIDE:
+        return True
+    return max(abs(ha), abs(hb)) < CUT_ALONG and da * db < 0
+
+
+# Znane wyjątki (boczne alejki-zaułki), opis w tests/camera_flip_test.gd (KNOWN).
+CUT_KNOWN = {("Archive", "South", "EastAisle"), ("Servers", "North", "WestAisle"), ("Servers", "South", "EastAisle")}
+
+
+def check_cuts(name, zones):
+    for i, a in enumerate(zones):
+        for b in zones[i + 1:]:
+            if (name, a[0], b[0]) not in CUT_KNOWN and cut_flips(a, b):
+                print(f"UWAGA {name}: cięcie {a[0]}↔{b[0]} odwraca kierunek ruchu (60)")
+
+
 def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=(), outer=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
@@ -221,6 +266,7 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         return [(p[0], (p[1][0] + dx, p[1][1], p[1][2] + dz)) + tuple(p[2:]) for p in sd[1]]
     solids = [s for sd in solids for s in place_solid(sd)]
     zones = [(z[0], (z[1][0] * kx, z[1][1] * kx, z[1][2] * kz, z[1][3] * kz), at(z[2]), at(z[3])) + tuple(z[4:]) for z in zones]
+    check_cuts(name, zones)
     lights = [(at(l[0]),) + tuple(l[1:]) for l in lights]
     loot = [(m[0], at(m[1])) + tuple(m[2:]) for m in loot]
     ambient = [(m[0], at(m[1])) + tuple(m[2:]) for m in ambient]
@@ -484,8 +530,10 @@ build(
         optional(0.6, ("box", (0, 3.3, -1.8), (16, 0.12, 0.12), "rust")),
     ],
     zones=[
-        ("WestHalf", (-8, 1, -2, 2), (7.6, 3.6, 1.4), (-5, 0.8, 0), 0.35, 0),
-        ("EastHalf", (-1, 8, -2, 2), (-7.6, 3.6, -1.4), (5, 0.8, 0), 0.35, 0),
+        # 60: obie kamery pod południową ścianą, każda w drugiej połowie, patrzy ukosem w swoją
+        # (zasada 180°): idąc na wschód, gracz na ekranie idzie w prawo przed cięciem i po nim.
+        ("WestHalf", (-8, 1, -2, 2), (3.0, 3.6, 1.4), (-4.5, 0.8, -1.4), 0.35, 0),
+        ("EastHalf", (-1, 8, -2, 2), (-3.0, 3.6, 1.4), (4.5, 0.8, -1.4), 0.35, 0),
     ],
     lights=[((-4, 3.6, 0), COLD, 0.8, 7.0, False), ((4, 3.6, 0), COLD, 0.8, 7.0, True)],
     ambient=[("Ambient0", (5, 3.4, 0))],
@@ -523,9 +571,11 @@ build(
     ],
     zones=[
         ("Entry", (-10, -2.5, -10, 10), (2, 5.6, -9.6), (-7, 0.6, 2), 0.25, 0),
-        ("NorthAisle", (-4.5, 10, -10, -3.5), (9.6, 5.4, -9.6), (-3, 0.6, -7), 0.2, 0),
+        # 60: wszystkie alejki widziane z zachodu na wschód, jak środkowa: przejście między
+        # alejkami nie odwraca ruchu. Wschodnie końce i tak pokazuje EastEnd.
+        ("NorthAisle", (-4.5, 10, -10, -3.5), (-4.5, 5.4, -9.6), (7, 0.6, -7), 0.2, 0),
         ("MiddleAisle", (-4.5, 10, -4, 4), (-9.4, 5.4, 0.5), (7, 0.6, 0), 0.3, 0),
-        ("SouthAisle", (-4.5, 10, 3.5, 10), (9.6, 5.4, 9.6), (-3, 0.6, 7), 0.0, 0),
+        ("SouthAisle", (-4.5, 10, 3.5, 10), (-4.5, 5.4, 6.5), (7, 0.6, 8.5), 0.0, 0),
         # Pas za regałami przy wschodnich drzwiach: widok znad środka magazynu.
         ("EastEnd", (6.5, 10, -10, 10), (0, 5.7, 0), (9, 0.6, 0), 0.25, 1),
     ],
@@ -604,8 +654,9 @@ build(
         optional(0.6, ("box", (-6.8, 0.4, 1.4), (0.8, 0.8, 0.8), "wood")),
     ],
     zones=[
-        ("Lower", (-8, 1, -2, 2), (7.6, S + 3.4, 1.4), (-4, 0.8, 0), 0.4, 0),
-        ("Upper", (-1, 8, -2, 2), (-7.6, S + 2.6, -1.4), (6, S + 0.6, 0), 0.4, 0),
+        # 60: kamery po jednej stronie biegu (jak w Corridor), żeby cięcie w połowie nie odwracało ruchu.
+        ("Lower", (-8, 1, -2, 2), (3.0, S + 3.4, 1.4), (-5, 0.8, -1.4), 0.4, 0),
+        ("Upper", (-1, 8, -2, 2), (-3.0, S + 2.6, 1.4), (6, S + 0.6, -1.4), 0.4, 0),
     ],
     lights=[((-6, 3.8, 0), COLD, 0.7, 8.0, False), ((6, S + 3.6, 0), WARM, 0.6, 7.0, True)],
     ambient=[("Ambient0", (0, S, 0))],
@@ -645,15 +696,21 @@ def link(length):
     li = length - 2 * T
     half = li / 2
     lights = [((0, 3.6, 0), COLD, 0.7, max(6.0, li * 0.6), False)] if length >= 6 else []
-    follow = 0.3 if length >= 6 else 0.12  # w łączniku 4 m kamera stoi tuż nad graczem
+    if length <= 6:
+        # Krótki łącznik: jedna kamera z boku (ruch w poprzek ekranu), bez cięcia w środku.
+        zones = [("All", (-half, half, -1.8, 1.8), (0, 3.7, 1.6), (0, 0.0, -0.6), 0.2, 0)]
+    else:
+        # 60: zasada 180° jak w Corridor: obie kamery pod jedną ścianą, każda w drugiej połowie.
+        back, aim = min(2.5, half / 2), min(half - 1.2, 4.5)
+        zones = [
+            ("WestHalf", (-half, 0.3, -1.8, 1.8), (back, 3.6, 1.3), (-aim, 0.8, -1.3), 0.3, 0),
+            ("EastHalf", (-0.3, half, -1.8, 1.8), (-back, 3.6, 1.3), (aim, 0.8, -1.3), 0.3, 0),
+        ]
     build(
         f"Link{length}", li, 3.6, 4.0,
         doors=[("West", "W", 0, 0), ("East", "E", 0, 0)],
         solids=[optional(0.5, ("box", (0, 3.6, -1.55), (li + 0.4, 0.2, 0.2), "metal"))],  # rura wzdłuż ściany
-        zones=[
-            ("WestHalf", (-half, 0.3, -1.8, 1.8), (half - 0.4, 3.6, 1.2), (-half + 1.0, 0.8, 0), follow, 0),
-            ("EastHalf", (-0.3, half, -1.8, 1.8), (-half + 0.4, 3.6, -1.2), (half - 1.0, 0.8, 0), follow, 0),
-        ],
+        zones=zones,
         lights=lights,
         vent=(0, 0),
     )
@@ -708,8 +765,8 @@ build(
         optional(0.6, ("cyl", (4.6, 0.6, 3.3), 0.4, 1.2, "rust")),
     ],
     zones=[
-        ("WestHalf", (-5.8, 0.2, 0.2, 3.8), (5.4, 3.6, 3.4), (-4.6, 0.8, 2), 0.3, 0),
-        ("EastHalf", (-0.2, 5.8, 0.2, 3.8), (-5.4, 3.6, 0.6), (4.6, 0.8, 2), 0.3, 0),
+        ("WestHalf", (-5.8, 0.2, 0.2, 3.8), (2.5, 3.6, 3.4), (-4.2, 0.8, 0.8), 0.3, 0),  # 60: jak Corridor
+        ("EastHalf", (-0.2, 5.8, 0.2, 3.8), (-2.5, 3.6, 3.4), (4.2, 0.8, 0.8), 0.3, 0),
         ("NorthArm", (-1.8, 1.8, -3.8, 0.2), (1.2, 3.6, 3.4), (0, 0.8, -3), 0.2, 1),
     ],
     lights=[((0, 3.6, 2), COLD, 0.8, 8.0, False)],
@@ -728,8 +785,8 @@ build(
         optional(0.6, ("box", (-4.6, 0.4, 1.3), (0.8, 0.8, 0.7), "wood")),
     ],
     zones=[
-        ("West", (-5.8, 0, -1.8, 1.8), (5.4, 3.6, 1.2), (-4.6, 0.8, 0), 0.3, 0),
-        ("East", (0, 5.8, -1.8, 1.8), (-5.4, 3.6, -1.2), (4.6, 0.8, 0), 0.3, 0),
+        ("West", (-5.8, 0, -1.8, 1.8), (3.5, 3.6, 1.4), (-4.0, 0.8, -1.4), 0.3, 0),  # 60: jak Corridor
+        ("East", (0, 5.8, -1.8, 1.8), (-3.5, 3.6, 1.4), (4.0, 0.8, -1.4), 0.3, 0),
         ("North", (-1.8, 1.8, -5.8, -1.8), (1.2, 3.6, 5.4), (0, 0.8, -4.6), 0.3, 1),
         ("South", (-1.8, 1.8, 1.8, 5.8), (-1.2, 3.6, -5.4), (0, 0.8, 4.6), 0.3, 1),
     ],
@@ -765,11 +822,13 @@ build(
         optional(0.6, ("box", (-6.6, 0.15, 3.6), (0.9, 0.3, 1.6), "wood")),  # zbutwiała słoma/sienik
     ],
     zones=[
-        ("WestHalf", (-7.8, 0.4, -1.8, 1.8), (7.4, 3.5, 1.2), (-5, 0.7, 0), 0.3, 0),
-        ("EastHalf", (-0.4, 7.8, -1.8, 1.8), (-7.4, 3.5, -1.2), (5, 0.7, 0), 0.3, 0),
-        # Każda cela: kamera po drugiej stronie korytarza, patrzy przez kratę do środka.
+        # 60: zasada 180° jak w Corridor.
+        ("WestHalf", (-7.8, 0.4, -1.8, 1.8), (2.5, 3.5, 1.3), (-4.5, 0.7, -1.3), 0.3, 0),
+        ("EastHalf", (-0.4, 7.8, -1.8, 1.8), (-2.5, 3.5, 1.3), (4.5, 0.7, -1.3), 0.3, 0),
+        # Każda cela: kamera po drugiej stronie korytarza, patrzy przez kratę do środka. Skrajne
+        # cele lekko ukosem od środka korytarza, jak kamera jego połowy (60).
         *[(f"Cell{k}{'N' if side < 0 else 'S'}", (CELL_X[k], CELL_X[k + 1], -5.8, -1.8) if side < 0 else (CELL_X[k], CELL_X[k + 1], 1.8, 5.8),
-           ((CELL_X[k] + CELL_X[k + 1]) / 2, 3.3, -side * 1.5), ((CELL_X[k] + CELL_X[k + 1]) / 2, 0.4, side * 4.2), 0.2, 1)
+           ((CELL_X[k] + CELL_X[k + 1]) / 2 + (1 - k), 3.3, -side * 1.5), ((CELL_X[k] + CELL_X[k + 1]) / 2 - (1 - k) * 0.5, 0.4, side * 4.2), 0.2, 1)
           for k in range(3) for side in (-1, 1)],
     ],
     lights=[((-4, 3.6, 0), WARM, 0.6, 7.0, True), ((4, 3.6, 0), WARM, 0.5, 7.0, False)],
@@ -797,11 +856,13 @@ build(
         ("box", (0, 7.6, 8), (19.6, 0.3, 0.4), "wood"),
         optional(0.6, ("cyl", (7.8, 0.6, -10.2), 0.4, 1.2, "rust")),
     ],
-    # Połowa holu na ujęcie, kamera wysoko nad przeciwległą ścianą (fontanna w środku zasłania
+    # Połowa holu na ujęcie, kamera wysoko w przeciwległym rogu (fontanna w środku zasłania
     # tylko wąski pas, a ten widać z drugiej kamery).
     zones=[
-        ("North", (-9.8, 9.8, -11.8, 1.0), (0, 6.5, 11.2), (0, 0.5, -6), 0.25, 0),
-        ("South", (-9.8, 9.8, 0.0, 11.8), (0, 6.5, -11.2), (0, 0.5, 6), 0.25, 0),
+        # 60: połowy zachodnia i wschodnia, obie kamery pod południową ścianą, każda w drugiej
+        # połowie, patrzy ukosem w swoją (zasada 180°, jak Boiler): przejście W↔E nie odwraca ruchu.
+        ("West", (-9.8, 0.5, -11.8, 11.8), (5.0, 6.5, 11.2), (-4, 0.5, -3), 0.25, 0),
+        ("East", (-0.5, 9.8, -11.8, 11.8), (-5.0, 6.5, 11.2), (4, 0.5, -3), 0.25, 0),
     ],
     lights=[((0, 7.0, 2), WARM, 1.2, 16.0, False), ((-6, 6.5, -8), WARM, 0.7, 10.0, True), ((6, 6.5, 8), WARM, 0.7, 10.0, False)],
     loot=[("Loot0", (0, 0.75, 4.2)), ("Loot1", (8.6, 0.55, 5))],
@@ -862,9 +923,10 @@ build(
     ],
     zones=[
         ("GroundWest", (-9.8, 0.5, -9.8, 9.8), (6.0, 3.0, 6.0), (-5, 0.5, -2), 0.25, 0, (0, 3.4)),
-        ("GroundEast", (-0.5, 9.8, -9.8, 9.8), (-6.0, 3.0, -6.0), (5, 0.5, 2), 0.25, 0, (0, 3.4)),
-        ("UpperNorth", (-9.8, 9.8, -9.8, 0.5), (0, 7.4, 6.0), (0, MEZZ, -8), 0.25, 1, (3.4, LH)),
-        ("UpperSouth", (-9.8, 9.8, -0.5, 9.8), (0, 7.4, -6.0), (0, MEZZ, 8), 0.25, 1, (3.4, LH)),
+        # 60: kamery parami po jednej stronie linii ruchu (zasada 180°).
+        ("GroundEast", (-0.5, 9.8, -9.8, 9.8), (-6.0, 3.0, 6.0), (5, 0.5, -2), 0.25, 0, (0, 3.4)),
+        ("UpperNorth", (-9.8, 9.8, -9.8, 0.5), (6.0, 7.4, 6.0), (-3, MEZZ, -8), 0.25, 1, (3.4, LH)),
+        ("UpperSouth", (-9.8, 9.8, -0.5, 9.8), (6.0, 7.4, -6.0), (-3, MEZZ, 8), 0.25, 1, (3.4, LH)),
     ],
     lights=[((0, LH - 1.0, 0), COLD, 1.6, 15.0, False), ((-8, MEZZ + 2.6, 0), WARM, 0.6, 8.0, True),
             ((8, MEZZ + 2.6, 0), WARM, 0.6, 8.0, False), ((0, 3.0, -8.5), WARM, 0.5, 7.0, False)],
@@ -944,7 +1006,7 @@ build(
         ("box", (-5.3, 0.6, 8.6), (0.8, 1.2, 1.6), "wood"),        # skrzynia na śpiewniki
     ],
     zones=[
-        ("Altar", (-5.8, 5.8, -9.8, -3.0), (3.5, 6.0, 9.2), (0, 0.5, -7), 0.2, 0),
+        ("Altar", (-5.8, 5.8, -9.8, -3.0), (-3.5, 6.0, 9.2), (0, 0.5, -7), 0.2, 0),  # 60: po stronie kamery nawy
         ("Nave", (-5.8, 5.8, -3.5, 9.8), (-5.0, 6.0, -8.8), (1.5, 0.5, 4), 0.25, 0),
     ],
     lights=[((0, 6.6, -2), WARM, 1.0, 12.0, False), ((0, 6.6, 5), WARM, 0.8, 10.0, True), ((0, 6.6, -8.5), COLD, 0.7, 8.0, False)],
@@ -1013,9 +1075,11 @@ build(
     ],
     zones=[
         ("North", (-7.8, 7.8, -5.8, 0.3), (-2.0, 3.7, 5.4), (2, 0, -4), 0.2, 0),
-        ("South", (-7.8, 7.8, -0.3, 5.8), (2.0, 3.7, -5.4), (-2, 0, 4), 0.2, 0),
+        ("South", (-7.8, 7.8, -0.3, 5.8), (-2.0, 3.7, -5.4), (2, 0, 4), 0.2, 0),  # 60: po stronie kamery North
         # Pas przy zachodnich drzwiach, za pierwszym rzędem szaf: z alejek szafy zasłaniają drzwi.
-        ("Entry", (-7.8, -3.75, -5.8, 5.8), (-4.0, 3.7, 5.4), (-6, 0.5, -3), 0.25, 1),
+        # 60: kamera nad pierwszym rzędem patrzy prosto na zachód (na drzwi): wejście do pasa
+        # z alejek to ruch prosto w głąb, więc nie odwraca kierunku ani z North, ani z South.
+        ("Entry", (-7.8, -3.75, -5.8, 5.8), (-3.4, 3.7, 0), (-7.8, 0.5, 0), 0.25, 1),
         ("EastAisle", (6.15, 7.8, -5.8, 5.8), (7.0, 3.7, 5.4), (7.0, 0.5, -4), 0.2, 1),
     ],
     lights=[((-1.5, 3.7, -2), COLD, 0.6, 7.0, True), ((2.5, 3.7, 2.5), COLD, 0.6, 7.0, False)],
@@ -1043,7 +1107,7 @@ build(
         ("box", (-5.45, 0.85, 3.5), (0.6, 0.15, 1.6), "tile"),
     ],
     zones=[
-        ("Room", (-5.8, 3.0, -5.8, 5.8), (5.2, 3.3, 5.2), (-2, 0.5, -2), 0.25, 0),
+        ("Room", (-5.8, 3.0, -5.8, 5.8), (5.2, 3.3, 0.5), (-4, 0.5, -0.5), 0.25, 0),  # 60: na wprost na zachód, żeby wejście do kabin nie odwracało ruchu
         ("Stalls", (2.8, 5.8, -5.8, 5.8), (-5.2, 3.3, -5.2), (4.5, 0.5, 1.5), 0.2, 1),
     ],
     lights=[((0, 3.3, -1), (0.8, 0.95, 1.0), 0.7, 8.0, True), ((4.5, 3.3, 2), (0.8, 0.95, 1.0), 0.4, 5.0, False)],
@@ -1075,8 +1139,9 @@ build(
         optional(0.6, ("box", (0, 3.35, -7.0), (11.6, 0.15, 0.4), "metal")),   # korytko pod sufitem
     ],
     zones=[
-        ("North", (-2.2, 2.2, -7.8, 0.3), (-1.5, 3.3, 7.4), (0, 0.5, -5), 0.2, 0),
-        ("South", (-2.2, 2.2, -0.3, 7.8), (1.5, 3.3, -7.4), (0, 0.5, 5), 0.2, 0),
+        # 60: obie kamery alejki po zachodniej stronie, patrzą ukosem (zasada 180°).
+        ("North", (-2.2, 2.2, -7.8, 0.3), (-2.0, 3.3, 7.4), (2.0, 0.5, -3), 0.2, 0),
+        ("South", (-2.2, 2.2, -0.3, 7.8), (-2.0, 3.3, -7.4), (2.0, 0.5, 3), 0.2, 0),
         ("WestAisle", (-5.8, -2.2, -7.8, 7.8), (-4.3, 3.3, -7.4), (-4.3, 0.5, 4), 0.2, 1),
         ("EastAisle", (2.2, 5.8, -7.8, 7.8), (4.3, 3.3, 7.4), (4.3, 0.5, -4), 0.2, 1),
     ],

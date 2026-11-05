@@ -390,11 +390,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.65, 1.7, 0)
 shape = SubResource("zone_GroundEast")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/GroundEast"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 3, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 3, 6)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(5, 0.5, 2)
+look_target = Vector3(5, 0.5, -2)
 follow = 0.5
 
 [node name="UpperNorth" type="Area3D" parent="CameraZones"]
@@ -409,12 +409,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.7, -4.65)
 shape = SubResource("zone_UpperNorth")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/UpperNorth"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.4, 6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 7.4, 6)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(0, 3.6, -8)
-follow = 0.48
+look_target = Vector3(-3, 3.6, -8)
+follow = 0.5
 
 [node name="UpperSouth" type="Area3D" parent="CameraZones"]
 collision_layer = 0
@@ -428,12 +428,12 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.7, 4.65)
 shape = SubResource("zone_UpperSouth")
 
 [node name="Camera" type="Camera3D" parent="CameraZones/UpperSouth"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 7.4, -6)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 7.4, -6)
 fov = 68
 near = 0.05
 script = ExtResource("3")
-look_target = Vector3(0, 3.6, 8)
-follow = 0.48
+look_target = Vector3(-3, 3.6, 8)
+follow = 0.5
 
 [node name="Lights" type="Node3D" parent="."]
 
