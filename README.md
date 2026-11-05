@@ -85,7 +85,7 @@ godot --path . -- --join=192.168.1.23        # albo adres:port
 
 ## Sterowanie
 
-WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · E tuż po przebiegnięciu przez drzwi: zatrzaśnij je za sobą · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · Spacja po śmierci: następny kolega · F1: debug · F2: raport błędu (opis + stan gry do schowka) · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
+WASD / strzałki: ruch (tank) · Shift: bieg · Q: obrót o 180° · F: latarka · Ctrl/C: kucanie · Spacja: skok · E (trzymaj): pomóż koledze / odbij porwanego / wyjdź windą / otwórz-zamknij drzwi (zakluczone: klucz) · E tuż po przebiegnięciu przez drzwi: zatrzaśnij je za sobą · stój przodem do zamkniętych drzwi: podgląd przez kratkę · H (trzymaj): bandaż · Tab (trzymaj): statystyki · M (trzymaj): mapa, postać stoi, W/S: piętro · Spacja po śmierci: następny kolega · F1: debug · F2: raport błędu (opis + stan gry do schowka) · R: następna runda (host) · ` (host, build deweloperski): menu testowe · Esc: wyjście
 
 ## Pokoje
 
@@ -128,4 +128,5 @@ godot --headless --path . -s tests/net_test.gd -- --host
 godot --headless --path . -s tests/net_test.gd -- --join=127.0.0.1
 godot --headless --path . -s tests/address_test.gd           # pole Dołącz: adres z opcjonalnym portem
 godot --headless --path . -s tests/last_address_test.gd      # pole Dołącz pamięta ostatni adres (user://settings.cfg)
+godot --headless --path . -s tests/explored_map_test.gd      # mapa pod M: tylko odwiedzone pokoje, winda po zobaczeniu, postać stoi
 ```

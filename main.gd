@@ -126,6 +126,8 @@ var room_count := 8
 ## Stały układ zamiast losowego (testy): [[ścieżka pokoju, przejście poprzedniego, przejście nowego], ...]
 var map_layout: Array = []
 var rooms: Array[Room] = []
+## Mapa-notatnik gracza pod M (65), lokalna.
+var explored_map := ExploredMap.new()
 var map_connections: Array[Dictionary] = []
 var map_loops := 0
 ## Z planu drzwi (host kładzie tyle kluczy, ile jest zakluczonych drzwi).
@@ -171,6 +173,8 @@ func _ready() -> void:
 	$HUD.visible = false
 	$Summary.visible = false
 	_build_bleed_vignette()
+	explored_map.main = self
+	add_child(explored_map)
 	listener.make_current()
 	status_label.text = Net.last_disconnect_reason
 	players.child_entered_tree.connect(func(_n: Node) -> void: _update_hud.call_deferred())
@@ -275,6 +279,7 @@ func _build_map(seed_value: int, count: int) -> void:
 	_visited_room = ""
 	room_count = count
 	camera_director.set_target(camera_director.target)  # zapomnij strefy starej mapy
+	explored_map.reset()
 	for child in room_parent.get_children():
 		child.free()
 	var generator := MapGenerator.new()

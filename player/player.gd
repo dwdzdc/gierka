@@ -239,7 +239,7 @@ func _tint_body() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_multiplayer_authority() or not is_up():
+	if not is_multiplayer_authority() or not is_up() or Input.is_action_pressed("map"):
 		return
 	if event.is_action_pressed("toggle_flashlight"):
 		flashlight.visible = not flashlight.visible and _battery() > 0
@@ -262,9 +262,11 @@ func _physics_process(delta: float) -> void:
 	_update_crouch()
 	var helping := _update_help(delta)
 	_update_peek(delta)
-	if Input.is_action_just_pressed("jump") and is_on_floor() and is_up() and not crouching and not helping:
+	# Mapa (65): gracz poświęca uwagę notatnikowi, postać stoi, a W/S przełączają piętra mapy.
+	var reading_map := Input.is_action_pressed("map")
+	if Input.is_action_just_pressed("jump") and is_on_floor() and is_up() and not crouching and not helping and not reading_map:
 		velocity.y = JUMP_VELOCITY
-	var desired := Vector3.ZERO if _quick_turning or helping or not is_up() else _tank_movement(delta)
+	var desired := Vector3.ZERO if _quick_turning or helping or reading_map or not is_up() else _tank_movement(delta)
 	_update_stamina(delta, desired)
 	velocity.x = move_toward(velocity.x, desired.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, desired.z, acceleration * delta)

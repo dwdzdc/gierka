@@ -19,7 +19,7 @@ Runda trwa, dopóki ktokolwiek jest na mapie: kończy się, gdy każdy gracz zgi
 2. Gracze rozchodzą się po kompleksie i zbierają monety: kupki na meblach oraz w kątach i pod ścianami. Wartość łupu jest losowa, niezależna od miejsca.
 3. W najdalszym pokoju budzi się pierwszy potwór (Łowca). Co etap (3 min + 15 s na pokój, czyli ok. 5 min przy 8 pokojach) dochodzi kolejny, maks. 4, a wszystkie mają ostrzejsze zmysły (+10% na etap).
 4. Ranni krwawią i zostawiają ślad, po którym idą koledzy i potwory. Powalonego można podnieść, porwanego odbić.
-5. Gdzieś na mapie jest winda: stalowe drzwi w zielonej futrynie, w losowym miejscu (blisko albo daleko, czasem za zakluczonymi drzwiami albo w ciemnym pokoju). Kto ją znajdzie, może od razu wyjść (trzymaj E); reszta drużyny nie wie, gdzie jest, dopóki ktoś im nie powie. Wyniesione monety są bezpieczne. Wydostany albo martwy gracz ogląda kamery kolegów.
+5. Gdzieś na mapie jest winda: stalowe drzwi w zielonej futrynie, w losowym miejscu (blisko albo daleko, czasem za zakluczonymi drzwiami albo w ciemnym pokoju). Kto ją znajdzie, może od razu wyjść (trzymaj E); reszta drużyny nie wie, gdzie jest, dopóki ktoś im nie powie. Każdy ma własną mapę (trzymaj M): rysują się na niej tylko pokoje, w których był, a winda dopiero, gdy ją zobaczył. Wyniesione monety są bezpieczne. Wydostany albo martwy gracz ogląda kamery kolegów.
 6. Gdy nikogo nie ma na mapie: ekran podsumowania z wynikiem rundy i sumą sesji. Host wciska R i startuje nowa runda na nowej mapie.
 
 ## Monety i punktacja
@@ -65,6 +65,7 @@ Każdy gracz ma własne, nieruchome ujęcia, przecinane według tego, gdzie stoi
 | E w szafce | wyjście z szafki |
 | H (trzymaj) | bandaż dla siebie |
 | Tab | statystyki (trzymaj): gracze, runda, sieć, sterowanie |
+| M | mapa (trzymaj): na środku ekranu; postać w tym czasie stoi, W/S przełączają piętra |
 | R | host: następna runda |
 | F1 | debug w panelu statystyk (ujęcie kamery, stany potworów); po śmierci Spacja przełącza oglądanego kolegę |
 | F2 | raport błędu: wpisz krótko, co się stało, Ctrl+Enter kopiuje do schowka opis + stan gry (seed, pokój, potwory, kamera); gra się nie pauzuje, tylko twoja postać stoi |
