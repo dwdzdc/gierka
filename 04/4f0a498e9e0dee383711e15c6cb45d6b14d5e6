@@ -1,0 +1,86 @@
+tests/explored_map_test.gd
+  s_193f7b62e89c5b::t_2f36c73defa81f 26-32,46-53
+rooms/link6.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 31-34
+rooms/boiler.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 40-43
+progress.md
+  s_193f7b62e89c5b::t_44b91adca62d2f 553,558
+rooms/junction.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 31-34
+rooms/corridor_l.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 31-34
+rooms/stairwell.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/cells.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 92-95
+rooms/link10.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/servers.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 40-43
+docs/spec.md
+  s_193f7b62e89c5b::t_44b91adca62d2f 22
+rooms/link16.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/room.gd
+  s_193f7b62e89c5b::t_773b2f46c51499 50-58
+rooms/storage.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 43-46
+rooms/corridor_t.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 37-40
+rooms/bend.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 31-34
+rooms/chapel.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/archive.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 40-43
+rooms/turn.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 31-34
+rooms/library.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 40-43
+rooms/atrium.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/link14.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/link12.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/closet.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 31-34
+rooms/hall.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/link4.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 27-30
+rooms/showers.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+game/explored_map.gd
+  s_193f7b62e89c5b::t_db488eef432a08 32-36,50-51,67,203,223-239,241-253,255,257-266,268,273-284,286-292
+  s_193f7b62e89c5b::t_7d1bf57da0dda1 240,254,256,267,269-272,285
+rooms/corridor_x.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 40-43
+rooms/corridor.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/ramp.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+rooms/link8.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+tools/gen_rooms.py
+  s_193f7b62e89c5b::t_73d47d6fe123eb 234-313,518,546-548
+rooms/canteen.tscn
+  s_193f7b62e89c5b::t_773b2f46c51499 34-37
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.4.10",
+  "base_commit_sha": "044f0a498e9e0dee383711e15c6cb45d6b14d5e6",
+  "prompts": {},
+  "sessions": {
+    "s_193f7b62e89c5b": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "d1885908-d377-4020-a236-ee5d5f86acc0",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Dawid Dziedzic <24682682+dwdzdc@users.noreply.github.com>"
+    }
+  }
+}
