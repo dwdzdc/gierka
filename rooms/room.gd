@@ -47,6 +47,15 @@ const EXIT_MARKER_DISTANCE := 0.8  # znacznik wyjścia przed drzwiami windy
 
 ## Bryła pokoju razem ze ścianami (lokalnie). Generator nie pozwala, żeby bryły się przecinały.
 @export var bounds := AABB()
+## Mapa-notatnik (67): obrysy w układzie pokoju (x, z), zapisuje je tools/gen_rooms.py.
+## Ściany od podłogi po sufit (wycinki korytarzy L/T/X, narożniki) – mapa odejmuje je od podłogi.
+@export var map_walls: Array[PackedVector2Array] = []
+## Meble, na które się nie wejdzie i pod którymi się nie przejdzie (regały, szafy, stoły).
+@export var map_props: Array[PackedVector2Array] = []
+## Rampy i biegi schodów.
+@export var map_ramps: Array[PackedVector2Array] = []
+## Pomosty nad głową (antresola biblioteki).
+@export var map_platforms: Array[PackedVector2Array] = []
 ## Zgaszony pokój (losuje generator). Potwory widzą w nim gracza bez latarki tylko z bliska.
 var dark := false
 

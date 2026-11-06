@@ -31,6 +31,10 @@ material = ExtResource("10")
 [node name="Showers" type="Node3D"]
 script = ExtResource("1")
 bounds = AABB(-6, -0.2, -6, 12, 4, 12)
+map_walls = Array[PackedVector2Array]([])
+map_props = Array[PackedVector2Array]([PackedVector2Array(-5.8, 5.745, 5.8, 5.745, 5.8, 5.795, -5.8, 5.795), PackedVector2Array(5.745, -5.8, 5.795, -5.8, 5.795, 5.8, 5.745, 5.8), PackedVector2Array(-5.8, -5.795, -1, -5.795, -1, -5.745, -5.8, -5.745), PackedVector2Array(1, -5.795, 5.8, -5.795, 5.8, -5.745, 1, -5.745), PackedVector2Array(-5.795, -5.8, -5.745, -5.8, -5.745, -1, -5.795, -1), PackedVector2Array(-5.795, 1, -5.745, 1, -5.745, 5.8, -5.795, 5.8), PackedVector2Array(4, -3.64, 5.8, -3.64, 5.8, -3.56, 4, -3.56), PackedVector2Array(4, -1.24, 5.8, -1.24, 5.8, -1.16, 4, -1.16), PackedVector2Array(4, 1.16, 5.8, 1.16, 5.8, 1.24, 4, 1.24), PackedVector2Array(4, 3.56, 5.8, 3.56, 5.8, 3.64, 4, 3.64), PackedVector2Array(-5.75, -4.3, -5.15, -4.3, -5.15, -2.7, -5.75, -2.7), PackedVector2Array(-5.75, 2.7, -5.15, 2.7, -5.15, 4.3, -5.75, 4.3)])
+map_ramps = Array[PackedVector2Array]([])
+map_platforms = Array[PackedVector2Array]([PackedVector2Array(5.45, -4.775, 5.75, -4.775, 5.75, -4.625, 5.45, -4.625), PackedVector2Array(5.45, -2.475, 5.75, -2.475, 5.75, -2.325, 5.45, -2.325), PackedVector2Array(5.45, -0.075, 5.75, -0.075, 5.75, 0.075, 5.45, 0.075), PackedVector2Array(5.45, 2.325, 5.75, 2.325, 5.75, 2.475, 5.45, 2.475), PackedVector2Array(5.45, 4.625, 5.75, 4.625, 5.75, 4.775, 5.45, 4.775)])
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true

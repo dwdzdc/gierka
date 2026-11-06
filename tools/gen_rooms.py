@@ -231,6 +231,86 @@ def check_cuts(name, zones):
                 print(f"UWAGA {name}: cięcie {a[0]}↔{b[0]} odwraca kierunek ruchu (60)")
 
 
+# --- Obrysy na mapę-notatnik (67) -------------------------------------------------------
+# Pokój zapisuje w sobie, co narysować na mapie (w swoim układzie, XZ): mapa przelicza to przez
+# transform pokoju, więc obrót i odbicie przy składaniu mapy działają same.
+MAP_PROP_MIN_TOP = 0.6     # m nad podłogą: niższe (krzesła, progi) tylko zaśmiecają mapę
+MAP_PROP_MAX_BOTTOM = 1.8  # m: wyżej wisi (rury, lampy), pod tym się przechodzi
+MAP_WALL_SLACK = 0.05      # m: bryła od podłogi po sufit z takim luzem to ściana, nie mebel
+MAP_PLATFORM_MAX = 0.4     # m: cieńsza pozioma płyta nad głową to antresola/pomost
+MAP_PLATFORM_CEILING = 0.5 # m pod sufitem: wyżej to już strop/belka, nie pomost
+MAP_CYL_SIDES = 8          # walec na mapie jako ośmiokąt
+BAR_THICKNESS = 0.1        # jak płyta kolizji kraty
+
+
+def bar_segments(a0, a1, gaps):
+    """Odcinki kraty między przerwami (przerwa = otwarte drzwiczki celi)."""
+    segments, cursor = [], a0
+    for g0, g1 in sorted(gaps):
+        if g0 > cursor:
+            segments.append((cursor, g0))
+        cursor = max(cursor, g1)
+    if cursor < a1:
+        segments.append((cursor, a1))
+    return segments
+
+
+def footprints(sd):
+    """Obrysy bryły w XZ (lista wielokątów). Krata daje osobny pasek na każdy odcinek."""
+    kind = sd[0]
+    if kind == "box":
+        (x, _, z), (w, _, d) = sd[1], sd[2]
+        a = math.radians(sd[4]) if len(sd) > 4 else 0.0
+        c, s = math.cos(a), math.sin(a)
+        # Jak tf(): wiersze bazy (c, 0, s), (0, 1, 0), (-s, 0, c).
+        return [[(x + c * lx + s * lz, z - s * lx + c * lz) for lx, lz in ((-w / 2, -d / 2), (w / 2, -d / 2), (w / 2, d / 2), (-w / 2, d / 2))]]
+    if kind == "cyl":
+        (x, _, z), r = sd[1], sd[2]
+        return [[(x + r * math.cos(2 * math.pi * k / MAP_CYL_SIDES), z + r * math.sin(2 * math.pi * k / MAP_CYL_SIDES)) for k in range(MAP_CYL_SIDES)]]
+    if kind == "vprism":
+        return [list(sd[1])]
+    if kind == "prism":
+        xs = [p[0] for p in sd[1]]
+        return [[(min(xs), sd[2]), (max(xs), sd[2]), (max(xs), sd[3]), (min(xs), sd[3])]]
+    if kind == "bars":
+        (x0, _, z0), (x1, _, z1) = sd[1], sd[2]
+        along_x = abs(x1 - x0) > abs(z1 - z0)
+        a0, a1 = (x0, x1) if along_x else (z0, z1)
+        b = BAR_THICKNESS / 2
+        return [[(s0, z0 - b), (s1, z0 - b), (s1, z0 + b), (s0, z0 + b)] if along_x else
+                [(x0 - b, s0), (x0 + b, s0), (x0 + b, s1), (x0 - b, s1)] for s0, s1 in bar_segments(a0, a1, sd[3])]
+    raise ValueError(kind)
+
+
+def map_shapes(solids, h):
+    """Dzieli bryły pokoju na ściany (od podłogi po sufit: wycinki w L/T/X, narożniki), meble,
+    rampy/schody i pomosty nad głową. Drobiazgi opcjonalne pomijamy: generator mapy może je usunąć,
+    a mapa nie wie, czy zostały."""
+    out = {"walls": [], "props": [], "ramps": [], "platforms": []}
+    for sd in solids:
+        if sd[0] == "optional":
+            continue
+        y0, y1 = solid_xz_bounds(sd)[4:]
+        level = math.floor((y0 + MAP_WALL_SLACK) / FLOOR_STEP) * FLOOR_STEP  # piętro, na którym stoi
+        if sd[0] == "prism":
+            kind = "ramps"
+        elif y0 <= MAP_WALL_SLACK and y1 >= h - MAP_WALL_SLACK:
+            kind = "walls"
+        elif y1 - y0 <= MAP_PLATFORM_MAX and y0 - level >= MAP_PROP_MAX_BOTTOM and y1 <= h - MAP_PLATFORM_CEILING:
+            kind = "platforms"
+        elif y1 - level >= MAP_PROP_MIN_TOP and y0 - level < MAP_PROP_MAX_BOTTOM:
+            kind = "props"
+        else:
+            continue
+        out[kind] += footprints(sd)
+    return out
+
+
+def map_export(polys):
+    inner = ", ".join(f"PackedVector2Array({v(*[c for pt in poly for c in pt])})" for poly in polys)
+    return f"Array[PackedVector2Array]([{inner}])"
+
+
 def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambient=(), spawns=(), exit_point=None, vent=None, lockers=(), outer=None):
     """doors: [(nazwa, strona N/S/E/W, offset wzdłuż ściany, y podłogi przejścia)]
     solids: [("box", pos, size, mat)], [("cyl", pos, promień, wysokość, mat)] (np. beczka)
@@ -435,15 +515,7 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
         height = y1 - y0
         nodes.append(f'[node name="{bname}" type="StaticBody3D" parent="."]\ncollision_layer = 8\ncollision_mask = 0\n')
         # Płyty kolizji między przerwami (przerwa = otwarte drzwiczki celi).
-        cuts = sorted(gaps)
-        segments, cursor = [], a0
-        for g0, g1 in cuts:
-            if g0 > cursor:
-                segments.append((cursor, g0))
-            cursor = max(cursor, g1)
-        if cursor < a1:
-            segments.append((cursor, a1))
-        for k, (s0, s1) in enumerate(segments):
+        for k, (s0, s1) in enumerate(bar_segments(a0, a1, gaps)):
             sid = f"{bname}_shape{k}"
             mid = (s0 + s1) / 2
             size = (s1 - s0, height, 0.1) if along_x else (0.1, height, s1 - s0)
@@ -471,7 +543,9 @@ def build(name, sx, sz, h, doors, solids=(), zones=(), lights=(), loot=(), ambie
     header = f"[gd_scene load_steps={len(EXT) + len(subs) + 1} format=3]\n\n"
     header += "\n".join(f'[ext_resource type="{t}" path="{p}" id="{i + 1}"]' for i, (t, p) in enumerate(EXT)) + "\n\n"
     body = "\n".join(subs) + "\n" if subs else ""
-    root = (f'[node name="{name}" type="Node3D"]\nscript = ExtResource("{EXT_ID["room"]}")\nbounds = {bounds}\n\n'
+    shapes = map_shapes(solids, h)
+    map_props = "".join(f"map_{k} = {map_export(polys)}\n" for k, polys in shapes.items())
+    root = (f'[node name="{name}" type="Node3D"]\nscript = ExtResource("{EXT_ID["room"]}")\nbounds = {bounds}\n{map_props}\n'
             '[node name="Geometry" type="CSGCombiner3D" parent="."]\nuse_collision = true\n\n')
     file_name = re.sub(r"(?<=[a-z0-9])([A-Z])", r"_\1", name).lower()  # CorridorL -> corridor_l
     (OUT / f"{file_name}.tscn").write_text(header + body + "\n" + root + "\n".join(nodes))

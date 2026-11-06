@@ -24,6 +24,10 @@ size = Vector3(3.6, 4, 3.6)
 [node name="Link4" type="Node3D"]
 script = ExtResource("1")
 bounds = AABB(-2, -0.2, -2, 4, 4.4, 4)
+map_walls = Array[PackedVector2Array]([])
+map_props = Array[PackedVector2Array]([])
+map_ramps = Array[PackedVector2Array]([])
+map_platforms = Array[PackedVector2Array]([])
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true

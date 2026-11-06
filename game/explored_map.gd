@@ -13,7 +13,6 @@ const BODY_POINT := 0.5  # m nad stopami: punkt ciała do sprawdzania, w którym
 const EXIT_SIGN_HEIGHT := 1.3  # m nad znacznikiem wyjścia: znak nad drzwiami windy
 const EXIT_SEE_RANGE := 25.0  # m: dalej winda w kadrze to plamka, nie „znalezienie”
 const WORLD_MASK := 1  # warstwa "world"
-const WALL := 0.2  # m: ściana pokoju, rysujemy wnętrze
 const MARGIN := 48.0  # px od brzegu panelu do mapy
 const TITLE_OFFSET := Vector2(16, 30)
 const TITLE_SIZE := 22
@@ -30,6 +29,11 @@ const COLOR_BACK := Color(0.05, 0.06, 0.07, 0.88)
 const COLOR_ROOM := Color(0.55, 0.58, 0.55, 0.35)
 const COLOR_HERE := Color(0.75, 0.78, 0.7, 0.55)
 const COLOR_EDGE := Color(0.85, 0.87, 0.8)
+const COLOR_PROP := Color(0.18, 0.2, 0.19, 0.95)  # meble ciemniejsze od podłogi: widać przejścia między nimi
+const COLOR_RAMP := Color(0.7, 0.62, 0.42, 0.5)
+const COLOR_PLATFORM := Color(0.85, 0.87, 0.8, 0.12)  # antresola półprzezroczysta: pod nią też jest podłoga
+const PROP_EDGE := 1.0  # px: obwódka mebla
+const PLATFORM_DASH := 6.0  # px: kreska obrysu antresoli
 const COLOR_DOOR := Color(0.95, 0.8, 0.45)
 const COLOR_EXIT := Color(0.3, 0.95, 0.4)
 const COLOR_PLAYER := Color(1.0, 0.35, 0.3)
@@ -43,6 +47,8 @@ var exit_seen := false
 var shown_floor := 0
 
 var _canvas := Control.new()
+## Podłoga pokoju (lokalnie, x/z) bez ścian w środku: liczona raz na pokój, bo obrysy się nie zmieniają.
+var _floors := {}  # Room -> [podłogi, słupy]
 
 
 func _ready() -> void:
@@ -58,6 +64,7 @@ func _ready() -> void:
 func reset() -> void:
 	visited.clear()
 	exit_seen = false
+	_floors.clear()
 
 
 func is_open() -> bool:
@@ -192,11 +199,8 @@ func _draw_map() -> void:
 		if not room_floors(room).has(shown_floor):
 			continue
 		var box := room_box(room)
-		# Ściany 0,2 m: rysujemy wnętrze, żeby sąsiednie pokoje nie zlewały się w jedną plamę.
-		var rect := Rect2(to_screen.call(box.position), Vector2(box.size.x, box.size.z) * scale).grow(-WALL * scale)
 		var here := player != null and box.has_point(player.global_position + Vector3.UP * BODY_POINT)
-		_canvas.draw_rect(rect, COLOR_HERE if here else COLOR_ROOM)
-		_canvas.draw_rect(rect, COLOR_EDGE, false, ROOM_EDGE)
+		_draw_room(room, here, origin, scale)
 	# Przejścia odwiedzonych pokoi: notatnik wie, że tam są drzwi, nawet jeśli nie wie dokąd.
 	for connection in main.map_connections:
 		for door in [connection.a, connection.b]:
@@ -214,6 +218,78 @@ func _draw_map() -> void:
 		var dir := Vector2(forward.x, forward.z).normalized()
 		var normal := Vector2(-dir.y, dir.x)
 		_canvas.draw_colored_polygon(PackedVector2Array([at + dir * ARROW_TIP, at - dir * ARROW_BACK + normal * ARROW_HALF, at - dir * ARROW_BACK - normal * ARROW_HALF]), COLOR_PLAYER)
+
+
+## Kształt pokoju z obrysów z generatora (67): podłoga minus ściany, na niej meble, rampy i antresola.
+func _draw_room(room: Room, here: bool, origin: Vector2, scale: float) -> void:
+	var shape := _floor_of(room)
+	var project := func(poly: PackedVector2Array) -> PackedVector2Array:
+		var out := PackedVector2Array()
+		for point in poly:
+			var world := room.global_transform * Vector3(point.x, 0.0, point.y)
+			out.append(origin + Vector2(world.x, world.z) * scale)
+		return out
+	for poly in shape[0]:
+		_canvas.draw_colored_polygon(project.call(poly), COLOR_HERE if here else COLOR_ROOM)
+	for poly in room.map_ramps:
+		_canvas.draw_colored_polygon(project.call(poly), COLOR_RAMP)
+	for poly in room.map_props:
+		var screen: PackedVector2Array = project.call(poly)
+		_canvas.draw_colored_polygon(screen, COLOR_PROP)
+		_canvas.draw_polyline(_closed(screen), COLOR_EDGE, PROP_EDGE)
+	for poly in shape[2]:
+		var screen: PackedVector2Array = project.call(poly)
+		_canvas.draw_colored_polygon(screen, COLOR_PLATFORM)
+		var ring := _closed(screen)
+		for k in ring.size() - 1:
+			_canvas.draw_dashed_line(ring[k], ring[k + 1], COLOR_EDGE, PROP_EDGE, PLATFORM_DASH)
+	for poly in shape[0]:
+		_canvas.draw_polyline(_closed(project.call(poly)), COLOR_EDGE, ROOM_EDGE)
+	for poly in shape[1]:
+		var screen: PackedVector2Array = project.call(poly)
+		_canvas.draw_colored_polygon(screen, COLOR_BACK)
+		_canvas.draw_polyline(_closed(screen), COLOR_EDGE, ROOM_EDGE)
+
+
+## [podłogi, słupy, pomosty]: wnętrze pokoju (bryła bez ścian zewnętrznych) minus ściany z generatora.
+## Ściana w środku podłogi zrobiłaby dziurę, której wielokąt nie opisze – taką rysujemy jako słup.
+## Pomosty też przycinamy do ścian: deski antresoli biblioteki wchodzą w ścięte narożniki.
+func _floor_of(room: Room) -> Array:
+	if _floors.has(room):
+		return _floors[room]
+	var b := room.bounds
+	var x0 := b.position.x + Room.WALL_THICKNESS
+	var x1 := b.end.x - Room.WALL_THICKNESS
+	var z0 := b.position.z + Room.WALL_THICKNESS
+	var z1 := b.end.z - Room.WALL_THICKNESS
+	var floors: Array[PackedVector2Array] = [PackedVector2Array([Vector2(x0, z0), Vector2(x1, z0), Vector2(x1, z1), Vector2(x0, z1)])]
+	var pillars: Array[PackedVector2Array] = []
+	var platforms: Array[PackedVector2Array] = room.map_platforms.duplicate()
+	for wall in room.map_walls:
+		var cut: Array[PackedVector2Array] = []
+		for poly in platforms:
+			cut.append_array(Geometry2D.clip_polygons(poly, wall).filter(func(part: PackedVector2Array) -> bool: return not Geometry2D.is_polygon_clockwise(part)))
+		platforms = cut
+		var next: Array[PackedVector2Array] = []
+		var hole := false
+		for poly in floors:
+			var parts := Geometry2D.clip_polygons(poly, wall)
+			if parts.any(func(part: PackedVector2Array) -> bool: return Geometry2D.is_polygon_clockwise(part)):
+				hole = true
+				next.append(poly)
+			else:
+				next.append_array(parts)
+		floors = next
+		if hole:
+			pillars.append(wall)
+	_floors[room] = [floors, pillars, platforms]
+	return _floors[room]
+
+
+static func _closed(poly: PackedVector2Array) -> PackedVector2Array:
+	var ring := poly.duplicate()
+	ring.append(poly[0])
+	return ring
 
 
 func _room_of(node: Node) -> Room:

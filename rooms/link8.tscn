@@ -31,6 +31,10 @@ material = ExtResource("10")
 [node name="Link8" type="Node3D"]
 script = ExtResource("1")
 bounds = AABB(-4, -0.2, -2, 8, 4.4, 4)
+map_walls = Array[PackedVector2Array]([])
+map_props = Array[PackedVector2Array]([])
+map_ramps = Array[PackedVector2Array]([])
+map_platforms = Array[PackedVector2Array]([])
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true

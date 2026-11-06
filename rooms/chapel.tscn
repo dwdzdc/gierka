@@ -31,6 +31,10 @@ material = ExtResource("10")
 [node name="Chapel" type="Node3D"]
 script = ExtResource("1")
 bounds = AABB(-6, -0.2, -10, 12, 7.4, 20)
+map_walls = Array[PackedVector2Array]([])
+map_props = Array[PackedVector2Array]([PackedVector2Array(-4.4, -3.82, -1.4, -3.82, -1.4, -3.74, -4.4, -3.74), PackedVector2Array(-4.4, -1.82, -1.4, -1.82, -1.4, -1.74, -4.4, -1.74), PackedVector2Array(-4.4, 0.18, -1.4, 0.18, -1.4, 0.26, -4.4, 0.26), PackedVector2Array(-4.4, 2.18, -1.4, 2.18, -1.4, 2.26, -4.4, 2.26), PackedVector2Array(-4.4, 4.18, -1.4, 4.18, -1.4, 4.26, -4.4, 4.26), PackedVector2Array(-4.4, 6.18, -1.4, 6.18, -1.4, 6.26, -4.4, 6.26), PackedVector2Array(1.4, -3.82, 4.4, -3.82, 4.4, -3.74, 1.4, -3.74), PackedVector2Array(1.4, -1.82, 4.4, -1.82, 4.4, -1.74, 1.4, -1.74), PackedVector2Array(1.4, 0.18, 4.4, 0.18, 4.4, 0.26, 1.4, 0.26), PackedVector2Array(1.4, 2.18, 4.4, 2.18, 4.4, 2.26, 1.4, 2.26), PackedVector2Array(1.4, 4.18, 4.4, 4.18, 4.4, 4.26, 1.4, 4.26), PackedVector2Array(1.4, 6.18, 4.4, 6.18, 4.4, 6.26, 1.4, 6.26), PackedVector2Array(-1.2, -8.45, 1.2, -8.45, 1.2, -7.55, -1.2, -7.55), PackedVector2Array(-1.25, -8.5, 1.25, -8.5, 1.25, -7.5, -1.25, -7.5), PackedVector2Array(-0.5, -7.545, 0.5, -7.545, 0.5, -7.515, -0.5, -7.515), PackedVector2Array(-1.92, -8.6, -1.9434, -8.5434, -2, -8.52, -2.0566, -8.5434, -2.08, -8.6, -2.0566, -8.6566, -2, -8.68, -1.9434, -8.6566), PackedVector2Array(2.08, -8.6, 2.0566, -8.5434, 2, -8.52, 1.9434, -8.5434, 1.92, -8.6, 1.9434, -8.6566, 2, -8.68, 2.0566, -8.6566), PackedVector2Array(-5.7, 7.8, -4.9, 7.8, -4.9, 9.4, -5.7, 9.4)])
+map_ramps = Array[PackedVector2Array]([])
+map_platforms = Array[PackedVector2Array]([PackedVector2Array(-0.5, -9.73, 0.5, -9.73, 0.5, -9.67, -0.5, -9.67)])
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true

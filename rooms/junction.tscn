@@ -28,6 +28,10 @@ material = ExtResource("10")
 [node name="Junction" type="Node3D"]
 script = ExtResource("1")
 bounds = AABB(-6, -0.2, -6, 12, 4.9, 12)
+map_walls = Array[PackedVector2Array]([])
+map_props = Array[PackedVector2Array]([PackedVector2Array(-1.5, -1.76, 1.5, -1.76, 1.5, -0.56, -1.5, -0.56), PackedVector2Array(-1.47, -1.73, -1.37, -1.73, -1.37, -1.63, -1.47, -1.63), PackedVector2Array(-1.47, -0.69, -1.37, -0.69, -1.37, -0.59, -1.47, -0.59), PackedVector2Array(1.37, -1.73, 1.47, -1.73, 1.47, -1.63, 1.37, -1.63), PackedVector2Array(1.37, -0.69, 1.47, -0.69, 1.47, -0.59, 1.37, -0.59), PackedVector2Array(3.408, -5.504, 5.408, -5.504, 5.408, -4.704, 3.408, -4.704), PackedVector2Array(3.958, -5.254, 4.458, -5.254, 4.458, -4.954, 3.958, -4.954)])
+map_ramps = Array[PackedVector2Array]([])
+map_platforms = Array[PackedVector2Array]([])
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true

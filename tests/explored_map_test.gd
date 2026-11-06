@@ -23,6 +23,13 @@ func _check(cond: bool, what: String) -> void:
 	log.append(("OK   " if cond else "ZLE  ") + what)
 
 
+static func _area(poly: PackedVector2Array) -> float:
+	var sum := 0.0
+	for k in poly.size():
+		sum += poly[k].cross(poly[(k + 1) % poly.size()])
+	return sum / 2.0
+
+
 func _process(_d: float) -> bool:
 	f += 1
 	if f == 2:
@@ -36,6 +43,14 @@ func _process(_d: float) -> bool:
 		_check(map.visited.keys() == [0], "na starcie zapisana tylko hala: %s" % [map.visited.keys()])
 		_check(not map.exit_seen, "winda nieznana")
 		_check(not map.visible, "mapa zamknięta bez M")
+		# 67: kształt z generatora. Korytarz L to kwadrat 7,6 m bez narożnika 4x4.
+		var corner = load("res://rooms/corridor_l.tscn").instantiate()
+		var area := 0.0
+		for poly in map._floor_of(corner)[0]:
+			area += absf(_area(poly))
+		_check(absf(area - (7.6 * 7.6 - 4.0 * 4.0)) < 0.01, "korytarz L na mapie ma kształt L (%.2f m²)" % area)
+		corner.free()
+		_check(not main.rooms[0].map_props.is_empty(), "hala ma meble na mapie")
 		start = p.global_position
 		Input.action_press("map")
 		Input.action_press("move_forward")

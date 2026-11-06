@@ -31,6 +31,10 @@ material = ExtResource("10")
 [node name="Stairwell" type="Node3D"]
 script = ExtResource("1")
 bounds = AABB(-5, -0.2, -4, 10, 9.9, 8)
+map_walls = Array[PackedVector2Array]([])
+map_props = Array[PackedVector2Array]([PackedVector2Array(3.33, -4, 4.83, -4, 4.83, 4, 3.33, 4)])
+map_ramps = Array[PackedVector2Array]([PackedVector2Array(-1.44, -3.8, 3.36, -3.8, 3.36, 0, -1.44, 0), PackedVector2Array(-4.8, 0, 3.36, 0, 3.36, 3.8, -4.8, 3.8)])
+map_platforms = Array[PackedVector2Array]([])
 
 [node name="Geometry" type="CSGCombiner3D" parent="."]
 use_collision = true
